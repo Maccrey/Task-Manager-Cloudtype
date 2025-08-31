@@ -340,7 +340,11 @@ document.addEventListener("DOMContentLoaded", () => {
         staff.push(newStaff);
         updateStaffDropdowns();
         updateAssignCorrectorDropdownIfOpen(); // Update assign corrector dropdown if modal is open
+        
+        // 항상 직원 리스트 렌더링
         renderStaffList();
+        // 직원 탭 강제 유지
+        switchTab('staff');
         return newStaff;
       } else {
         throw new Error('Failed to add staff member');
@@ -361,7 +365,11 @@ document.addEventListener("DOMContentLoaded", () => {
         staff = staff.filter(s => s.id !== staffId);
         updateStaffDropdowns();
         updateAssignCorrectorDropdownIfOpen(); // Update assign corrector dropdown if modal is open
+        
+        // 항상 직원 리스트 렌더링
         renderStaffList();
+        // 직원 탭 강제 유지
+        switchTab('staff');
       } else {
         throw new Error('Failed to delete staff member');
       }
@@ -424,7 +432,7 @@ document.addEventListener("DOMContentLoaded", () => {
     staffTbody.innerHTML = '';
 
     if (staff.length === 0) {
-      staffTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666; padding: 20px;">등록된 직원이 없습니다.</td></tr>';
+      staffTbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666; padding: 20px;">등록된 직원이 없습니다.</td></tr>';
       return;
     }
 
@@ -445,6 +453,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${roleText}</td>
         <td>${createdDate}</td>
         <td>
+          <button class="action-btn edit-btn" onclick="handleEditStaff('${s.id}')">수정</button>
           <button class="action-btn delete-btn" onclick="handleDeleteStaff('${s.id}')">삭제</button>
         </td>
       `;
@@ -646,7 +655,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.target === bookSelectionModal) {
       closeBookSelectionModal();
     }
-    if (event.target === adminPanelModal) {
+    if (event.target === adminPanelModal && !isStaffOperationInProgress) {
       closeAdminPanel();
     }
   });
@@ -1730,7 +1739,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!isAdminMode) return;
 
     adminPanelModal.style.display = "flex";
-    switchTab("tasks");
+    // 기본적으로 tasks 탭으로 시작하되, 이미 다른 탭이 활성화되어 있다면 유지
+    if (!currentActiveTab || currentActiveTab === "tasks") {
+      switchTab("tasks");
+    } else {
+      switchTab(currentActiveTab);
+    }
     loadAdminData();
   }
 
@@ -1740,7 +1754,16 @@ document.addEventListener("DOMContentLoaded", () => {
     currentEditingRow = null;
   }
 
+  // 현재 활성 탭을 추적하는 변수
+  let currentActiveTab = "tasks";
+  
+  // 직원 작업 중 모달 닫기 방지 플래그
+  let isStaffOperationInProgress = false;
+
   function switchTab(tabName) {
+    console.log(`Switching to tab: ${tabName}, previous tab: ${currentActiveTab}`);
+    currentActiveTab = tabName;
+    
     // 탭 버튼 활성화
     tabButtons.forEach((btn) => {
       btn.classList.remove("active");
@@ -1769,6 +1792,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (tabName === "stats") {
       loadStatistics();
     }
+    
+    console.log(`Tab switched successfully to: ${currentActiveTab}`);
   }
 
   async function loadAdminData() {
@@ -2726,19 +2751,55 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       
-      // 중복 이름 체크
-      if (staff.some(s => s.name === name)) {
-        alert('이미 등록된 직원입니다.');
-        return;
-      }
-      
       try {
-        await addStaff(name, role);
-        nameInput.value = '';
-        roleSelect.value = 'corrector';
-        alert('직원이 성공적으로 등록되었습니다.');
+        isStaffOperationInProgress = true; // 직원 작업 시작
+        
+        if (currentEditingStaff) {
+          // 편집 모드: 기존 직원 정보 업데이트
+          // 중복 이름 체크 (자기 자신 제외)
+          if (staff.some(s => s.name === name && s.id !== currentEditingStaff)) {
+            alert('이미 등록된 직원입니다.');
+            isStaffOperationInProgress = false; // 작업 종료
+            return;
+          }
+          
+          await updateStaff(currentEditingStaff, name, role);
+          exitEditMode();
+          alert('직원 정보가 성공적으로 수정되었습니다.');
+          // alert 후 관리자 패널과 직원 탭 유지
+          setTimeout(() => {
+            adminPanelModal.style.display = "flex";
+            switchTab('staff');
+            isStaffOperationInProgress = false; // 작업 완료
+          }, 100);
+        } else {
+          // 새로 추가 모드
+          // 중복 이름 체크
+          if (staff.some(s => s.name === name)) {
+            alert('이미 등록된 직원입니다.');
+            isStaffOperationInProgress = false; // 작업 종료
+            return;
+          }
+          
+          await addStaff(name, role);
+          nameInput.value = '';
+          roleSelect.value = 'corrector';
+          alert('직원이 성공적으로 등록되었습니다.');
+          // alert 후 관리자 패널과 직원 탭 유지
+          setTimeout(() => {
+            adminPanelModal.style.display = "flex";
+            switchTab('staff');
+            isStaffOperationInProgress = false; // 작업 완료
+          }, 100);
+        }
       } catch (error) {
-        alert('직원 등록에 실패했습니다: ' + error.message);
+        alert(currentEditingStaff ? '직원 수정에 실패했습니다: ' + error.message : '직원 등록에 실패했습니다: ' + error.message);
+        // 오류 시에도 관리자 패널과 직원 탭 유지
+        setTimeout(() => {
+          adminPanelModal.style.display = "flex";
+          switchTab('staff');
+          isStaffOperationInProgress = false; // 작업 완료
+        }, 100);
       }
     });
   }
@@ -3467,17 +3528,139 @@ document.addEventListener("DOMContentLoaded", () => {
   // Update current workers display periodically
   setInterval(updateCurrentWorkersDisplay, 60000); // Update every minute
 
+  // Staff editing functionality
+  let currentEditingStaff = null;
+
+  async function updateStaff(staffId, name, role) {
+    try {
+      const response = await fetch(`${STAFF_API_URL}/${staffId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, role }),
+      });
+      
+      if (response.ok) {
+        const updatedStaff = await response.json();
+        // Update staff array
+        const index = staff.findIndex(s => s.id === staffId);
+        if (index !== -1) {
+          staff[index] = updatedStaff;
+        }
+        updateStaffDropdowns();
+        updateAssignCorrectorDropdownIfOpen();
+        
+        // 항상 직원 리스트 렌더링
+        renderStaffList();
+        // 직원 탭 강제 유지
+        switchTab('staff');
+        return updatedStaff;
+      } else {
+        throw new Error('Failed to update staff member');
+      }
+    } catch (error) {
+      console.error('Error updating staff:', error);
+      throw error;
+    }
+  }
+
+  function enterEditMode(staffId) {
+    const staffMember = staff.find(s => s.id === staffId);
+    if (!staffMember) return;
+
+    currentEditingStaff = staffId;
+    
+    // Find the staff form elements
+    const nameInput = document.getElementById('staff-name');
+    const roleSelect = document.getElementById('staff-role');
+    const submitBtn = document.querySelector('#staff-form button[type="submit"]');
+    
+    if (nameInput && roleSelect && submitBtn) {
+      // Fill form with current staff data
+      nameInput.value = staffMember.name;
+      roleSelect.value = staffMember.role;
+      
+      // Change button text to indicate editing mode
+      submitBtn.textContent = '수정 완료';
+      
+      // Scroll to form
+      nameInput.scrollIntoView({ behavior: 'smooth' });
+      nameInput.focus();
+      
+      // Add visual indicator
+      const form = document.getElementById('staff-form');
+      form.classList.add('editing');
+      
+      // Add cancel button if it doesn't exist
+      let cancelBtn = document.getElementById('edit-cancel-btn');
+      if (!cancelBtn) {
+        cancelBtn = document.createElement('button');
+        cancelBtn.id = 'edit-cancel-btn';
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'small-btn cancel-btn';
+        cancelBtn.textContent = '취소';
+        cancelBtn.style.marginLeft = '10px';
+        cancelBtn.onclick = exitEditMode;
+        submitBtn.parentNode.appendChild(cancelBtn);
+      }
+      cancelBtn.style.display = 'inline-block';
+    }
+  }
+
+  function exitEditMode() {
+    currentEditingStaff = null;
+    
+    // Reset form
+    const nameInput = document.getElementById('staff-name');
+    const roleSelect = document.getElementById('staff-role');
+    const submitBtn = document.querySelector('#staff-form button[type="submit"]');
+    const cancelBtn = document.getElementById('edit-cancel-btn');
+    
+    if (nameInput && roleSelect && submitBtn) {
+      nameInput.value = '';
+      roleSelect.value = 'corrector';
+      submitBtn.textContent = '등록';
+      
+      // Remove visual indicators
+      const form = document.getElementById('staff-form');
+      form.classList.remove('editing');
+      
+      // Hide cancel button
+      if (cancelBtn) {
+        cancelBtn.style.display = 'none';
+      }
+    }
+  }
+
   // 전역 함수들
+  window.handleEditStaff = function(staffId) {
+    enterEditMode(staffId);
+  };
+
   window.handleDeleteStaff = async function(staffId) {
     const staffMember = staff.find(s => s.id === staffId);
     if (!staffMember) return;
     
     if (confirm(`'${staffMember.name}' 직원을 삭제하시겠습니까?`)) {
       try {
+        isStaffOperationInProgress = true; // 직원 작업 시작
         await deleteStaff(staffId);
         alert('직원이 삭제되었습니다.');
+        // alert 후 관리자 패널과 직원 탭 유지
+        setTimeout(() => {
+          adminPanelModal.style.display = "flex";
+          switchTab('staff');
+          isStaffOperationInProgress = false; // 작업 완료
+        }, 100);
       } catch (error) {
         alert('직원 삭제에 실패했습니다: ' + error.message);
+        // 오류 시에도 관리자 패널과 직원 탭 유지
+        setTimeout(() => {
+          adminPanelModal.style.display = "flex";
+          switchTab('staff');
+          isStaffOperationInProgress = false; // 작업 완료
+        }, 100);
       }
     }
   };

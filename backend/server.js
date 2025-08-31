@@ -211,6 +211,27 @@ app.post('/staff', (req, res) => {
     res.status(201).json(newStaff);
 });
 
+// PUT (update) a staff member
+app.put('/staff/:id', (req, res) => {
+    const staff = readStaff();
+    const { id } = req.params;
+    const { name, role } = req.body;
+    const index = staff.findIndex(s => s.id === id);
+
+    if (index !== -1) {
+        staff[index] = { 
+            ...staff[index], 
+            name: name,
+            role: role,
+            updatedAt: new Date().toISOString()
+        };
+        writeStaff(staff);
+        res.json(staff[index]);
+    } else {
+        res.status(404).send('Staff member not found');
+    }
+});
+
 // DELETE a staff member
 app.delete('/staff/:id', (req, res) => {
     let staff = readStaff();

@@ -548,10 +548,71 @@ main {
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.9rem;
+    height: 40px;
 }
 
 .small-btn:hover {
     background-color: #5a6268;
+}
+
+/* 직원 등록 폼 스타일 */
+.staff-form .form-row {
+    display: flex;
+    align-items: stretch;
+    gap: 15px;
+    margin: 0;
+    padding: 0;
+}
+
+.staff-form input[type="text"],
+.staff-form select,
+.staff-form button {
+    height: 40px !important;
+    padding: 0 12px !important;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+    margin: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.staff-form input[type="text"] {
+    flex: 2;
+    min-width: 150px;
+}
+
+.staff-form select {
+    flex: 1;
+    min-width: 140px;
+}
+
+.staff-form button {
+    flex: 0 0 auto;
+    min-width: 80px;
+    border: none !important;
+    background-color: #6c757d !important;
+    color: white !important;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.staff-form button:hover {
+    background-color: #5a6268 !important;
+}
+
+/* 수정 모드 스타일 개선 */
+#staff-form.editing {
+    background-color: #fff3cd !important;
+    border: 2px solid #ffc107 !important;
+    border-radius: 6px !important;
+    padding: 15px !important;
+}
+
+#staff-form .form-row button {
+    margin-left: 0 !important;
 }
 
 /* 관리자 테이블 */
