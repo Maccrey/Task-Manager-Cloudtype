@@ -873,26 +873,28 @@ document.addEventListener("DOMContentLoaded", () => {
                         : ""
                     }
                 </p>
-                ${
-                  task.currentStage !== "completed"
-                    ? `<button data-id="${task.id}" class="update-progress-button">진행 상황 업데이트</button>`
-                    : ""
-                }
-                <button data-id="${
-                  task.id
-                }" class="delete-task-button">삭제</button>
-                <button data-id="${task.id}" class="notes-button ${
+                <div class="task-buttons">
+                    ${
+                      task.currentStage !== "completed"
+                        ? `<button data-id="${task.id}" class="update-progress-button">진행 상황 업데이트</button>`
+                        : ""
+                    }
+                    <button data-id="${
+                      task.id
+                    }" class="delete-task-button">삭제</button>
+                    <button data-id="${task.id}" class="notes-button ${
         noteCount === 0 ? "inactive" : ""
       }">특이사항 <span class="note-count">${noteCount}</span></button>
-                ${
-                  assignedTo !== "미정" && task.currentStage !== "completed"
-                    ? `<button data-id="${task.id}" class="work-session-button ${
-                        currentWorkSessions.has(task.id) ? "stop" : "start"
-                      }" data-worker="${assignedTo}">${
-                        currentWorkSessions.has(task.id) ? "작업중지" : "작업시작"
-                      }</button>`
-                    : ""
-                }
+                    ${
+                      assignedTo !== "미정" && task.currentStage !== "completed"
+                        ? `<button data-id="${task.id}" class="work-session-button ${
+                            currentWorkSessions.has(task.id) ? "stop" : "start"
+                          }" data-worker="${assignedTo}">${
+                            currentWorkSessions.has(task.id) ? "작업중지" : "작업시작"
+                          }</button>`
+                        : ""
+                    }
+                </div>
             `;
       taskList.appendChild(taskItem);
     });
