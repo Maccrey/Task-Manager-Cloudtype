@@ -121,6 +121,13 @@ main {
     display: none;
 }
 
+.search-section {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
 .search-section input[type="text"] {
     flex-grow: 1;
     padding: 10px;
@@ -411,6 +418,17 @@ main {
 
 .completed-button:hover {
     background-color: #218838 !important;
+}
+
+/* 출퇴근기록 확인 버튼 */
+.attendance-check-button {
+    background-color: #6c757d !important;
+    color: white !important;
+    margin-left: auto !important;
+}
+
+.attendance-check-button:hover {
+    background-color: #545b62 !important;
 }
 
 /* 비밀번호 모달 */

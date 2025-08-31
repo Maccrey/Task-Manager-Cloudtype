@@ -658,6 +658,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.target === adminPanelModal && !isStaffOperationInProgress) {
       closeAdminPanel();
     }
+    if (event.target === document.getElementById('attendance-only-modal')) {
+      document.getElementById('attendance-only-modal').style.display = 'none';
+    }
   });
 
   // 작업 등록 폼 제출
@@ -3055,13 +3058,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   
   function loadAttendanceData() {
-    const attendanceYear = document.getElementById('attendance-year');
-    const attendanceMonth = document.getElementById('attendance-month');
-    const attendanceDate = document.getElementById('attendance-date');
-    const attendanceWorker = document.getElementById('attendance-worker');
+    loadAttendanceDataForModal('attendance');
+  }
+
+  function loadAttendanceDataForModal(prefix) {
+    const attendanceYear = document.getElementById(`${prefix}-year`);
+    const attendanceMonth = document.getElementById(`${prefix}-month`);
+    const attendanceDate = document.getElementById(`${prefix}-date`);
+    const attendanceWorker = document.getElementById(`${prefix}-worker`);
     
     // Populate year dropdown with available years
-    populateYearDropdown();
+    populateYearDropdownForModal(prefix);
     
     // Set current year and month as default
     const now = new Date();
@@ -3085,12 +3092,16 @@ document.addEventListener("DOMContentLoaded", () => {
       attendanceWorker.appendChild(option);
     });
     
-    renderAttendanceSummary();
-    renderAttendanceTable();
+    renderAttendanceSummaryForModal(prefix);
+    renderAttendanceTableForModal(prefix);
   }
   
   function populateYearDropdown() {
-    const attendanceYear = document.getElementById('attendance-year');
+    populateYearDropdownForModal('attendance');
+  }
+
+  function populateYearDropdownForModal(prefix) {
+    const attendanceYear = document.getElementById(`${prefix}-year`);
     if (!attendanceYear) return;
     
     // Get unique years from work sessions
@@ -3119,9 +3130,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   
   function renderAttendanceSummary() {
+    renderAttendanceSummaryForModal('attendance');
+  }
+
+  function renderAttendanceSummaryForModal(prefix) {
     const today = new Date().toDateString();
     const attendanceRecords = calculateAttendanceRecords();
-    const summaryContent = document.getElementById('attendance-summary-content');
+    const summaryContent = document.getElementById(`${prefix}-summary-content`);
     
     let todayWorkers = [];
     attendanceRecords.forEach((workerDays, worker) => {
@@ -3230,11 +3245,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   
   function renderAttendanceTable() {
-    const attendanceYear = document.getElementById('attendance-year');
-    const attendanceMonth = document.getElementById('attendance-month');
-    const attendanceDate = document.getElementById('attendance-date');
-    const attendanceWorker = document.getElementById('attendance-worker');
-    const attendanceTbody = document.getElementById('attendance-tbody');
+    renderAttendanceTableForModal('attendance');
+  }
+
+  function renderAttendanceTableForModal(prefix) {
+    const attendanceYear = document.getElementById(`${prefix}-year`);
+    const attendanceMonth = document.getElementById(`${prefix}-month`);
+    const attendanceDate = document.getElementById(`${prefix}-date`);
+    const attendanceWorker = document.getElementById(`${prefix}-worker`);
+    const attendanceTbody = document.getElementById(`${prefix}-tbody`);
     
     const selectedYear = attendanceYear?.value;
     const selectedMonth = attendanceMonth?.value;
@@ -3379,10 +3398,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   
   function exportAttendanceRecords() {
-    const attendanceYear = document.getElementById('attendance-year');
-    const attendanceMonth = document.getElementById('attendance-month');
-    const attendanceDate = document.getElementById('attendance-date');
-    const attendanceWorker = document.getElementById('attendance-worker');
+    exportAttendanceRecordsForModal('attendance');
+  }
+
+  function exportAttendanceRecordsForModal(prefix) {
+    const attendanceYear = document.getElementById(`${prefix}-year`);
+    const attendanceMonth = document.getElementById(`${prefix}-month`);
+    const attendanceDate = document.getElementById(`${prefix}-date`);
+    const attendanceWorker = document.getElementById(`${prefix}-worker`);
     
     const selectedYear = attendanceYear?.value;
     const selectedMonth = attendanceMonth?.value;
@@ -3634,6 +3657,38 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   }
+
+  // 출퇴근 기록 전용 모달 함수들 - 기존 함수들을 재사용
+  function loadAttendanceOnlyData() {
+    loadAttendanceDataForModal('attendance-only');
+  }
+
+  // 출퇴근 기록 전용 모달 이벤트 리스너들
+  const attendanceOnlyModal = document.getElementById('attendance-only-modal');
+  const attendanceCheckButton = document.getElementById('attendance-check-button');
+  const attendanceOnlyCloseButton = attendanceOnlyModal?.querySelector('.close-button');
+  
+  if (attendanceCheckButton) {
+    attendanceCheckButton.addEventListener('click', function() {
+      attendanceOnlyModal.style.display = 'flex';
+      loadAttendanceOnlyData();
+    });
+  }
+
+  // 출퇴근 기록 전용 모달 닫기 버튼 이벤트
+  if (attendanceOnlyCloseButton) {
+    attendanceOnlyCloseButton.addEventListener('click', function() {
+      attendanceOnlyModal.style.display = 'none';
+    });
+  }
+  
+  // 출퇴근 기록 전용 모달 내부 이벤트 리스너들
+  document.getElementById('attendance-only-year')?.addEventListener('change', () => renderAttendanceTableForModal('attendance-only'));
+  document.getElementById('attendance-only-month')?.addEventListener('change', () => renderAttendanceTableForModal('attendance-only'));
+  document.getElementById('attendance-only-date')?.addEventListener('change', () => renderAttendanceTableForModal('attendance-only'));
+  document.getElementById('attendance-only-worker')?.addEventListener('change', () => renderAttendanceTableForModal('attendance-only'));
+  document.getElementById('refresh-attendance-only-btn')?.addEventListener('click', loadAttendanceOnlyData);
+  document.getElementById('export-attendance-only-btn')?.addEventListener('click', () => exportAttendanceRecordsForModal('attendance-only'));
 
   // 전역 함수들
   window.handleEditStaff = function(staffId) {
