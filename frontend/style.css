@@ -112,6 +112,34 @@ header {
     padding: 0 20px;
 }
 
+.current-work-section {
+    margin: 20px auto;
+    max-width: 1200px;
+    padding: 0 20px;
+}
+
+.current-work-box {
+    background-color: #f8f9fa;
+    border: 2px solid #4CAF50;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.current-work-box h3 {
+    margin: 0 0 10px 0;
+    color: #4CAF50;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.current-work-box p {
+    margin: 5px 0;
+    color: #333;
+    font-size: 1rem;
+}
+
 .header-content h1 {
     margin: 0;
     font-size: 1.5rem;

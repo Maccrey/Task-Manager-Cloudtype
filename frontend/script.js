@@ -122,6 +122,46 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentAssignTask = null; // Current task for corrector assignment
   let currentAssignStage = null; // Current stage for corrector assignment
 
+  // Korean date parsing function
+  function parseKoreanDate(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') {
+      return null;
+    }
+
+    // If it's already a valid date object or ISO string, use it directly
+    const directParse = new Date(dateStr);
+    if (!isNaN(directParse.getTime())) {
+      return directParse;
+    }
+
+    // Korean date format: "2025. 7. 10. 오후 5:45:00"
+    const koreanDateRegex = /(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.\s*(오전|오후)\s*(\d{1,2}):(\d{2}):(\d{2})/;
+    const match = dateStr.match(koreanDateRegex);
+    
+    if (match) {
+      const [, year, month, day, ampm, hour, minute, second] = match;
+      let hour24 = parseInt(hour, 10);
+      
+      // Convert to 24-hour format
+      if (ampm === '오후' && hour24 !== 12) {
+        hour24 += 12;
+      } else if (ampm === '오전' && hour24 === 12) {
+        hour24 = 0;
+      }
+      
+      return new Date(
+        parseInt(year, 10),
+        parseInt(month, 10) - 1, // Month is 0-indexed
+        parseInt(day, 10),
+        hour24,
+        parseInt(minute, 10),
+        parseInt(second, 10)
+      );
+    }
+    
+    return null;
+  }
+
   // 서버 연결 상태 확인
   async function checkServerConnection() {
     try {
@@ -2244,7 +2284,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (stageData.history && stageData.history.length > 0) {
         historyHtml += "<div>";
         stageData.history.forEach((entry) => {
-          const date = new Date(entry.date).toLocaleString("ko-KR");
+          let date;
+          try {
+            const parsedDate = parseKoreanDate(entry.date);
+            date = parsedDate ? parsedDate.toLocaleString("ko-KR") : entry.date;
+          } catch (error) {
+            console.warn('Date parsing error:', error);
+            date = entry.date || "날짜 정보 없음";
+          }
           historyHtml += `
                         <div class="history-entry">
                             <div>${entry.startPage}페이지 → ${entry.endPage}페이지</div>
@@ -2981,22 +3028,25 @@ document.addEventListener("DOMContentLoaded", () => {
         background: #e8f5e8;
         border: 1px solid #4CAF50;
         border-radius: 8px;
-        margin: 10px 0;
-        padding: 10px;
+        margin: 20px auto;
+        padding: 15px;
         font-size: 0.9em;
+        max-width: 1200px;
+        text-align: center;
       `;
       
-      // 더 안전한 방법으로 요소 추가
-      if (headerContent) {
-        // header-content div 아래에 추가
-        headerContent.appendChild(currentWorkersDiv);
+      // 더 안전한 방법으로 요소 추가 - 메인 섹션에 추가하도록 수정
+      const searchSection = document.querySelector('.search-section');
+      if (searchSection) {
+        // search-section 다음에 추가
+        searchSection.parentNode.insertBefore(currentWorkersDiv, searchSection.nextSibling);
       } else {
-        // header-content가 없으면 header 바로 아래에 추가
-        const header = document.querySelector('header');
-        if (header) {
-          header.appendChild(currentWorkersDiv);
+        // search-section이 없으면 main 시작 부분에 추가
+        const main = document.querySelector('main');
+        if (main) {
+          main.insertBefore(currentWorkersDiv, main.firstChild);
         } else {
-          console.warn('Header element not found, skipping current workers display');
+          console.warn('Main element not found, skipping current workers display');
           return;
         }
       }
