@@ -1078,3 +1078,317 @@ main {
 #book-info p {
     margin: 5px 0 5px 0; /* 문단과 다음 요소 사이의 간격을 줄임 */
 }
+
+/* Work Session Button Styles */
+.work-session-button {
+    margin-top: 15px;
+    margin-left: 10px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.work-session-button.start {
+    background-color: #28a745;
+    color: white;
+}
+
+.work-session-button.start:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.work-session-button.stop {
+    background-color: #dc3545;
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.work-session-button.stop:hover {
+    background-color: #c82333;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+}
+
+/* Current Workers Display */
+#current-workers-display {
+    margin: 15px 0;
+    padding: 15px;
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+    border: 2px solid #4CAF50;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.15);
+    color: #333; /* 기본 텍스트 색상을 검은색으로 설정 */
+}
+
+#current-workers-display > div:first-child {
+    color: #2e7d32;
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+#current-workers-display div[style*="inline-block"] {
+    color: #333 !important; /* 작업자 정보 박스의 텍스트 색상을 검은색으로 강제 설정 */
+}
+
+#current-workers-display strong {
+    color: #2e7d32 !important; /* 작업자 이름을 진한 녹색으로 설정 */
+}
+
+/* Attendance Management Styles */
+.attendance-management {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.attendance-toolbar {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.attendance-filters {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.date-filters {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.date-filters label {
+    font-size: 0.9rem;
+    color: #666;
+    margin-right: 5px;
+}
+
+.year-select, .month-select, .date-input, .worker-select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    background-color: white;
+}
+
+.year-select, .month-select {
+    min-width: 100px;
+}
+
+.attendance-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.attendance-summary {
+    background-color: #e8f5e8;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border-left: 4px solid #4CAF50;
+}
+
+.attendance-summary h4 {
+    margin: 0 0 15px 0;
+    color: #2e7d32;
+}
+
+.attendance-summary-item {
+    background: white;
+    padding: 10px 15px;
+    margin: 8px 0;
+    border-radius: 6px;
+    border-left: 3px solid #28a745;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.attendance-summary-item strong {
+    color: #2e7d32;
+}
+
+.attendance-table-container {
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.attendance-table-container h4 {
+    background: #4CAF50;
+    color: white;
+    margin: 0;
+    padding: 15px;
+    font-size: 1.1rem;
+}
+
+#attendance-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#attendance-table th,
+#attendance-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+#attendance-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    color: #2e7d32;
+    border-bottom: 2px solid #4CAF50;
+}
+
+#attendance-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+#attendance-table tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+/* Responsive design for attendance */
+@media (max-width: 768px) {
+    .attendance-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .date-filters {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .year-select, .month-select, .date-input, .worker-select {
+        width: 100%;
+        box-sizing: border-box;
+        min-width: auto;
+    }
+    
+    .attendance-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .attendance-actions button {
+        width: 100%;
+    }
+    
+    #attendance-table th,
+    #attendance-table td {
+        padding: 8px;
+        font-size: 0.8rem;
+    }
+}
+
+/* Assign Corrector Modal */
+.assign-corrector {
+    max-width: 500px !important;
+    width: 90% !important;
+}
+
+.assign-form-content {
+    margin-bottom: 25px;
+}
+
+.assign-form-content p {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border-left: 4px solid #007bff;
+    color: #333;
+}
+
+.assign-form-content .form-group {
+    margin-bottom: 0;
+}
+
+.assign-form-content label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #333;
+}
+
+.assign-form-content select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    background-color: white;
+    transition: border-color 0.3s ease;
+}
+
+.assign-form-content select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.assign-form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.assign-btn {
+    padding: 12px 24px;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.assign-btn.confirm {
+    background-color: #28a745;
+    color: white;
+}
+
+.assign-btn.confirm:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.assign-btn.cancel {
+    background-color: #6c757d;
+    color: white;
+}
+
+.assign-btn.cancel:hover {
+    background-color: #5a6268;
+}
+
+@media (max-width: 768px) {
+    .assign-form-actions {
+        flex-direction: column;
+    }
+    
+    .assign-btn {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+}

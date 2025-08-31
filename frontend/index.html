@@ -39,18 +39,26 @@
                 <input type="number" id="total-pages" required>
 
                 <label for="corrector1">1차 교정자:</label>
-                <input type="text" id="corrector1" required>
+                <select id="corrector1" required>
+                    <option value="">담당자 선택</option>
+                </select>
 
                 <label for="corrector2">2차 교정자:</label>
-                <input type="text" id="corrector2">
+                <select id="corrector2">
+                    <option value="">담당자 선택</option>
+                </select>
 
                 <label for="corrector3">3차 교정자:</label>
-                <input type="text" id="corrector3">
+                <select id="corrector3">
+                    <option value="">담당자 선택</option>
+                </select>
 
                 <label for="transcriber">점역자 (선택):</label>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <input type="checkbox" id="enable-transcriber" checked>
-                    <input type="text" id="transcriber">
+                    <select id="transcriber">
+                        <option value="">담당자 선택</option>
+                    </select>
                 </div>
 
                 <button type="submit">등록</button>
@@ -92,6 +100,8 @@
             <div class="admin-tabs">
                 <button class="tab-button active" data-tab="tasks">작업 관리</button>
                 <button class="tab-button" data-tab="data">데이터 관리</button>
+                <button class="tab-button" data-tab="staff">직원 관리</button>
+                <button class="tab-button" data-tab="attendance">출퇴근 기록</button>
                 <button class="tab-button" data-tab="stats">통계</button>
             </div>
 
@@ -132,6 +142,111 @@
                     <h3>데이터 정보</h3>
                     <div id="data-info" class="data-info">
                         <!-- 데이터 정보가 여기에 표시됩니다 -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="admin-tab-staff" class="tab-content">
+                <div class="staff-management">
+                    <div class="staff-toolbar">
+                        <h3>직원 등록</h3>
+                        <form id="staff-form" class="staff-form">
+                            <div class="form-row">
+                                <input type="text" id="staff-name" placeholder="직원 이름" required>
+                                <select id="staff-role">
+                                    <option value="corrector">교정자</option>
+                                    <option value="transcriber">점역자</option>
+                                    <option value="both">교정자+점역자</option>
+                                    <option value="admin">관리자</option>
+                                </select>
+                                <button type="submit" class="small-btn">등록</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="staff-list-container">
+                        <h3>등록된 직원 목록</h3>
+                        <div class="admin-table-container">
+                            <table id="staff-table" class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>이름</th>
+                                        <th>역할</th>
+                                        <th>등록일</th>
+                                        <th>작업</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staff-tbody">
+                                    <!-- 직원 목록이 동적으로 추가됩니다 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="admin-tab-attendance" class="tab-content">
+                <div class="attendance-management">
+                    <div class="attendance-toolbar">
+                        <h3>출퇴근 기록</h3>
+                        <div class="attendance-filters">
+                            <div class="date-filters">
+                                <select id="attendance-year" class="year-select">
+                                    <option value="">전체 연도</option>
+                                </select>
+                                <select id="attendance-month" class="month-select">
+                                    <option value="">전체 월</option>
+                                    <option value="01">1월</option>
+                                    <option value="02">2월</option>
+                                    <option value="03">3월</option>
+                                    <option value="04">4월</option>
+                                    <option value="05">5월</option>
+                                    <option value="06">6월</option>
+                                    <option value="07">7월</option>
+                                    <option value="08">8월</option>
+                                    <option value="09">9월</option>
+                                    <option value="10">10월</option>
+                                    <option value="11">11월</option>
+                                    <option value="12">12월</option>
+                                </select>
+                                <input type="date" id="attendance-date" class="date-input" placeholder="특정 날짜">
+                            </div>
+                            <select id="attendance-worker" class="worker-select">
+                                <option value="">모든 직원</option>
+                            </select>
+                            <div class="attendance-actions">
+                                <button id="refresh-attendance-btn" class="small-btn">새로고침</button>
+                                <button id="export-attendance-btn" class="small-btn">출퇴근 기록 내보내기</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="attendance-summary">
+                        <h4>오늘의 출퇴근 현황</h4>
+                        <div id="attendance-summary-content">
+                            <!-- 출퇴근 현황이 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                    
+                    <div class="attendance-table-container">
+                        <h4>출퇴근 기록 상세</h4>
+                        <div class="admin-table-container">
+                            <table id="attendance-table" class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>날짜</th>
+                                        <th>직원</th>
+                                        <th>출근시간</th>
+                                        <th>퇴근시간</th>
+                                        <th>근무시간</th>
+                                        <th>작업내용</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendance-tbody">
+                                    <!-- 출퇴근 기록이 동적으로 추가됩니다 -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -225,7 +340,9 @@
                     <div class="stage-section">
                         <h4>1차 교정</h4>
                         <div class="stage-info">
-                            <label>담당자: <input type="text" id="corrector1-assigned" class="stage-input"></label>
+                            <label>담당자: <select id="corrector1-assigned" class="stage-input">
+                                <option value="">담당자 선택</option>
+                            </select></label>
                             <label>진행 페이지: <span id="corrector1-progress">0</span></label>
                         </div>
                     </div>
@@ -233,7 +350,9 @@
                     <div class="stage-section">
                         <h4>2차 교정</h4>
                         <div class="stage-info">
-                            <label>담당자: <input type="text" id="corrector2-assigned" class="stage-input"></label>
+                            <label>담당자: <select id="corrector2-assigned" class="stage-input">
+                                <option value="">담당자 선택</option>
+                            </select></label>
                             <label>진행 페이지: <span id="corrector2-progress">0</span></label>
                         </div>
                     </div>
@@ -241,7 +360,9 @@
                     <div class="stage-section">
                         <h4>3차 교정</h4>
                         <div class="stage-info">
-                            <label>담당자: <input type="text" id="corrector3-assigned" class="stage-input"></label>
+                            <label>담당자: <select id="corrector3-assigned" class="stage-input">
+                                <option value="">담당자 선택</option>
+                            </select></label>
                             <label>진행 페이지: <span id="corrector3-progress">0</span></label>
                         </div>
                     </div>
@@ -249,7 +370,9 @@
                     <div class="stage-section">
                         <h4>점역</h4>
                         <div class="stage-info">
-                            <label>담당자: <input type="text" id="transcriber-assigned" class="stage-input"></label>
+                            <label>담당자: <select id="transcriber-assigned" class="stage-input">
+                                <option value="">담당자 선택</option>
+                            </select></label>
                             <label>진행 페이지: <span id="transcriber-progress">0</span></label>
                         </div>
                     </div>
@@ -339,6 +462,28 @@
                 <label for="note-content">내용:</label>
                 <textarea id="note-content" rows="3" required></textarea>
                 <button type="submit">저장</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="assign-corrector-modal" class="modal">
+        <div class="modal-content assign-corrector">
+            <span class="close-button">&times;</span>
+            <h2 id="assign-modal-title">담당자 지정</h2>
+            <form id="assign-corrector-form">
+                <div class="assign-form-content">
+                    <p id="assign-task-info"></p>
+                    <div class="form-group">
+                        <label for="assign-corrector-select">담당자 선택:</label>
+                        <select id="assign-corrector-select" required>
+                            <option value="">담당자를 선택해주세요</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="assign-form-actions">
+                    <button type="submit" class="assign-btn confirm">지정</button>
+                    <button type="button" class="assign-btn cancel" id="assign-cancel-btn">취소</button>
+                </div>
             </form>
         </div>
     </div>

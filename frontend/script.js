@@ -81,18 +81,33 @@ document.addEventListener("DOMContentLoaded", () => {
   const passwordCancelBtn = document.getElementById("password-cancel");
   const passwordModalCloseButton = passwordModal.querySelector(".close-button");
 
+  // Assign Corrector Modal Elements
+  const assignCorrectorModal = document.getElementById("assign-corrector-modal");
+  const assignCorrectorForm = document.getElementById("assign-corrector-form");
+  const assignModalTitle = document.getElementById("assign-modal-title");
+  const assignTaskInfo = document.getElementById("assign-task-info");
+  const assignCorrectorSelect = document.getElementById("assign-corrector-select");
+  const assignCancelBtn = document.getElementById("assign-cancel-btn");
+  const assignModalCloseButton = assignCorrectorModal.querySelector(".close-button");
+
   const apiKey =
     "e080d32c1a94808682a5c4fe268ba6f9e5aedf09c936f44ecb51272e59287233";
-  const API_URL = "http://172.30.1.52:3000/books";
+  const API_URL = "http://192.168.1.25:3000/books";
+  const STAFF_API_URL = "http://192.168.1.25:3000/staff";
 
   let currentBook = null;
   let tasks = [];
+  let staff = [];
   let currentTaskForUpdate = null;
   let currentTaskForNotes = null;
   let serverStatus = "unknown"; // 'online', 'offline', 'unknown'
   let isAdminMode = false;
   let currentEditingRow = null;
   let currentDetailTask = null;
+  let currentWorkSessions = new Map(); // taskId -> { startTime, worker, isWorking }
+  let workSessions = []; // All work sessions history
+  let currentAssignTask = null; // Current task for corrector assignment
+  let currentAssignStage = null; // Current stage for corrector assignment
 
   // 서버 연결 상태 확인
   async function checkServerConnection() {
@@ -188,62 +203,11 @@ document.addEventListener("DOMContentLoaded", () => {
       serverStatus = "offline";
       tasks = [];
 
-      // 초기 데이터가 필요한 경우에만 제공
-      if (tasks.length === 0) {
-        console.log("Loading initial data...");
-        const initialData = await loadInitialData();
-        tasks = initialData;
-        console.log("Initialized with sample data");
-      }
-
       updateStatusDisplay();
       renderTasks();
-
-      alert("서버에 연결할 수 없습니다. 서버 상태를 확인해주세요.");
     }
   }
 
-  // 초기 데이터 로드 (bookworklist.json의 데이터 사용)
-  async function loadInitialData() {
-    // 이미 제공된 JSON 데이터를 사용
-    const initialTask = {
-      id: 1754960400206,
-      book: {
-        title:
-          "설민석의 삼국지 : 지금, 심플하게 <라이트 에디션>. 1, 답답한 세상, 희망을 꿈꾸다",
-        author: "설민석[1970-] 지은이",
-        publisher: "서울 : 세계사(세계사컨텐츠그룹), 20200624",
-        isbn: "9788933871522",
-        totalPages: null,
-      },
-      totalPages: 384,
-      stages: {
-        correction1: {
-          assignedTo: "김희연",
-          history: [],
-          status: "pending",
-        },
-        correction2: {
-          assignedTo: "",
-          history: [],
-          status: "pending",
-        },
-        correction3: {
-          assignedTo: "",
-          history: [],
-          status: "pending",
-        },
-        transcription: {
-          assignedTo: "",
-          history: [],
-          status: "not_applicable",
-        },
-      },
-      currentStage: "correction1",
-    };
-
-    return [initialTask];
-  }
 
   // 작업 저장/업데이트 함수
   async function saveTask(task, isNewTask = false) {
@@ -252,6 +216,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const url = isNewTask ? API_URL : `${API_URL}/${task.id}`;
 
       console.log(`${method} request to:`, url);
+      console.log("Task data being sent:", JSON.stringify(task, null, 2));
 
       const response = await fetch(url, {
         method: method,
@@ -262,8 +227,11 @@ document.addEventListener("DOMContentLoaded", () => {
         signal: AbortSignal.timeout(10000), // 10초 타임아웃
       });
 
+      console.log("Response status:", response.status, response.statusText);
+
       if (!response.ok) {
         const errorText = await response.text();
+        console.error("Server error response:", errorText);
         throw new Error(
           `Server error: ${response.status} ${response.statusText}. ${errorText}`
         );
@@ -275,8 +243,25 @@ document.addEventListener("DOMContentLoaded", () => {
       return savedTask;
     } catch (error) {
       console.error("Error saving task:", error);
+      console.error("Full error details:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      
       serverStatus = "offline";
       updateStatusDisplay();
+      
+      // 네트워크 오류인지 확인
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        throw new Error(`네트워크 연결 실패: ${API_URL}에 접근할 수 없습니다.`);
+      }
+      
+      // 타임아웃 오류인지 확인
+      if (error.name === "AbortError") {
+        throw new Error("요청 시간 초과: 서버 응답이 너무 오래 걸립니다.");
+      }
+      
       throw error;
     }
   }
@@ -321,8 +306,205 @@ document.addEventListener("DOMContentLoaded", () => {
     return div.textContent || div.innerText || "";
   }
 
+  // Staff management functions
+  async function loadStaff() {
+    try {
+      const response = await fetch(STAFF_API_URL);
+      if (response.ok) {
+        staff = await response.json();
+        updateStaffDropdowns();
+        updateAssignCorrectorDropdownIfOpen(); // Update assign corrector dropdown if modal is open
+        console.log(`Loaded ${staff.length} staff members`);
+      } else {
+        console.warn('Failed to load staff data');
+        staff = [];
+      }
+    } catch (error) {
+      console.error('Error loading staff:', error);
+      staff = [];
+    }
+  }
+
+  async function addStaff(name, role) {
+    try {
+      const response = await fetch(STAFF_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, role }),
+      });
+      
+      if (response.ok) {
+        const newStaff = await response.json();
+        staff.push(newStaff);
+        updateStaffDropdowns();
+        updateAssignCorrectorDropdownIfOpen(); // Update assign corrector dropdown if modal is open
+        renderStaffList();
+        return newStaff;
+      } else {
+        throw new Error('Failed to add staff member');
+      }
+    } catch (error) {
+      console.error('Error adding staff:', error);
+      throw error;
+    }
+  }
+
+  async function deleteStaff(staffId) {
+    try {
+      const response = await fetch(`${STAFF_API_URL}/${staffId}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok || response.status === 404) {
+        staff = staff.filter(s => s.id !== staffId);
+        updateStaffDropdowns();
+        updateAssignCorrectorDropdownIfOpen(); // Update assign corrector dropdown if modal is open
+        renderStaffList();
+      } else {
+        throw new Error('Failed to delete staff member');
+      }
+    } catch (error) {
+      console.error('Error deleting staff:', error);
+      throw error;
+    }
+  }
+
+  function updateStaffDropdowns() {
+    // Get all dropdown elements
+    const dropdowns = [
+      document.getElementById('corrector1'),
+      document.getElementById('corrector2'),
+      document.getElementById('corrector3'),
+      document.getElementById('transcriber'),
+      document.getElementById('corrector1-assigned'),
+      document.getElementById('corrector2-assigned'),
+      document.getElementById('corrector3-assigned'),
+      document.getElementById('transcriber-assigned'),
+    ];
+
+    dropdowns.forEach(dropdown => {
+      if (dropdown) {
+        // Save current value
+        const currentValue = dropdown.value;
+        
+        // Clear existing options except first one
+        dropdown.innerHTML = '<option value="">담당자 선택</option>';
+        
+        // Add staff options based on dropdown type
+        const isTranscriber = dropdown.id.includes('transcriber');
+        const filteredStaff = staff.filter(s => {
+          if (isTranscriber) {
+            return s.role === 'transcriber' || s.role === 'both' || s.role === 'admin';
+          } else {
+            return s.role === 'corrector' || s.role === 'both' || s.role === 'admin';
+          }
+        });
+
+        filteredStaff.forEach(s => {
+          const option = document.createElement('option');
+          option.value = s.name;
+          option.textContent = s.name;
+          dropdown.appendChild(option);
+        });
+
+        // Restore previous value if it still exists
+        if (currentValue && Array.from(dropdown.options).some(opt => opt.value === currentValue)) {
+          dropdown.value = currentValue;
+        }
+      }
+    });
+  }
+
+  function renderStaffList() {
+    const staffTbody = document.getElementById('staff-tbody');
+    if (!staffTbody) return;
+
+    staffTbody.innerHTML = '';
+
+    if (staff.length === 0) {
+      staffTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #666; padding: 20px;">등록된 직원이 없습니다.</td></tr>';
+      return;
+    }
+
+    staff.forEach(s => {
+      const row = document.createElement('tr');
+      
+      const roleText = {
+        'corrector': '교정자',
+        'transcriber': '점역자',
+        'both': '교정자+점역자',
+        'admin': '관리자'
+      }[s.role] || s.role;
+
+      const createdDate = new Date(s.createdAt).toLocaleDateString('ko-KR');
+
+      row.innerHTML = `
+        <td>${s.name}</td>
+        <td>${roleText}</td>
+        <td>${createdDate}</td>
+        <td>
+          <button class="action-btn delete-btn" onclick="handleDeleteStaff('${s.id}')">삭제</button>
+        </td>
+      `;
+      staffTbody.appendChild(row);
+    });
+  }
+
+  // Debug function to test API connectivity
+  window.testAPIConnection = async function() {
+    console.log("=== API Connection Test ===");
+    console.log("API_URL:", API_URL);
+    
+    try {
+      // Test GET request
+      console.log("Testing GET request...");
+      const getResponse = await fetch(API_URL);
+      console.log("GET Response:", getResponse.status, getResponse.statusText);
+      
+      if (getResponse.ok) {
+        const data = await getResponse.json();
+        console.log("GET Data length:", data.length);
+        
+        if (data.length > 0) {
+          const testTask = data[0];
+          console.log("Testing PUT request with task:", testTask.id);
+          
+          // Test PUT request
+          const putResponse = await fetch(`${API_URL}/${testTask.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              ...testTask,
+              testField: `test-${Date.now()}`
+            })
+          });
+          
+          console.log("PUT Response:", putResponse.status, putResponse.statusText);
+          
+          if (putResponse.ok) {
+            const putData = await putResponse.json();
+            console.log("PUT Success, updated task:", putData.id);
+          } else {
+            const errorText = await putResponse.text();
+            console.error("PUT Error:", errorText);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("API Test Error:", error);
+    }
+    
+    console.log("=== End API Test ===");
+  };
+
   // 초기 로드
   loadTasks();
+  loadStaff();
+  setTimeout(updateCurrentWorkersDisplay, 1000); // Show current workers after initial load
 
   // 점역자 체크박스 이벤트
   enableTranscriberCheckbox.addEventListener("change", () => {
@@ -556,6 +738,23 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderTasks() {
     taskList.innerHTML = "";
 
+    // 서버 연결 상태에 따른 메시지 표시
+    if (serverStatus === "offline") {
+      taskList.innerHTML = 
+        '<div style="display: flex; justify-content: center; align-items: center; min-height: 300px; padding: 40px;">' +
+        '<div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 30px; max-width: 500px; text-align: center; color: #856404; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">' +
+        '<h3 style="margin-top: 0; color: #856404; font-size: 1.3em;">⚠️ 서버 연결 실패</h3>' +
+        '<p style="margin: 15px 0; line-height: 1.5;">데이터베이스 서버에 연결할 수 없습니다.</p>' +
+        '<p style="margin: 15px 0; line-height: 1.5;">백엔드 서버가 실행 중인지 확인해주세요.</p>' +
+        '<div style="background: #f8f9fa; border-radius: 4px; padding: 10px; margin: 15px 0;">' +
+        '<p style="font-size: 0.9em; color: #6c757d; margin: 0;">서버 실행 명령어:</p>' +
+        '<code style="color: #495057; font-weight: bold;">cd backend && npm start</code>' +
+        '</div>' +
+        '</div>' +
+        '</div>';
+      return;
+    }
+
     // 완료된 작업 필터링 - 메인 화면에서는 완료된 작업 제외
     const incompleteTasks = tasks.filter(
       (task) => task.currentStage !== "completed"
@@ -563,7 +762,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (incompleteTasks.length === 0) {
       taskList.innerHTML =
-        '<p style="text-align: center; color: #666; padding: 40px;">진행 중인 작업이 없습니다.</p>';
+        '<div style="display: flex; justify-content: center; align-items: center; min-height: 300px; padding: 40px;">' +
+        '<div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 30px; max-width: 500px; text-align: center; color: #6c757d; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">' +
+        '<h3 style="margin-top: 0; color: #6c757d; font-size: 1.3em;">📚 작업 목록이 비어있습니다</h3>' +
+        '<p style="margin: 15px 0; line-height: 1.5;">현재 진행 중인 작업이 없습니다.</p>' +
+        '<p style="margin: 15px 0; line-height: 1.5;">새 도서를 등록하거나 검색하여 작업을 시작하세요.</p>' +
+        '</div>' +
+        '</div>';
       return;
     }
 
@@ -670,6 +875,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 <button data-id="${task.id}" class="notes-button ${
         noteCount === 0 ? "inactive" : ""
       }">특이사항 <span class="note-count">${noteCount}</span></button>
+                ${
+                  assignedTo !== "미정" && task.currentStage !== "completed"
+                    ? `<button data-id="${task.id}" class="work-session-button ${
+                        currentWorkSessions.has(task.id) ? "stop" : "start"
+                      }" data-worker="${assignedTo}">${
+                        currentWorkSessions.has(task.id) ? "작업중지" : "작업시작"
+                      }</button>`
+                    : ""
+                }
             `;
       taskList.appendChild(taskItem);
     });
@@ -712,11 +926,21 @@ document.addEventListener("DOMContentLoaded", () => {
       if (task) {
         openNotesModal(task);
       }
+    } else if (target.classList.contains("work-session-button")) {
+      const worker = target.dataset.worker;
+      if (target.classList.contains("start")) {
+        startWorkSession(task, worker);
+      } else {
+        stopWorkSession(task, worker);
+      }
     }
   });
 
-  // 담당자 지정
-  async function assignCorrectorFromCard(task, stageKey) {
+  // 담당자 지정 모달 열기
+  function assignCorrectorFromCard(task, stageKey) {
+    currentAssignTask = task;
+    currentAssignStage = stageKey;
+
     const stageNames = {
       correction1: "1차 교정",
       correction2: "2차 교정",
@@ -725,25 +949,117 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const stageName = stageNames[stageKey] || stageKey;
-    const newAssignedTo = prompt(
-      `${stripHtmlTags(task.book.title)}의 ${stageName} 담당자를 입력해주세요:`
-    );
+    
+    assignModalTitle.textContent = "담당자 지정";
+    assignTaskInfo.innerHTML = `
+      <strong>도서:</strong> ${stripHtmlTags(task.book.title)}<br>
+      <strong>단계:</strong> ${stageName}
+    `;
 
-    if (newAssignedTo && newAssignedTo.trim()) {
-      const originalAssignedTo = task.stages[stageKey].assignedTo;
-      task.stages[stageKey].assignedTo = newAssignedTo.trim();
+    // 드롭다운에 최신 직원 목록 채우기 (모달 열 때마다 최신 데이터 사용)
+    populateAssignCorrectorDropdown(stageKey);
+    
+    assignCorrectorModal.style.display = "flex";
+  }
 
-      try {
-        await saveTask(task);
-        renderTasks();
-        alert("담당자가 지정되었습니다.");
-      } catch (error) {
-        console.error("Error assigning corrector:", error);
-        task.stages[stageKey].assignedTo = originalAssignedTo;
-        alert(`담당자 지정에 실패했습니다: ${error.message}`);
+  // 담당자 지정 드롭다운 채우기
+  function populateAssignCorrectorDropdown(stageKey) {
+    assignCorrectorSelect.innerHTML = '<option value="">담당자를 선택해주세요</option>';
+    
+    if (staff.length === 0) {
+      assignCorrectorSelect.innerHTML = '<option value="">등록된 직원이 없습니다</option>';
+      return;
+    }
+
+    const isTranscriber = stageKey === 'transcription';
+    const filteredStaff = staff.filter(s => {
+      if (isTranscriber) {
+        return s.role === 'transcriber' || s.role === 'both' || s.role === 'admin';
+      } else {
+        return s.role === 'corrector' || s.role === 'both' || s.role === 'admin';
       }
-    } else if (newAssignedTo === "") {
-      alert("담당자 이름을 입력해야 합니다.");
+    });
+
+    if (filteredStaff.length === 0) {
+      const roleText = isTranscriber ? '점역자' : '교정자';
+      assignCorrectorSelect.innerHTML = `<option value="">등록된 ${roleText}가 없습니다</option>`;
+      return;
+    }
+
+    filteredStaff.forEach(s => {
+      const option = document.createElement('option');
+      option.value = s.name;
+      option.textContent = s.name;
+      assignCorrectorSelect.appendChild(option);
+    });
+  }
+
+  // 담당자 지정 모달 닫기
+  function closeAssignCorrectorModal() {
+    assignCorrectorModal.style.display = "none";
+    currentAssignTask = null;
+    currentAssignStage = null;
+    assignCorrectorSelect.value = "";
+  }
+
+  // 담당자 지정 모달이 열려있다면 드롭다운 업데이트
+  function updateAssignCorrectorDropdownIfOpen() {
+    // Check if assign corrector modal is currently open
+    if (assignCorrectorModal && assignCorrectorModal.style.display === "flex" && currentAssignStage) {
+      // Save current selection
+      const currentValue = assignCorrectorSelect.value;
+      
+      // Repopulate dropdown with latest staff data
+      populateAssignCorrectorDropdown(currentAssignStage);
+      
+      // Restore selection if it's still valid
+      if (currentValue) {
+        const options = Array.from(assignCorrectorSelect.options);
+        if (options.some(opt => opt.value === currentValue)) {
+          assignCorrectorSelect.value = currentValue;
+        }
+      }
+    }
+  }
+
+  // 담당자 지정 처리
+  async function handleAssignCorrectorSubmit(e) {
+    e.preventDefault();
+    
+    const selectedWorker = assignCorrectorSelect.value;
+    if (!selectedWorker) {
+      alert("담당자를 선택해주세요.");
+      return;
+    }
+
+    if (!currentAssignTask || !currentAssignStage) {
+      alert("작업 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    const originalAssignedTo = currentAssignTask.stages[currentAssignStage].assignedTo;
+    currentAssignTask.stages[currentAssignStage].assignedTo = selectedWorker;
+
+    try {
+      await saveTask(currentAssignTask);
+      renderTasks();
+      
+      // If this was triggered from progress update, continue with progress modal
+      if (window.pendingProgressUpdateTask) {
+        const pendingTask = window.pendingProgressUpdateTask;
+        window.pendingProgressUpdateTask = null;
+        closeAssignCorrectorModal();
+        setTimeout(() => {
+          openProgressUpdateModal(pendingTask);
+        }, 100);
+      } else {
+        closeAssignCorrectorModal();
+        alert("담당자가 지정되었습니다.");
+      }
+    } catch (error) {
+      console.error("Error assigning corrector:", error);
+      currentAssignTask.stages[currentAssignStage].assignedTo = originalAssignedTo;
+      alert(`담당자 지정에 실패했습니다: ${error.message}`);
     }
   }
 
@@ -769,24 +1085,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const assignedTo = stage?.assignedTo;
 
     if (!assignedTo) {
-      const newAssignedTo = prompt(`${stageName} 담당자를 먼저 입력해주세요:`);
-      if (newAssignedTo && newAssignedTo.trim()) {
-        task.stages[stageKey].assignedTo = newAssignedTo.trim();
-        saveTask(task)
-          .then(() => {
-            renderTasks();
-            openProgressUpdateModal(task);
-          })
-          .catch((error) => {
-            console.error("Error saving assignee:", error);
-            alert("담당자 저장에 실패했습니다.");
-          });
-      } else {
-        alert(
-          "담당자 입력이 취소되었습니다. 진행 상황을 업데이트할 수 없습니다."
-        );
-        return;
-      }
+      // Store the task to continue with progress update after assignment
+      window.pendingProgressUpdateTask = task;
+      assignCorrectorFromCard(task, stageKey);
       return;
     }
 
@@ -914,6 +1215,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
       await saveTask(task);
 
+      // Update work session with completed pages if session was just stopped
+      if (window.currentStoppedSession && window.currentStoppedSession.taskId === task.id) {
+        const sessionIndex = window.currentStoppedSession.sessionIndex;
+        if (sessionIndex !== -1 && workSessions[sessionIndex]) {
+          workSessions[sessionIndex].endPage = newPage;
+          workSessions[sessionIndex].pagesWorked = Math.max(0, newPage - window.currentStoppedSession.startPage);
+          saveWorkSessionsToStorage();
+          console.log(`Updated session with pages worked: ${workSessions[sessionIndex].pagesWorked}`);
+        }
+        // Clear the session info
+        window.currentStoppedSession = null;
+      }
+
       // 단계 완료 시 다음 단계로 이동
       if (newPage === task.totalPages) {
         const stageNames = {
@@ -1014,7 +1328,24 @@ document.addEventListener("DOMContentLoaded", () => {
       renderTasks();
     } catch (error) {
       console.error("Error moving to next stage:", error);
-      alert("다음 단계로 이동하는 데 실패했습니다: " + error.message);
+      console.error("Full error details:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        cause: error.cause
+      });
+      
+      let errorMessage = "다음 단계로 이동하는 데 실패했습니다: ";
+      
+      if (error.name === "TypeError" && error.message.includes("fetch")) {
+        errorMessage += "서버 연결 실패. 백엔드 서버가 실행 중인지 확인해주세요.";
+      } else if (error.name === "AbortError" || error.message.includes("timeout")) {
+        errorMessage += "요청 시간 초과. 네트워크 연결을 확인해주세요.";
+      } else {
+        errorMessage += error.message;
+      }
+      
+      alert(errorMessage);
     }
   }
 
@@ -1355,10 +1686,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 관리자 모드 기능
   function authenticateAdmin() {
+    console.log('Admin button clicked');
     openPasswordModal();
   }
 
   function openPasswordModal() {
+    console.log('Opening password modal');
     adminPasswordInput.value = "";
     passwordModal.style.display = "flex";
     setTimeout(() => adminPasswordInput.focus(), 100);
@@ -1372,12 +1705,15 @@ document.addEventListener("DOMContentLoaded", () => {
   function handlePasswordSubmit(e) {
     e.preventDefault();
     const password = adminPasswordInput.value;
+    console.log('Password submitted:', password);
 
     if (password === "maccrey") {
+      console.log('Password correct, opening admin panel');
       isAdminMode = true;
       closePasswordModal();
       openAdminPanel();
     } else {
+      console.log('Password incorrect');
       adminPasswordInput.value = "";
       adminPasswordInput.style.borderColor = "#dc3545";
       adminPasswordInput.style.backgroundColor = "#fff5f5";
@@ -1426,6 +1762,10 @@ document.addEventListener("DOMContentLoaded", () => {
       loadAdminTasks();
     } else if (tabName === "data") {
       loadDataInfo();
+    } else if (tabName === "staff") {
+      renderStaffList();
+    } else if (tabName === "attendance") {
+      loadAttendanceData();
     } else if (tabName === "stats") {
       loadStatistics();
     }
@@ -1731,7 +2071,16 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // 이벤트 리스너들
-  adminModeButton.addEventListener("click", authenticateAdmin);
+  console.log('adminModeButton:', adminModeButton);
+  console.log('passwordModal:', passwordModal);
+  console.log('passwordForm:', passwordForm);
+  
+  if (adminModeButton) {
+    adminModeButton.addEventListener("click", authenticateAdmin);
+    console.log('Admin button event listener added');
+  } else {
+    console.error('Admin mode button not found!');
+  }
   adminPanelCloseButton.addEventListener("click", closeAdminPanel);
 
   tabButtons.forEach((btn) => {
@@ -1798,10 +2147,19 @@ document.addEventListener("DOMContentLoaded", () => {
     stages.forEach((stage) => {
       const stageData = task.stages && task.stages[stage.db];
 
-      // 담당자 설정
-      const assignedInput = document.getElementById(`${stage.ui}-assigned`);
-      if (assignedInput) {
-        assignedInput.value = stageData?.assignedTo || "";
+      // 담당자 설정 (드롭다운)
+      const assignedSelect = document.getElementById(`${stage.ui}-assigned`);
+      if (assignedSelect) {
+        // 현재 값 임시 저장
+        const currentValue = stageData?.assignedTo || "";
+        
+        // 드롭다운이 이미 업데이트되어 있어야 함
+        updateStaffDropdowns();
+        
+        // 값 설정
+        if (currentValue && Array.from(assignedSelect.options).some(opt => opt.value === currentValue)) {
+          assignedSelect.value = currentValue;
+        }
       }
 
       // 진행 페이지 설정
@@ -1910,12 +2268,12 @@ document.addEventListener("DOMContentLoaded", () => {
         { ui: "transcriber", db: "transcription" },
       ];
       stages.forEach((stage) => {
-        const assignedInput = document.getElementById(`${stage.ui}-assigned`);
-        if (assignedInput) {
+        const assignedSelect = document.getElementById(`${stage.ui}-assigned`);
+        if (assignedSelect) {
           if (!updatedTask.stages) updatedTask.stages = {};
           if (!updatedTask.stages[stage.db])
             updatedTask.stages[stage.db] = { history: [] };
-          updatedTask.stages[stage.db].assignedTo = assignedInput.value.trim();
+          updatedTask.stages[stage.db].assignedTo = assignedSelect.value;
         }
       });
 
@@ -1982,6 +2340,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (event.target === passwordModal) {
       closePasswordModal();
+    }
+    if (event.target === assignCorrectorModal) {
+      closeAssignCorrectorModal();
     }
   });
 
@@ -2334,4 +2695,790 @@ document.addEventListener("DOMContentLoaded", () => {
   passwordForm.addEventListener("submit", handlePasswordSubmit);
   passwordCancelBtn.addEventListener("click", closePasswordModal);
   passwordModalCloseButton.addEventListener("click", closePasswordModal);
+
+  // 담당자 지정 모달 이벤트 리스너들
+  assignCorrectorForm.addEventListener("submit", handleAssignCorrectorSubmit);
+  assignCancelBtn.addEventListener("click", closeAssignCorrectorModal);
+  assignModalCloseButton.addEventListener("click", closeAssignCorrectorModal);
+
+  // 출퇴근 기록 이벤트 리스너들
+  document.getElementById('attendance-year')?.addEventListener('change', renderAttendanceTable);
+  document.getElementById('attendance-month')?.addEventListener('change', renderAttendanceTable);
+  document.getElementById('attendance-date')?.addEventListener('change', renderAttendanceTable);
+  document.getElementById('attendance-worker')?.addEventListener('change', renderAttendanceTable);
+  document.getElementById('refresh-attendance-btn')?.addEventListener('click', loadAttendanceData);
+  document.getElementById('export-attendance-btn')?.addEventListener('click', exportAttendanceRecords);
+  
+  // 직원 관리 이벤트 리스너들
+  const staffForm = document.getElementById('staff-form');
+  if (staffForm) {
+    staffForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const nameInput = document.getElementById('staff-name');
+      const roleSelect = document.getElementById('staff-role');
+      
+      const name = nameInput.value.trim();
+      const role = roleSelect.value;
+      
+      if (!name) {
+        alert('직원 이름을 입력해주세요.');
+        return;
+      }
+      
+      // 중복 이름 체크
+      if (staff.some(s => s.name === name)) {
+        alert('이미 등록된 직원입니다.');
+        return;
+      }
+      
+      try {
+        await addStaff(name, role);
+        nameInput.value = '';
+        roleSelect.value = 'corrector';
+        alert('직원이 성공적으로 등록되었습니다.');
+      } catch (error) {
+        alert('직원 등록에 실패했습니다: ' + error.message);
+      }
+    });
+  }
+
+  // Work Session Management Functions
+  function startWorkSession(task, worker) {
+    // Check if worker is already working on another task
+    for (const [taskId, session] of currentWorkSessions) {
+      if (session.worker === worker && session.isWorking) {
+        if (confirm(`${worker}님이 이미 다른 작업(작업 ID: ${taskId})을 진행 중입니다. 기존 작업을 중지하고 새 작업을 시작하시겠습니까?`)) {
+          const existingTask = tasks.find(t => t.id === taskId);
+          if (existingTask) {
+            stopWorkSession(existingTask, worker, false); // Don't show progress modal
+          }
+        } else {
+          return;
+        }
+      }
+    }
+
+    const startTime = new Date();
+    currentWorkSessions.set(task.id, {
+      startTime: startTime,
+      worker: worker,
+      isWorking: true,
+      taskTitle: task.book.title,
+      stage: task.currentStage
+    });
+
+    // Save to work sessions history
+    const sessionId = `${task.id}_${worker}_${startTime.getTime()}`;
+    const workSession = {
+      id: sessionId,
+      taskId: task.id,
+      taskTitle: task.book.title,
+      worker: worker,
+      stage: task.currentStage,
+      startTime: startTime.toISOString(),
+      endTime: null,
+      isCompleted: false
+    };
+    
+    workSessions.push(workSession);
+    saveWorkSessionsToStorage();
+    
+    renderTasks();
+    updateCurrentWorkersDisplay();
+    
+    console.log(`Work session started for ${worker} on task ${task.id}`);
+  }
+
+  function stopWorkSession(task, worker, showProgressModal = true) {
+    const sessionData = currentWorkSessions.get(task.id);
+    if (!sessionData || sessionData.worker !== worker) {
+      alert('작업 세션 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    const endTime = new Date();
+    const duration = Math.round((endTime - sessionData.startTime) / 1000 / 60); // minutes
+
+    // Get current progress before stopping session
+    const currentStage = task.stages[task.currentStage];
+    const startPage = currentStage && currentStage.history.length > 0 
+      ? currentStage.history[currentStage.history.length - 1].endPage 
+      : 0;
+
+    // Update work session history
+    const sessionId = `${task.id}_${worker}_${sessionData.startTime.getTime()}`;
+    const sessionIndex = workSessions.findIndex(s => s.id === sessionId);
+    if (sessionIndex !== -1) {
+      workSessions[sessionIndex].endTime = endTime.toISOString();
+      workSessions[sessionIndex].duration = duration;
+      workSessions[sessionIndex].startPage = startPage;
+      // endPage will be updated after progress update
+    }
+
+    currentWorkSessions.delete(task.id);
+    saveWorkSessionsToStorage();
+    
+    renderTasks();
+    updateCurrentWorkersDisplay();
+    
+    console.log(`Work session stopped for ${worker} on task ${task.id}, duration: ${duration} minutes`);
+    
+    // Show progress update modal if requested
+    if (showProgressModal) {
+      // Store current session info for progress update
+      window.currentStoppedSession = {
+        sessionIndex,
+        taskId: task.id,
+        worker,
+        startPage
+      };
+      
+      setTimeout(() => {
+        openProgressUpdateModal(task);
+      }, 100);
+    }
+  }
+
+  function saveWorkSessionsToStorage() {
+    try {
+      const data = {
+        currentSessions: Array.from(currentWorkSessions.entries()).map(([taskId, session]) => ({
+          taskId,
+          startTime: session.startTime.toISOString(),
+          worker: session.worker,
+          taskTitle: session.taskTitle,
+          stage: session.stage
+        })),
+        sessions: workSessions
+      };
+      localStorage.setItem('workSessions', JSON.stringify(data));
+    } catch (error) {
+      console.error('Error saving work sessions:', error);
+    }
+  }
+
+  function loadWorkSessionsFromStorage() {
+    try {
+      const data = localStorage.getItem('workSessions');
+      if (data) {
+        const parsed = JSON.parse(data);
+        
+        // Load work sessions history
+        workSessions = parsed.sessions || [];
+        
+        // Load current sessions
+        if (parsed.currentSessions) {
+          currentWorkSessions.clear();
+          parsed.currentSessions.forEach(session => {
+            currentWorkSessions.set(session.taskId, {
+              startTime: new Date(session.startTime),
+              worker: session.worker,
+              isWorking: true,
+              taskTitle: session.taskTitle,
+              stage: session.stage
+            });
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading work sessions:', error);
+      currentWorkSessions.clear();
+      workSessions = [];
+    }
+  }
+
+  function updateCurrentWorkersDisplay() {
+    let currentWorkersDiv = document.getElementById('current-workers-display');
+    if (!currentWorkersDiv) {
+      // Create the display element
+      const header = document.querySelector('header');
+      const dashboardTitle = header.querySelector('h1');
+      
+      currentWorkersDiv = document.createElement('div');
+      currentWorkersDiv.id = 'current-workers-display';
+      currentWorkersDiv.style.cssText = `
+        background: #e8f5e8;
+        border: 1px solid #4CAF50;
+        border-radius: 8px;
+        margin: 10px 0;
+        padding: 10px;
+        font-size: 0.9em;
+      `;
+      
+      header.insertBefore(currentWorkersDiv, dashboardTitle.nextSibling);
+      
+      // Add click handler for debugging
+      currentWorkersDiv.addEventListener('click', () => {
+        console.log('Current work sessions debug:', {
+          size: currentWorkSessions.size,
+          entries: Array.from(currentWorkSessions.entries()),
+          raw: currentWorkSessions
+        });
+      });
+    }
+    
+    if (currentWorkSessions.size === 0) {
+      currentWorkersDiv.innerHTML = '<div style="text-align: center; color: #666;">현재 작업 중인 담당자가 없습니다.</div>';
+      return;
+    }
+    
+    const workersHtml = Array.from(currentWorkSessions.entries()).map(([taskId, session]) => {
+      const duration = Math.round((new Date() - session.startTime) / 1000 / 60);
+      const stageNames = {
+        correction1: '1차 교정',
+        correction2: '2차 교정', 
+        correction3: '3차 교정',
+        transcription: '점역'
+      };
+      const stageName = stageNames[session.stage] || session.stage;
+      
+      const workerName = session.worker || 'Unknown';
+      
+      return `
+        <div style="display: inline-block; background: white; padding: 5px 10px; margin: 2px; border-radius: 20px; border: 1px solid #4CAF50; color: #333;">
+          <strong style="color: #2e7d32;">${workerName}</strong> - ${stageName} (작업시간: ${duration}분)
+        </div>
+      `;
+    }).join('');
+    
+    currentWorkersDiv.innerHTML = `
+      <div style="font-weight: bold; margin-bottom: 5px;">현재 작업 중 (${currentWorkSessions.size}명)</div>
+      <div>${workersHtml}</div>
+    `;
+  }
+
+  // Attendance Management Functions
+  function calculateAttendanceRecords() {
+    const attendanceRecords = new Map(); // worker -> date -> { startTime, endTime, workSessions, tasks }
+    
+    workSessions.forEach(session => {
+      if (!session.startTime || !session.endTime) return;
+      
+      const startDate = new Date(session.startTime).toDateString();
+      const worker = session.worker;
+      
+      if (!attendanceRecords.has(worker)) {
+        attendanceRecords.set(worker, new Map());
+      }
+      
+      const workerRecords = attendanceRecords.get(worker);
+      if (!workerRecords.has(startDate)) {
+        workerRecords.set(startDate, {
+          startTime: new Date(session.startTime),
+          endTime: new Date(session.endTime),
+          workSessions: [],
+          tasks: new Set()
+        });
+      }
+      
+      const dayRecord = workerRecords.get(startDate);
+      dayRecord.workSessions.push(session);
+      dayRecord.tasks.add(session.taskTitle);
+      
+      // Update start/end times for the day
+      const sessionStart = new Date(session.startTime);
+      const sessionEnd = new Date(session.endTime);
+      
+      if (sessionStart < dayRecord.startTime) {
+        dayRecord.startTime = sessionStart;
+      }
+      if (sessionEnd > dayRecord.endTime) {
+        dayRecord.endTime = sessionEnd;
+      }
+    });
+    
+    return attendanceRecords;
+  }
+  
+  function loadAttendanceData() {
+    const attendanceYear = document.getElementById('attendance-year');
+    const attendanceMonth = document.getElementById('attendance-month');
+    const attendanceDate = document.getElementById('attendance-date');
+    const attendanceWorker = document.getElementById('attendance-worker');
+    
+    // Populate year dropdown with available years
+    populateYearDropdown();
+    
+    // Set current year and month as default
+    const now = new Date();
+    const currentYear = now.getFullYear().toString();
+    const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
+    
+    if (attendanceYear && !attendanceYear.value) {
+      attendanceYear.value = currentYear;
+    }
+    if (attendanceMonth && !attendanceMonth.value) {
+      attendanceMonth.value = currentMonth;
+    }
+    
+    // Populate worker dropdown
+    attendanceWorker.innerHTML = '<option value="">모든 직원</option>';
+    const uniqueWorkers = [...new Set(workSessions.map(s => s.worker))].filter(w => w);
+    uniqueWorkers.forEach(worker => {
+      const option = document.createElement('option');
+      option.value = worker;
+      option.textContent = worker;
+      attendanceWorker.appendChild(option);
+    });
+    
+    renderAttendanceSummary();
+    renderAttendanceTable();
+  }
+  
+  function populateYearDropdown() {
+    const attendanceYear = document.getElementById('attendance-year');
+    if (!attendanceYear) return;
+    
+    // Get unique years from work sessions
+    const years = new Set();
+    workSessions.forEach(session => {
+      if (session.startTime) {
+        const year = new Date(session.startTime).getFullYear();
+        years.add(year);
+      }
+    });
+    
+    // Add current year if not present
+    years.add(new Date().getFullYear());
+    
+    // Clear and populate year dropdown
+    attendanceYear.innerHTML = '<option value="">전체 연도</option>';
+    
+    // Sort years in descending order
+    const sortedYears = Array.from(years).sort((a, b) => b - a);
+    sortedYears.forEach(year => {
+      const option = document.createElement('option');
+      option.value = year.toString();
+      option.textContent = `${year}년`;
+      attendanceYear.appendChild(option);
+    });
+  }
+  
+  function renderAttendanceSummary() {
+    const today = new Date().toDateString();
+    const attendanceRecords = calculateAttendanceRecords();
+    const summaryContent = document.getElementById('attendance-summary-content');
+    
+    let todayWorkers = [];
+    attendanceRecords.forEach((workerDays, worker) => {
+      if (workerDays.has(today)) {
+        const todayRecord = workerDays.get(today);
+        const workTime = Math.round((todayRecord.endTime - todayRecord.startTime) / 1000 / 60); // minutes
+        
+        // Calculate total pages worked today for this worker
+        let totalPagesWorked = 0;
+        const taskProgress = new Map(); // taskId -> { title, pagesWorked }
+        
+        todayRecord.workSessions.forEach(session => {
+          if (session.taskId && session.pagesWorked > 0) {
+            // Use directly stored pages worked from session
+            totalPagesWorked += session.pagesWorked;
+            
+            const task = tasks.find(t => t.id === session.taskId);
+            if (task) {
+              const taskKey = session.taskId;
+              if (!taskProgress.has(taskKey)) {
+                taskProgress.set(taskKey, {
+                  title: task.book.title,
+                  pagesWorked: 0
+                });
+              }
+              taskProgress.get(taskKey).pagesWorked += session.pagesWorked;
+            }
+          } else if (session.taskId) {
+            // Fallback to old method if pagesWorked not available
+            const task = tasks.find(t => t.id === session.taskId);
+            if (task && task.stages && task.stages[session.stage]) {
+              const stage = task.stages[session.stage];
+              if (stage.history && stage.history.length > 0) {
+                const sessionStart = new Date(session.startTime);
+                const sessionEnd = new Date(session.endTime);
+                
+                let sessionPages = 0;
+                stage.history.forEach(entry => {
+                  const entryDate = new Date(entry.date);
+                  if (entryDate >= sessionStart && entryDate <= sessionEnd) {
+                    const pagesInEntry = entry.endPage - entry.startPage + 1;
+                    sessionPages += pagesInEntry;
+                    totalPagesWorked += pagesInEntry;
+                  }
+                });
+                
+                if (sessionPages > 0) {
+                  const taskKey = session.taskId;
+                  if (!taskProgress.has(taskKey)) {
+                    taskProgress.set(taskKey, {
+                      title: task.book.title,
+                      pagesWorked: 0
+                    });
+                  }
+                  taskProgress.get(taskKey).pagesWorked += sessionPages;
+                }
+              }
+            }
+          }
+        });
+        
+        todayWorkers.push({
+          worker,
+          startTime: todayRecord.startTime,
+          endTime: todayRecord.endTime,
+          workTime,
+          tasks: Array.from(todayRecord.tasks),
+          totalPagesWorked,
+          taskProgress: Array.from(taskProgress.values())
+        });
+      }
+    });
+    
+    if (todayWorkers.length === 0) {
+      summaryContent.innerHTML = '<p>오늘 출근 기록이 없습니다.</p>';
+      return;
+    }
+    
+    const summaryHtml = todayWorkers.map(record => {
+      const hours = Math.floor(record.workTime / 60);
+      const minutes = record.workTime % 60;
+      
+      // Create detailed task progress string
+      let taskProgressStr = '';
+      if (record.taskProgress.length > 0) {
+        taskProgressStr = record.taskProgress.map(tp => 
+          `${tp.title} (${tp.pagesWorked}페이지)`
+        ).join(', ');
+      } else {
+        taskProgressStr = record.tasks.join(', ');
+      }
+      
+      return `
+        <div class="attendance-summary-item">
+          <strong>${record.worker}</strong> - 
+          출근: ${record.startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}, 
+          퇴근: ${record.endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}, 
+          근무시간: ${hours}시간 ${minutes}분
+          ${record.totalPagesWorked > 0 ? `<br><span style="color: #28a745; font-weight: bold;">총 작업 페이지: ${record.totalPagesWorked}페이지</span>` : ''}
+          <br><small>작업: ${taskProgressStr}</small>
+        </div>
+      `;
+    }).join('');
+    
+    summaryContent.innerHTML = summaryHtml;
+  }
+  
+  function renderAttendanceTable() {
+    const attendanceYear = document.getElementById('attendance-year');
+    const attendanceMonth = document.getElementById('attendance-month');
+    const attendanceDate = document.getElementById('attendance-date');
+    const attendanceWorker = document.getElementById('attendance-worker');
+    const attendanceTbody = document.getElementById('attendance-tbody');
+    
+    const selectedYear = attendanceYear?.value;
+    const selectedMonth = attendanceMonth?.value;
+    const selectedDate = attendanceDate?.value;
+    const selectedWorker = attendanceWorker?.value;
+    
+    const attendanceRecords = calculateAttendanceRecords();
+    const tableData = [];
+    
+    attendanceRecords.forEach((workerDays, worker) => {
+      if (selectedWorker && worker !== selectedWorker) return;
+      
+      workerDays.forEach((dayRecord, dateStr) => {
+        const recordDate = new Date(dateStr);
+        
+        // Apply date filters
+        if (selectedDate) {
+          // Specific date filter takes priority
+          const filterDate = new Date(selectedDate);
+          if (recordDate.toDateString() !== filterDate.toDateString()) return;
+        } else {
+          // Year and month filters
+          if (selectedYear) {
+            if (recordDate.getFullYear().toString() !== selectedYear) return;
+          }
+          if (selectedMonth) {
+            const recordMonth = (recordDate.getMonth() + 1).toString().padStart(2, '0');
+            if (recordMonth !== selectedMonth) return;
+          }
+        }
+        
+        const workTime = Math.round((dayRecord.endTime - dayRecord.startTime) / 1000 / 60);
+        const hours = Math.floor(workTime / 60);
+        const minutes = workTime % 60;
+        
+        // Calculate pages worked for this day
+        let totalPagesWorked = 0;
+        const taskProgress = new Map(); // taskId -> { title, pagesWorked }
+        
+        dayRecord.workSessions.forEach(session => {
+          if (session.taskId && session.pagesWorked > 0) {
+            // Use directly stored pages worked from session
+            totalPagesWorked += session.pagesWorked;
+            
+            const task = tasks.find(t => t.id === session.taskId);
+            if (task) {
+              const taskKey = session.taskId;
+              if (!taskProgress.has(taskKey)) {
+                taskProgress.set(taskKey, {
+                  title: task.book.title,
+                  pagesWorked: 0
+                });
+              }
+              taskProgress.get(taskKey).pagesWorked += session.pagesWorked;
+            }
+          } else if (session.taskId) {
+            // Fallback to old method if pagesWorked not available
+            const task = tasks.find(t => t.id === session.taskId);
+            if (task && task.stages && task.stages[session.stage]) {
+              const stage = task.stages[session.stage];
+              if (stage.history && stage.history.length > 0) {
+                const sessionStart = new Date(session.startTime);
+                const sessionEnd = new Date(session.endTime);
+                
+                let sessionPages = 0;
+                stage.history.forEach(entry => {
+                  const entryDate = new Date(entry.date);
+                  if (entryDate >= sessionStart && entryDate <= sessionEnd) {
+                    const pagesInEntry = entry.endPage - entry.startPage + 1;
+                    sessionPages += pagesInEntry;
+                    totalPagesWorked += pagesInEntry;
+                  }
+                });
+                
+                if (sessionPages > 0) {
+                  const taskKey = session.taskId;
+                  if (!taskProgress.has(taskKey)) {
+                    taskProgress.set(taskKey, {
+                      title: task.book.title,
+                      pagesWorked: 0
+                    });
+                  }
+                  taskProgress.get(taskKey).pagesWorked += sessionPages;
+                }
+              }
+            }
+          }
+        });
+        
+        // Create task progress string with page counts
+        let taskProgressStr = '';
+        if (taskProgress.size > 0) {
+          taskProgressStr = Array.from(taskProgress.values()).map(tp => 
+            `${tp.title} (${tp.pagesWorked}페이지)`
+          ).join(', ');
+        } else {
+          taskProgressStr = Array.from(dayRecord.tasks).join(', ');
+        }
+        
+        tableData.push({
+          date: recordDate,
+          worker,
+          startTime: dayRecord.startTime,
+          endTime: dayRecord.endTime,
+          workTime: `${hours}시간 ${minutes}분`,
+          tasks: Array.from(dayRecord.tasks),
+          taskProgressStr,
+          totalPagesWorked
+        });
+      });
+    });
+    
+    // Sort by date and then by worker
+    tableData.sort((a, b) => {
+      const dateCompare = b.date - a.date; // Latest first
+      if (dateCompare !== 0) return dateCompare;
+      return a.worker.localeCompare(b.worker);
+    });
+    
+    if (tableData.length === 0) {
+      attendanceTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #666; padding: 20px;">출근 기록이 없습니다.</td></tr>';
+      return;
+    }
+    
+    const tableHtml = tableData.map(record => {
+      return `
+        <tr>
+          <td>${record.date.toLocaleDateString('ko-KR')}</td>
+          <td>${record.worker}</td>
+          <td>${record.startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</td>
+          <td>${record.endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</td>
+          <td>${record.workTime}</td>
+          <td>
+            <small>${record.taskProgressStr}</small>
+            ${record.totalPagesWorked > 0 ? `<br><span style="color: #28a745; font-weight: bold; font-size: 0.8em;">총 ${record.totalPagesWorked}페이지 작업</span>` : ''}
+          </td>
+        </tr>
+      `;
+    }).join('');
+    
+    attendanceTbody.innerHTML = tableHtml;
+  }
+  
+  function exportAttendanceRecords() {
+    const attendanceYear = document.getElementById('attendance-year');
+    const attendanceMonth = document.getElementById('attendance-month');
+    const attendanceDate = document.getElementById('attendance-date');
+    const attendanceWorker = document.getElementById('attendance-worker');
+    
+    const selectedYear = attendanceYear?.value;
+    const selectedMonth = attendanceMonth?.value;
+    const selectedDate = attendanceDate?.value;
+    const selectedWorker = attendanceWorker?.value;
+    
+    const attendanceRecords = calculateAttendanceRecords();
+    const csvData = [];
+    
+    // Header
+    csvData.push(['날짜', '직원', '출근시간', '퇴근시간', '근무시간', '작업페이지수', '작업내용'].join(','));
+    
+    const exportData = [];
+    attendanceRecords.forEach((workerDays, worker) => {
+      if (selectedWorker && worker !== selectedWorker) return;
+      
+      workerDays.forEach((dayRecord, dateStr) => {
+        const recordDate = new Date(dateStr);
+        
+        // Apply same date filters as table
+        if (selectedDate) {
+          const filterDate = new Date(selectedDate);
+          if (recordDate.toDateString() !== filterDate.toDateString()) return;
+        } else {
+          if (selectedYear) {
+            if (recordDate.getFullYear().toString() !== selectedYear) return;
+          }
+          if (selectedMonth) {
+            const recordMonth = (recordDate.getMonth() + 1).toString().padStart(2, '0');
+            if (recordMonth !== selectedMonth) return;
+          }
+        }
+        
+        const workTime = Math.round((dayRecord.endTime - dayRecord.startTime) / 1000 / 60);
+        const hours = Math.floor(workTime / 60);
+        const minutes = workTime % 60;
+        
+        // Calculate pages worked for export
+        let totalPagesWorked = 0;
+        const taskProgress = new Map();
+        
+        dayRecord.workSessions.forEach(session => {
+          if (session.taskId && session.pagesWorked > 0) {
+            // Use directly stored pages worked from session
+            totalPagesWorked += session.pagesWorked;
+            
+            const task = tasks.find(t => t.id === session.taskId);
+            if (task) {
+              const taskKey = session.taskId;
+              if (!taskProgress.has(taskKey)) {
+                taskProgress.set(taskKey, {
+                  title: task.book.title,
+                  pagesWorked: 0
+                });
+              }
+              taskProgress.get(taskKey).pagesWorked += session.pagesWorked;
+            }
+          } else if (session.taskId) {
+            // Fallback to old method if pagesWorked not available
+            const task = tasks.find(t => t.id === session.taskId);
+            if (task && task.stages && task.stages[session.stage]) {
+              const stage = task.stages[session.stage];
+              if (stage.history && stage.history.length > 0) {
+                const sessionStart = new Date(session.startTime);
+                const sessionEnd = new Date(session.endTime);
+                
+                let sessionPages = 0;
+                stage.history.forEach(entry => {
+                  const entryDate = new Date(entry.date);
+                  if (entryDate >= sessionStart && entryDate <= sessionEnd) {
+                    const pagesInEntry = entry.endPage - entry.startPage + 1;
+                    sessionPages += pagesInEntry;
+                    totalPagesWorked += pagesInEntry;
+                  }
+                });
+                
+                if (sessionPages > 0) {
+                  const taskKey = session.taskId;
+                  if (!taskProgress.has(taskKey)) {
+                    taskProgress.set(taskKey, {
+                      title: task.book.title,
+                      pagesWorked: 0
+                    });
+                  }
+                  taskProgress.get(taskKey).pagesWorked += sessionPages;
+                }
+              }
+            }
+          }
+        });
+        
+        let taskProgressStr = '';
+        if (taskProgress.size > 0) {
+          taskProgressStr = Array.from(taskProgress.values()).map(tp => 
+            `${stripHtmlTags(tp.title)} (${tp.pagesWorked}페이지)`
+          ).join(', ');
+        } else {
+          taskProgressStr = Array.from(dayRecord.tasks).map(title => stripHtmlTags(title)).join(', ');
+        }
+        
+        exportData.push({
+          date: recordDate,
+          worker: stripHtmlTags(worker),
+          startTime: dayRecord.startTime,
+          endTime: dayRecord.endTime,
+          workTime: `${hours}시간 ${minutes}분`,
+          totalPagesWorked,
+          tasks: taskProgressStr
+        });
+      });
+    });
+    
+    // Sort by date desc
+    exportData.sort((a, b) => b.date - a.date);
+    
+    exportData.forEach(record => {
+      csvData.push([
+        record.date.toLocaleDateString('ko-KR'),
+        `"${record.worker}"`,
+        record.startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+        record.endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+        record.workTime,
+        `${record.totalPagesWorked}페이지`,
+        `"${record.tasks}"`
+      ].join(','));
+    });
+    
+    const blob = new Blob(["\ufeff" + csvData.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `attendance_records_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    alert('출근 기록이 CSV 파일로 내보내졌습니다.');
+  }
+  
+  // Load work sessions on startup
+  loadWorkSessionsFromStorage();
+  
+  // Update current workers display periodically
+  setInterval(updateCurrentWorkersDisplay, 60000); // Update every minute
+
+  // 전역 함수들
+  window.handleDeleteStaff = async function(staffId) {
+    const staffMember = staff.find(s => s.id === staffId);
+    if (!staffMember) return;
+    
+    if (confirm(`'${staffMember.name}' 직원을 삭제하시겠습니까?`)) {
+      try {
+        await deleteStaff(staffId);
+        alert('직원이 삭제되었습니다.');
+      } catch (error) {
+        alert('직원 삭제에 실패했습니다: ' + error.message);
+      }
+    }
+  };
 });

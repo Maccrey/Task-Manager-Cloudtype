@@ -6,6 +6,7 @@ const cors = require('cors');
 const app = express();
 const PORT = 3000;
 const DATA_FILE = path.join(__dirname, 'bookworklist.json');
+const STAFF_FILE = path.join(__dirname, 'staff.json');
 
 app.use(cors());
 app.use(express.json());
@@ -28,6 +29,29 @@ const writeBooks = (books) => {
         fs.writeFileSync(DATA_FILE, JSON.stringify(books, null, 2), 'utf8');
     } catch (error) {
         console.error('Error writing to bookworklist.json:', error);
+    }
+};
+
+// Helper function to read staff
+const readStaff = () => {
+    try {
+        if (!fs.existsSync(STAFF_FILE)) {
+            return [];
+        }
+        const data = fs.readFileSync(STAFF_FILE, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error reading staff.json:', error);
+        return [];
+    }
+};
+
+// Helper function to write staff
+const writeStaff = (staff) => {
+    try {
+        fs.writeFileSync(STAFF_FILE, JSON.stringify(staff, null, 2), 'utf8');
+    } catch (error) {
+        console.error('Error writing to staff.json:', error);
     }
 };
 
@@ -162,6 +186,43 @@ app.delete('/books/:id/notes/:noteId', (req, res) => {
         }
     } else {
         res.status(404).send('Book not found');
+    }
+});
+
+// Staff-related endpoints
+
+// GET all staff
+app.get('/staff', (req, res) => {
+    const staff = readStaff();
+    res.json(staff);
+});
+
+// POST a new staff member
+app.post('/staff', (req, res) => {
+    const staff = readStaff();
+    const newStaff = {
+        id: Date.now().toString(),
+        name: req.body.name,
+        role: req.body.role,
+        createdAt: new Date().toISOString()
+    };
+    staff.push(newStaff);
+    writeStaff(staff);
+    res.status(201).json(newStaff);
+});
+
+// DELETE a staff member
+app.delete('/staff/:id', (req, res) => {
+    let staff = readStaff();
+    const { id } = req.params;
+    const initialLength = staff.length;
+    staff = staff.filter(s => s.id !== id);
+
+    if (staff.length < initialLength) {
+        writeStaff(staff);
+        res.status(204).send();
+    } else {
+        res.status(404).send('Staff member not found');
     }
 });
 
