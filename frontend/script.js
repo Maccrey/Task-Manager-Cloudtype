@@ -1,4 +1,17 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // 로그인 관련 변수
+  let currentUser = null;
+  const loginPage = document.getElementById('login-page');
+  const mainDashboard = document.getElementById('main-dashboard');
+  const loginForm = document.getElementById('login-form');
+  const staffNameInput = document.getElementById('staff-name-login');
+  const loginError = document.getElementById('login-error');
+  const currentUserName = document.getElementById('current-user-name');
+  const logoutBtn = document.getElementById('logout-btn');
+  
+  // 페이지 로드 시 로그인 상태 확인 (모든 변수 초기화 후)
+  setTimeout(checkLoginStatus, 100);
+
   const isbnTitleInput = document.getElementById("isbn-title-input");
   const searchButton = document.getElementById("search-button");
   const addNewButton = document.getElementById("add-new-button");
@@ -510,10 +523,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("=== End API Test ===");
   };
 
-  // 초기 로드
-  loadTasks();
-  loadStaff();
-  setTimeout(updateCurrentWorkersDisplay, 1000); // Show current workers after initial load
+  // 초기 로드는 로그인 후에만 실행
 
   // 점역자 체크박스 이벤트
   enableTranscriberCheckbox.addEventListener("change", () => {
@@ -2955,11 +2965,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateCurrentWorkersDisplay() {
+    // 로그인되지 않은 상태에서는 실행하지 않음
+    if (!currentUser || mainDashboard.style.display === 'none') {
+      return;
+    }
+    
     let currentWorkersDiv = document.getElementById('current-workers-display');
     if (!currentWorkersDiv) {
       // Create the display element
-      const header = document.querySelector('header');
-      const dashboardTitle = header.querySelector('h1');
+      const headerContent = document.querySelector('.header-content');
       
       currentWorkersDiv = document.createElement('div');
       currentWorkersDiv.id = 'current-workers-display';
@@ -2972,7 +2986,20 @@ document.addEventListener("DOMContentLoaded", () => {
         font-size: 0.9em;
       `;
       
-      header.insertBefore(currentWorkersDiv, dashboardTitle.nextSibling);
+      // 더 안전한 방법으로 요소 추가
+      if (headerContent) {
+        // header-content div 아래에 추가
+        headerContent.appendChild(currentWorkersDiv);
+      } else {
+        // header-content가 없으면 header 바로 아래에 추가
+        const header = document.querySelector('header');
+        if (header) {
+          header.appendChild(currentWorkersDiv);
+        } else {
+          console.warn('Header element not found, skipping current workers display');
+          return;
+        }
+      }
       
       // Add click handler for debugging
       currentWorkersDiv.addEventListener('click', () => {
@@ -3689,6 +3716,110 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('attendance-only-worker')?.addEventListener('change', () => renderAttendanceTableForModal('attendance-only'));
   document.getElementById('refresh-attendance-only-btn')?.addEventListener('click', loadAttendanceOnlyData);
   document.getElementById('export-attendance-only-btn')?.addEventListener('click', () => exportAttendanceRecordsForModal('attendance-only'));
+
+  // 로그인 관련 함수들
+  function checkLoginStatus() {
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      currentUser = savedUser;
+      showMainDashboard();
+    } else {
+      showLoginPage();
+    }
+  }
+  
+  function showLoginPage() {
+    loginPage.style.display = 'flex';
+    mainDashboard.style.display = 'none';
+  }
+  
+  function showMainDashboard() {
+    loginPage.style.display = 'none';
+    mainDashboard.style.display = 'block';
+    if (currentUserName && currentUser) {
+      currentUserName.textContent = `${currentUser}님`;
+    }
+    // 메인 대시보드가 표시될 때 필요한 데이터들 로드
+    loadTasks();
+    loadStaff();
+    setTimeout(updateCurrentWorkersDisplay, 1000); // Show current workers after initial load
+  }
+  
+  async function validateUser(name) {
+    try {
+      // 직원 목록을 서버에서 가져와서 확인
+      const response = await fetch('http://localhost:3000/staff');
+      let staffList = [];
+      
+      if (response.ok) {
+        staffList = await response.json();
+      } else {
+        // 서버에서 직원 목록을 가져올 수 없는 경우, 로컬 데이터 사용
+        const savedStaff = localStorage.getItem('staff');
+        if (savedStaff) {
+          staffList = JSON.parse(savedStaff);
+        }
+      }
+      
+      // 직원 목록에서 해당 이름이 있는지 확인
+      return staffList.some(staff => staff.name === name);
+    } catch (error) {
+      console.error('직원 검증 중 오류:', error);
+      // 오류가 발생한 경우 로컬 데이터로 확인
+      const savedStaff = localStorage.getItem('staff');
+      if (savedStaff) {
+        const staffList = JSON.parse(savedStaff);
+        return staffList.some(staff => staff.name === name);
+      }
+      return false;
+    }
+  }
+  
+  function showLoginError(message) {
+    loginError.textContent = message;
+    loginError.style.display = 'block';
+    setTimeout(() => {
+      loginError.style.display = 'none';
+    }, 3000);
+  }
+  
+  async function handleLogin(event) {
+    event.preventDefault();
+    const staffName = staffNameInput.value.trim();
+    
+    if (!staffName) {
+      showLoginError('직원 이름을 입력해주세요.');
+      return;
+    }
+    
+    // 직원 목록에서 해당 이름이 등록되어 있는지 확인
+    const isValidUser = await validateUser(staffName);
+    
+    if (isValidUser) {
+      currentUser = staffName;
+      localStorage.setItem('currentUser', currentUser);
+      showMainDashboard();
+    } else {
+      showLoginError('등록되지 않은 직원입니다. 관리자에게 문의하세요.');
+      staffNameInput.value = '';
+    }
+  }
+  
+  function handleLogout() {
+    currentUser = null;
+    localStorage.removeItem('currentUser');
+    staffNameInput.value = '';
+    showLoginPage();
+  }
+  
+  // 로그인 이벤트 리스너
+  if (loginForm) {
+    loginForm.addEventListener('submit', handleLogin);
+  }
+  
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', handleLogout);
+  }
 
   // 전역 함수들
   window.handleEditStaff = function(staffId) {
