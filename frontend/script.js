@@ -107,6 +107,11 @@ document.addEventListener("DOMContentLoaded", () => {
     "e080d32c1a94808682a5c4fe268ba6f9e5aedf09c936f44ecb51272e59287233";
   const API_URL = "http://localhost:3000/books";
   const STAFF_API_URL = "http://localhost:3000/staff";
+  const WORK_SESSIONS_API_URL = "http://localhost:3000/work-sessions";
+  const WS_URL = "ws://localhost:3000";
+
+  // WebSocket 연결
+  let socket = null;
 
   let currentBook = null;
   let tasks = [];
@@ -121,6 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let workSessions = []; // All work sessions history
   let currentAssignTask = null; // Current task for corrector assignment
   let currentAssignStage = null; // Current stage for corrector assignment
+  let isStartingNewSession = false; // Flag to prevent progress modal during session start
 
   // Korean date parsing function
   function parseKoreanDate(dateStr) {
@@ -162,6 +168,81 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   }
 
+  // WebSocket 연결 초기화
+  function initializeWebSocket() {
+    try {
+      socket = new WebSocket(WS_URL);
+      
+      socket.onopen = function(event) {
+        console.log("WebSocket 연결이 열렸습니다.");
+        updateStatusDisplay();
+      };
+      
+      socket.onmessage = function(event) {
+        try {
+          const message = JSON.parse(event.data);
+          handleWebSocketMessage(message);
+        } catch (error) {
+          console.error("WebSocket 메시지 처리 오류:", error);
+        }
+      };
+      
+      socket.onclose = function(event) {
+        console.log("WebSocket 연결이 닫혔습니다.");
+        socket = null;
+        updateStatusDisplay();
+        
+        // 5초 후 재연결 시도
+        setTimeout(() => {
+          if (!socket || socket.readyState === WebSocket.CLOSED) {
+            console.log("WebSocket 재연결 시도...");
+            initializeWebSocket();
+          }
+        }, 5000);
+      };
+      
+      socket.onerror = function(error) {
+        console.error("WebSocket 오류:", error);
+      };
+    } catch (error) {
+      console.error("WebSocket 초기화 오류:", error);
+    }
+  }
+
+  // WebSocket 메시지 처리
+  function handleWebSocketMessage(message) {
+    console.log("WebSocket 메시지 수신:", message);
+    
+    switch (message.type) {
+      case 'book_added':
+        handleBookAdded(message.data);
+        break;
+      case 'book_updated':
+        handleBookUpdated(message.data);
+        break;
+      case 'book_deleted':
+        handleBookDeleted(message.data);
+        break;
+      case 'note_added':
+        handleNoteAdded(message.data);
+        break;
+      case 'note_updated':
+        handleNoteUpdated(message.data);
+        break;
+      case 'note_deleted':
+        handleNoteDeleted(message.data);
+        break;
+      case 'work_session_started':
+        handleWorkSessionStarted(message.data);
+        break;
+      case 'work_session_ended':
+        handleWorkSessionEnded(message.data);
+        break;
+      default:
+        console.log("알 수 없는 메시지 타입:", message.type);
+    }
+  }
+
   // 서버 연결 상태 확인
   async function checkServerConnection() {
     try {
@@ -176,6 +257,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (response.ok) {
         serverStatus = "online";
         console.log("Server is online");
+        
+        // WebSocket 연결이 없거나 닫혀있다면 초기화
+        if (!socket || socket.readyState === WebSocket.CLOSED) {
+          initializeWebSocket();
+        }
+        
         return true;
       } else {
         serverStatus = "offline";
@@ -251,6 +338,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       updateStatusDisplay();
       renderTasks();
+      
+      // 작업 세션 로드
+      await loadCurrentWorkSessions();
     } catch (error) {
       console.error("Error in loadTasks:", error);
       serverStatus = "offline";
@@ -995,7 +1085,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (target.classList.contains("start")) {
         startWorkSession(task, worker);
       } else {
-        stopWorkSession(task, worker);
+        stopWorkSession(task, worker, true); // 명시적으로 진행상황 모달 표시
       }
     }
   });
@@ -1196,6 +1286,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function closeProgressUpdateModal() {
     progressUpdateModal.style.display = "none";
     currentTaskForUpdate = null;
+    
+    // 모달이 닫힐 때 UI 업데이트
+    renderTasks();
   }
 
   progressModalCloseButton.addEventListener("click", closeProgressUpdateModal);
@@ -2867,99 +2960,88 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Work Session Management Functions
-  function startWorkSession(task, worker) {
-    // Check if worker is already working on another task
-    for (const [taskId, session] of currentWorkSessions) {
-      if (session.worker === worker && session.isWorking) {
-        if (confirm(`${worker}님이 이미 다른 작업(작업 ID: ${taskId})을 진행 중입니다. 기존 작업을 중지하고 새 작업을 시작하시겠습니까?`)) {
-          const existingTask = tasks.find(t => t.id === taskId);
-          if (existingTask) {
-            stopWorkSession(existingTask, worker, false); // Don't show progress modal
-          }
-        } else {
-          return;
-        }
+  async function startWorkSession(task, worker) {
+    try {
+      // 새로운 세션 시작 플래그 설정
+      isStartingNewSession = true;
+      
+      // API 호출로 작업 세션 시작
+      const response = await fetch(WORK_SESSIONS_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          taskId: task.id,
+          worker: worker
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const newSession = await response.json();
+      console.log(`Work session started for ${worker} on task ${task.id}`);
+      
+      // 플래그 해제 (약간의 지연 후)
+      setTimeout(() => {
+        isStartingNewSession = false;
+      }, 1000);
+      
+      // 로컬 처리는 WebSocket 메시지로 받을 때 처리됨
+      
+    } catch (error) {
+      console.error('작업 세션 시작 실패:', error);
+      alert('작업 세션 시작에 실패했습니다: ' + error.message);
+      isStartingNewSession = false; // 에러 시에도 플래그 해제
     }
-
-    const startTime = new Date();
-    currentWorkSessions.set(task.id, {
-      startTime: startTime,
-      worker: worker,
-      isWorking: true,
-      taskTitle: task.book.title,
-      stage: task.currentStage
-    });
-
-    // Save to work sessions history
-    const sessionId = `${task.id}_${worker}_${startTime.getTime()}`;
-    const workSession = {
-      id: sessionId,
-      taskId: task.id,
-      taskTitle: task.book.title,
-      worker: worker,
-      stage: task.currentStage,
-      startTime: startTime.toISOString(),
-      endTime: null,
-      isCompleted: false
-    };
-    
-    workSessions.push(workSession);
-    saveWorkSessionsToStorage();
-    
-    renderTasks();
-    updateCurrentWorkersDisplay();
-    
-    console.log(`Work session started for ${worker} on task ${task.id}`);
   }
 
-  function stopWorkSession(task, worker, showProgressModal = true) {
-    const sessionData = currentWorkSessions.get(task.id);
-    if (!sessionData || sessionData.worker !== worker) {
-      alert('작업 세션 정보를 찾을 수 없습니다.');
-      return;
-    }
-
-    const endTime = new Date();
-    const duration = Math.round((endTime - sessionData.startTime) / 1000 / 60); // minutes
-
-    // Get current progress before stopping session
-    const currentStage = task.stages[task.currentStage];
-    const startPage = currentStage && currentStage.history.length > 0 
-      ? currentStage.history[currentStage.history.length - 1].endPage 
-      : 0;
-
-    // Update work session history
-    const sessionId = `${task.id}_${worker}_${sessionData.startTime.getTime()}`;
-    const sessionIndex = workSessions.findIndex(s => s.id === sessionId);
-    if (sessionIndex !== -1) {
-      workSessions[sessionIndex].endTime = endTime.toISOString();
-      workSessions[sessionIndex].duration = duration;
-      workSessions[sessionIndex].startPage = startPage;
-      // endPage will be updated after progress update
-    }
-
-    currentWorkSessions.delete(task.id);
-    saveWorkSessionsToStorage();
-    
-    renderTasks();
-    updateCurrentWorkersDisplay();
-    
-    console.log(`Work session stopped for ${worker} on task ${task.id}, duration: ${duration} minutes`);
-    
-    // Show progress update modal if requested
-    if (showProgressModal) {
-      // Store current session info for progress update
-      window.currentStoppedSession = {
-        sessionIndex,
-        taskId: task.id,
-        worker,
-        startPage
-      };
+  async function stopWorkSession(task, worker, showProgressModal = true) {
+    try {
+      // 진행상황 업데이트를 위해 현재 세션 정보를 미리 저장
+      const sessionData = currentWorkSessions.get(task.id);
+      let sessionInfo = null;
       
-      setTimeout(() => {
+      if (showProgressModal && sessionData) {
+        const currentStage = task.stages[task.currentStage];
+        const startPage = currentStage && currentStage.history.length > 0 
+          ? currentStage.history[currentStage.history.length - 1].endPage 
+          : 0;
+          
+        sessionInfo = {
+          taskId: task.id,
+          worker,
+          startPage
+        };
+      }
+      
+      // API 호출로 작업 세션 종료
+      const response = await fetch(`${WORK_SESSIONS_API_URL}/${task.id}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      console.log(`Work session stopped for ${worker} on task ${task.id}`);
+      
+      // 진행상황 업데이트 모달 표시 (필요한 경우)
+      if (showProgressModal && sessionInfo && !isStartingNewSession) {
+        // Store current session info for progress update
+        window.currentStoppedSession = sessionInfo;
+        
+        // 모달을 즉시 표시
         openProgressUpdateModal(task);
-      }, 100);
+      }
+      
+      // 로컬 처리는 WebSocket 메시지로 받을 때 처리됨
+      
+    } catch (error) {
+      console.error('작업 세션 종료 실패:', error);
+      alert('작업 세션 종료에 실패했습니다: ' + error.message);
     }
   }
 
@@ -3902,4 +3984,258 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   };
+
+  // WebSocket 실시간 업데이트 핸들러 함수들
+  
+  // 책이 추가된 경우
+  function handleBookAdded(book) {
+    console.log("새 책 추가됨:", book);
+    
+    // tasks 배열에 추가
+    if (!tasks.find(task => task.id === book.id)) {
+      tasks.push(book);
+    }
+    
+    // UI 업데이트
+    renderTasks();
+    updateTaskCounts();
+    
+    // 관리자 패널이 열려있다면 업데이트
+    if (adminPanelModal.style.display === "flex") {
+      displayAdminTasks();
+    }
+  }
+  
+  // 책이 업데이트된 경우
+  function handleBookUpdated(book) {
+    console.log("책 업데이트됨:", book);
+    
+    // tasks 배열에서 해당 책 찾아서 업데이트
+    const index = tasks.findIndex(task => task.id === book.id);
+    if (index !== -1) {
+      tasks[index] = book;
+    }
+    
+    // UI 업데이트
+    renderTasks();
+    updateTaskCounts();
+    
+    // 관리자 패널이 열려있다면 업데이트
+    if (adminPanelModal.style.display === "flex") {
+      displayAdminTasks();
+    }
+    
+    // 완료된 작업 모달이 열려있다면 업데이트
+    if (completedBooksModal.style.display === "flex") {
+      displayCompletedBooks();
+    }
+    
+    // 작업 세부사항 모달이 열려있고 현재 수정 중인 작업이라면 업데이트
+    if (taskDetailModal.style.display === "flex" && currentDetailTask && currentDetailTask.id === book.id) {
+      currentDetailTask = book;
+      populateTaskDetailForm(book);
+    }
+  }
+  
+  // 책이 삭제된 경우
+  function handleBookDeleted(data) {
+    console.log("책 삭제됨:", data);
+    
+    // tasks 배열에서 제거
+    tasks = tasks.filter(task => task.id !== data.id);
+    
+    // UI 업데이트
+    renderTasks();
+    updateTaskCounts();
+    
+    // 관리자 패널이 열려있다면 업데이트
+    if (adminPanelModal.style.display === "flex") {
+      displayAdminTasks();
+    }
+    
+    // 완료된 작업 모달이 열려있다면 업데이트
+    if (completedBooksModal.style.display === "flex") {
+      displayCompletedBooks();
+    }
+    
+    // 작업 세부사항 모달이 삭제된 작업을 보고 있다면 닫기
+    if (taskDetailModal.style.display === "flex" && currentDetailTask && currentDetailTask.id === data.id) {
+      taskDetailModal.style.display = "none";
+      currentDetailTask = null;
+    }
+  }
+  
+  // 노트가 추가된 경우
+  function handleNoteAdded(data) {
+    console.log("노트 추가됨:", data);
+    
+    const { bookId, note } = data;
+    
+    // tasks 배열에서 해당 책 찾아서 노트 추가
+    const book = tasks.find(task => task.id === bookId);
+    if (book) {
+      if (!book.notes) {
+        book.notes = [];
+      }
+      
+      // 이미 존재하지 않는 경우에만 추가
+      if (!book.notes.find(n => n.noteId === note.noteId)) {
+        book.notes.push(note);
+      }
+      
+      // UI 업데이트
+      renderTasks();
+      
+      // 노트 모달이 열려있고 해당 책의 노트를 보고 있다면 업데이트
+      if (notesModal.style.display === "flex" && currentTaskForNotes && currentTaskForNotes.id === bookId) {
+        displayNotes(bookId);
+      }
+    }
+  }
+  
+  // 노트가 업데이트된 경우
+  function handleNoteUpdated(data) {
+    console.log("노트 업데이트됨:", data);
+    
+    const { bookId, note } = data;
+    
+    // tasks 배열에서 해당 책의 노트 업데이트
+    const book = tasks.find(task => task.id === bookId);
+    if (book && book.notes) {
+      const noteIndex = book.notes.findIndex(n => n.noteId === note.noteId);
+      if (noteIndex !== -1) {
+        book.notes[noteIndex] = note;
+      }
+      
+      // UI 업데이트
+      renderTasks();
+      
+      // 노트 모달이 열려있고 해당 책의 노트를 보고 있다면 업데이트
+      if (notesModal.style.display === "flex" && currentTaskForNotes && currentTaskForNotes.id === bookId) {
+        displayNotes(bookId);
+      }
+    }
+  }
+  
+  // 노트가 삭제된 경우
+  function handleNoteDeleted(data) {
+    console.log("노트 삭제됨:", data);
+    
+    const { bookId, noteId } = data;
+    
+    // tasks 배열에서 해당 책의 노트 삭제
+    const book = tasks.find(task => task.id === bookId);
+    if (book && book.notes) {
+      book.notes = book.notes.filter(n => n.noteId !== noteId);
+      
+      // UI 업데이트
+      renderTasks();
+      
+      // 노트 모달이 열려있고 해당 책의 노트를 보고 있다면 업데이트
+      if (notesModal.style.display === "flex" && currentTaskForNotes && currentTaskForNotes.id === bookId) {
+        displayNotes(bookId);
+      }
+    }
+  }
+
+  // 작업 세션 시작 처리
+  function handleWorkSessionStarted(sessionData) {
+    console.log("작업 세션 시작됨:", sessionData);
+    
+    // 로컬 currentWorkSessions에 추가
+    currentWorkSessions.set(sessionData.taskId, {
+      startTime: new Date(sessionData.startTime),
+      worker: sessionData.worker,
+      isWorking: true,
+      taskTitle: getTaskTitle(sessionData.taskId),
+      stage: getCurrentStage(sessionData.taskId)
+    });
+
+    // Save to work sessions history
+    const workSession = {
+      id: `${sessionData.taskId}_${sessionData.worker}_${new Date(sessionData.startTime).getTime()}`,
+      taskId: sessionData.taskId,
+      taskTitle: getTaskTitle(sessionData.taskId),
+      worker: sessionData.worker,
+      stage: getCurrentStage(sessionData.taskId),
+      startTime: sessionData.startTime,
+      endTime: null,
+      isCompleted: false
+    };
+    
+    workSessions.push(workSession);
+    saveWorkSessionsToStorage();
+    
+    // UI 업데이트
+    renderTasks();
+    updateCurrentWorkersDisplay();
+  }
+
+  // 작업 세션 종료 처리
+  function handleWorkSessionEnded(data) {
+    console.log("작업 세션 종료됨:", data);
+    
+    const { taskId, worker } = data;
+    const sessionData = currentWorkSessions.get(taskId);
+    
+    if (sessionData) {
+      const endTime = new Date();
+      const duration = Math.round((endTime - sessionData.startTime) / 1000 / 60); // minutes
+
+      // Update work session history
+      const sessionId = `${taskId}_${worker}_${sessionData.startTime.getTime()}`;
+      const sessionIndex = workSessions.findIndex(s => s.id === sessionId);
+      if (sessionIndex !== -1) {
+        workSessions[sessionIndex].endTime = endTime.toISOString();
+        workSessions[sessionIndex].duration = duration;
+      }
+      
+      currentWorkSessions.delete(taskId);
+      saveWorkSessionsToStorage();
+    }
+    
+    // 진행상황 업데이트 모달이 열려있지 않을 때만 UI 업데이트
+    const progressModal = document.getElementById("progress-update-modal");
+    if (!progressModal || progressModal.style.display !== "flex") {
+      renderTasks();
+    }
+    updateCurrentWorkersDisplay();
+  }
+
+  // 헬퍼 함수들
+  function getTaskTitle(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    return task && task.book ? task.book.title : '알 수 없는 작업';
+  }
+
+  function getCurrentStage(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    return task ? task.currentStage : 'unknown';
+  }
+
+  // 페이지 로드 시 서버에서 현재 작업 세션 가져오기
+  async function loadCurrentWorkSessions() {
+    try {
+      const response = await fetch(WORK_SESSIONS_API_URL);
+      if (response.ok) {
+        const sessions = await response.json();
+        
+        // 서버의 세션 데이터를 로컬에 동기화
+        currentWorkSessions.clear();
+        for (const [taskId, sessionData] of Object.entries(sessions)) {
+          currentWorkSessions.set(taskId, {
+            startTime: new Date(sessionData.startTime),
+            worker: sessionData.worker,
+            isWorking: sessionData.isWorking,
+            taskTitle: getTaskTitle(taskId),
+            stage: getCurrentStage(taskId)
+          });
+        }
+        
+        updateCurrentWorkersDisplay();
+      }
+    } catch (error) {
+      console.error('현재 작업 세션 로드 실패:', error);
+    }
+  }
 });
