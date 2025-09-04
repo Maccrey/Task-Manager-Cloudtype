@@ -2,11 +2,14 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
+const http = require('http');
+const WebSocket = require('ws');
 
 const app = express();
 const PORT = 3000;
 const DATA_FILE = path.join(__dirname, 'bookworklist.json');
 const STAFF_FILE = path.join(__dirname, 'staff.json');
+const WORK_SESSIONS_FILE = path.join(__dirname, 'work-sessions.json');
 
 app.use(cors());
 app.use(express.json());
@@ -55,6 +58,29 @@ const writeStaff = (staff) => {
     }
 };
 
+// Helper function to read work sessions
+const readWorkSessions = () => {
+    try {
+        if (!fs.existsSync(WORK_SESSIONS_FILE)) {
+            return {};
+        }
+        const data = fs.readFileSync(WORK_SESSIONS_FILE, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error reading work-sessions.json:', error);
+        return {};
+    }
+};
+
+// Helper function to write work sessions
+const writeWorkSessions = (sessions) => {
+    try {
+        fs.writeFileSync(WORK_SESSIONS_FILE, JSON.stringify(sessions, null, 2), 'utf8');
+    } catch (error) {
+        console.error('Error writing to work-sessions.json:', error);
+    }
+};
+
 // GET all books
 app.get('/books', (req, res) => {
     const books = readBooks();
@@ -69,6 +95,13 @@ app.post('/books', (req, res) => {
     const newBook = { id: Date.now().toString(), ...req.body }; // Simple ID generation
     books.push(newBook);
     writeBooks(books);
+    
+    // Broadcast the new book to all connected clients
+    broadcast({
+        type: 'book_added',
+        data: newBook
+    });
+    
     res.status(201).json(newBook);
 });
 
@@ -82,6 +115,13 @@ app.put('/books/:id', (req, res) => {
     if (index !== -1) {
         books[index] = { ...books[index], ...updatedBookData };
         writeBooks(books);
+        
+        // Broadcast the updated book to all connected clients
+        broadcast({
+            type: 'book_updated',
+            data: books[index]
+        });
+        
         res.json(books[index]);
     } else {
         res.status(404).send('Book not found');
@@ -97,6 +137,13 @@ app.delete('/books/:id', (req, res) => {
 
     if (books.length < initialLength) {
         writeBooks(books);
+        
+        // Broadcast the book deletion to all connected clients
+        broadcast({
+            type: 'book_deleted',
+            data: { id }
+        });
+        
         res.status(204).send(); // No content
     } else {
         res.status(404).send('Book not found');
@@ -137,6 +184,16 @@ app.post('/books/:id/notes', (req, res) => {
         }
         books[index].notes.push(newNote);
         writeBooks(books);
+        
+        // Broadcast the new note to all connected clients
+        broadcast({
+            type: 'note_added',
+            data: {
+                bookId: id,
+                note: newNote
+            }
+        });
+        
         res.status(201).json(newNote);
     } else {
         res.status(404).send('Book not found');
@@ -159,6 +216,16 @@ app.put('/books/:id/notes/:noteId', (req, res) => {
                 updatedAt: new Date().toISOString()
             };
             writeBooks(books);
+            
+            // Broadcast the updated note to all connected clients
+            broadcast({
+                type: 'note_updated',
+                data: {
+                    bookId: id,
+                    note: books[bookIndex].notes[noteIndex]
+                }
+            });
+            
             res.json(books[bookIndex].notes[noteIndex]);
         } else {
             res.status(404).send('Note not found');
@@ -180,6 +247,16 @@ app.delete('/books/:id/notes/:noteId', (req, res) => {
 
         if (books[bookIndex].notes.length < initialLength) {
             writeBooks(books);
+            
+            // Broadcast the note deletion to all connected clients
+            broadcast({
+                type: 'note_deleted',
+                data: {
+                    bookId: id,
+                    noteId: noteId
+                }
+            });
+            
             res.status(204).send();
         } else {
             res.status(404).send('Note not found');
@@ -247,6 +324,106 @@ app.delete('/staff/:id', (req, res) => {
     }
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+// Work Session related endpoints
+
+// GET all work sessions
+app.get('/work-sessions', (req, res) => {
+    const sessions = readWorkSessions();
+    res.json(sessions);
+});
+
+// POST start a work session
+app.post('/work-sessions', (req, res) => {
+    const sessions = readWorkSessions();
+    const { taskId, worker } = req.body;
+    
+    // End any existing session for this worker
+    for (const [id, session] of Object.entries(sessions)) {
+        if (session.worker === worker) {
+            // Broadcast the existing session end to all connected clients
+            broadcast({
+                type: 'work_session_ended',
+                data: { taskId: id, worker: session.worker }
+            });
+            delete sessions[id];
+        }
+    }
+    
+    // Create new session
+    const newSession = {
+        taskId: taskId,
+        worker: worker,
+        startTime: new Date().toISOString(),
+        isWorking: true
+    };
+    
+    sessions[taskId] = newSession;
+    writeWorkSessions(sessions);
+    
+    // Broadcast the work session start to all connected clients
+    broadcast({
+        type: 'work_session_started',
+        data: newSession
+    });
+    
+    res.status(201).json(newSession);
+});
+
+// DELETE end a work session
+app.delete('/work-sessions/:taskId', (req, res) => {
+    const sessions = readWorkSessions();
+    const { taskId } = req.params;
+    
+    if (sessions[taskId]) {
+        const session = sessions[taskId];
+        delete sessions[taskId];
+        writeWorkSessions(sessions);
+        
+        // Broadcast the work session end to all connected clients
+        broadcast({
+            type: 'work_session_ended',
+            data: { taskId, worker: session.worker }
+        });
+        
+        res.status(204).send();
+    } else {
+        res.status(404).send('Work session not found');
+    }
+});
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Create WebSocket server
+const wss = new WebSocket.Server({ server });
+
+// WebSocket connection handling
+wss.on('connection', (ws) => {
+    console.log('New WebSocket connection established');
+    
+    ws.on('message', (message) => {
+        console.log('Received:', message.toString());
+    });
+    
+    ws.on('close', () => {
+        console.log('WebSocket connection closed');
+    });
+    
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
+    });
+});
+
+// Broadcast function to all connected clients
+const broadcast = (message) => {
+    wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(message));
+        }
+    });
+};
+
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}. Open http://<your-internal-ip>:${PORT} in your browser.`);
+    console.log(`WebSocket server is also running on the same port`);
 });
