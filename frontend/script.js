@@ -105,8 +105,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const apiKey =
     "e080d32c1a94808682a5c4fe268ba6f9e5aedf09c936f44ecb51272e59287233";
-  const API_URL = "http://192.168.1.25:3000/books";
-  const STAFF_API_URL = "http://192.168.1.25:3000/staff";
+  const API_URL = "http://localhost:3000/books";
+  const STAFF_API_URL = "http://localhost:3000/staff";
 
   let currentBook = null;
   let tasks = [];
