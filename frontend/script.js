@@ -108,6 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const API_URL = "http://localhost:3000/books";
   const STAFF_API_URL = "http://localhost:3000/staff";
   const WORK_SESSIONS_API_URL = "http://localhost:3000/work-sessions";
+  const ATTENDANCE_DATA_API_URL = "http://localhost:3000/attendance-data";
   const WS_URL = "ws://localhost:3000";
 
   // WebSocket 연결
@@ -127,6 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentAssignTask = null; // Current task for corrector assignment
   let currentAssignStage = null; // Current stage for corrector assignment
   let isStartingNewSession = false; // Flag to prevent progress modal during session start
+  let isProgressModalProtected = false; // 진행상황 모달 보호 플래그
 
   // Korean date parsing function
   function parseKoreanDate(dateStr) {
@@ -332,6 +334,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await response.json();
         tasks = Array.isArray(data) ? data : [];
         console.log(`Loaded ${tasks.length} tasks from server`);
+        
+        // 현재 작업 세션도 서버에서 로드
+        await loadCurrentWorkSessions();
       } else {
         throw new Error("Server is not available");
       }
@@ -1287,6 +1292,9 @@ document.addEventListener("DOMContentLoaded", () => {
     progressUpdateModal.style.display = "none";
     currentTaskForUpdate = null;
     
+    // 모달 보호 플래그 해제
+    isProgressModalProtected = false;
+    
     // 모달이 닫힐 때 UI 업데이트
     renderTasks();
   }
@@ -1378,7 +1386,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (sessionIndex !== -1 && workSessions[sessionIndex]) {
           workSessions[sessionIndex].endPage = newPage;
           workSessions[sessionIndex].pagesWorked = Math.max(0, newPage - window.currentStoppedSession.startPage);
-          saveWorkSessionsToStorage();
           console.log(`Updated session with pages worked: ${workSessions[sessionIndex].pagesWorked}`);
         }
         // Clear the session info
@@ -2881,13 +2888,46 @@ document.addEventListener("DOMContentLoaded", () => {
   assignCancelBtn.addEventListener("click", closeAssignCorrectorModal);
   assignModalCloseButton.addEventListener("click", closeAssignCorrectorModal);
 
-  // 출퇴근 기록 이벤트 리스너들
-  document.getElementById('attendance-year')?.addEventListener('change', renderAttendanceTable);
-  document.getElementById('attendance-month')?.addEventListener('change', renderAttendanceTable);
-  document.getElementById('attendance-date')?.addEventListener('change', renderAttendanceTable);
-  document.getElementById('attendance-worker')?.addEventListener('change', renderAttendanceTable);
+  // 출퇴근 기록 이벤트 리스너들 - 서버 데이터 사용
+  let currentAdminAttendanceData = null;
+  
+  async function refreshAdminAttendanceTable() {
+    if (currentAdminAttendanceData) {
+      renderAttendanceTableForModalWithData('attendance', currentAdminAttendanceData);
+    } else {
+      // 데이터가 없으면 새로고침
+      await loadAttendanceData();
+    }
+  }
+  
+  async function exportAdminAttendanceRecords() {
+    try {
+      // 서버에서 최신 출석부 데이터 로드
+      const response = await fetch(ATTENDANCE_DATA_API_URL);
+      if (response.ok) {
+        const serverWorkSessions = await response.json();
+        console.log('Exporting admin attendance data from server:', serverWorkSessions.length, 'sessions');
+        
+        // 서버 데이터로 내보내기
+        exportAttendanceRecordsForModalWithData('attendance', serverWorkSessions);
+      } else {
+        console.error('Failed to load attendance data from server for export');
+        // 폴백으로 기존 방식 사용
+        exportAttendanceRecordsForModal('attendance');
+      }
+    } catch (error) {
+      console.error('Error exporting admin attendance data from server:', error);
+      // 폴백으로 기존 방식 사용
+      exportAttendanceRecordsForModal('attendance');
+    }
+  }
+  
+  document.getElementById('attendance-year')?.addEventListener('change', refreshAdminAttendanceTable);
+  document.getElementById('attendance-month')?.addEventListener('change', refreshAdminAttendanceTable);
+  document.getElementById('attendance-date')?.addEventListener('change', refreshAdminAttendanceTable);
+  document.getElementById('attendance-worker')?.addEventListener('change', refreshAdminAttendanceTable);
   document.getElementById('refresh-attendance-btn')?.addEventListener('click', loadAttendanceData);
-  document.getElementById('export-attendance-btn')?.addEventListener('click', exportAttendanceRecords);
+  document.getElementById('export-attendance-btn')?.addEventListener('click', exportAdminAttendanceRecords);
   
   // 직원 관리 이벤트 리스너들
   const staffForm = document.getElementById('staff-form');
@@ -2965,6 +3005,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // 새로운 세션 시작 플래그 설정
       isStartingNewSession = true;
       
+      // 진행상황 모달 보호 플래그 해제 (작업 시작 시에는 모달이 열리면 안됨)
+      isProgressModalProtected = false;
+      
       // 진행상황 모달이 열려있다면 닫기 (작업 시작 시에는 모달이 열리면 안됨)
       const progressModal = document.getElementById("progress-update-modal");
       if (progressModal && progressModal.style.display === "flex") {
@@ -3039,16 +3082,19 @@ document.addEventListener("DOMContentLoaded", () => {
         // Store current session info for progress update
         window.currentStoppedSession = sessionInfo;
         
+        // 모달 보호 플래그 설정
+        isProgressModalProtected = true;
+        
         // 더 안전한 모달 표시를 위해 지연 후 표시
         const showModal = () => {
           const progressModal = document.getElementById("progress-update-modal");
-          if (!progressModal || progressModal.style.display !== "flex") {
+          if (isProgressModalProtected && (!progressModal || progressModal.style.display !== "flex")) {
             openProgressUpdateModal(task);
           }
         };
         
         // WebSocket 메시지 처리와 UI 업데이트 완료 후 모달 표시
-        setTimeout(showModal, 800);
+        setTimeout(showModal, 1000);
       }
       
       // 로컬 처리는 WebSocket 메시지로 받을 때 처리됨
@@ -3059,52 +3105,56 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function saveWorkSessionsToStorage() {
+  // 서버에서 현재 작업 세션 로드
+  async function loadCurrentWorkSessions() {
     try {
-      const data = {
-        currentSessions: Array.from(currentWorkSessions.entries()).map(([taskId, session]) => ({
-          taskId,
-          startTime: session.startTime.toISOString(),
-          worker: session.worker,
-          taskTitle: session.taskTitle,
-          stage: session.stage
-        })),
-        sessions: workSessions
-      };
-      localStorage.setItem('workSessions', JSON.stringify(data));
-    } catch (error) {
-      console.error('Error saving work sessions:', error);
-    }
-  }
-
-  function loadWorkSessionsFromStorage() {
-    try {
-      const data = localStorage.getItem('workSessions');
-      if (data) {
-        const parsed = JSON.parse(data);
+      const response = await fetch(WORK_SESSIONS_API_URL);
+      if (response.ok) {
+        const sessions = await response.json();
+        currentWorkSessions.clear();
         
-        // Load work sessions history
-        workSessions = parsed.sessions || [];
-        
-        // Load current sessions
-        if (parsed.currentSessions) {
-          currentWorkSessions.clear();
-          parsed.currentSessions.forEach(session => {
-            currentWorkSessions.set(session.taskId, {
+        // 서버 데이터를 currentWorkSessions Map에 로드
+        Object.entries(sessions).forEach(([taskId, session]) => {
+          if (session.isWorking) {
+            currentWorkSessions.set(taskId, {
               startTime: new Date(session.startTime),
               worker: session.worker,
               isWorking: true,
               taskTitle: session.taskTitle,
               stage: session.stage
             });
-          });
-        }
+          }
+        });
+        
+        console.log(`Loaded ${currentWorkSessions.size} current work sessions from server`);
       }
     } catch (error) {
-      console.error('Error loading work sessions:', error);
-      currentWorkSessions.clear();
-      workSessions = [];
+      console.error('Error loading current work sessions:', error);
     }
+  }
+
+  // DEPRECATED: 로컬스토리지 기반 출퇴근 기록 저장 - 이제 서버 기반으로 대체됨
+  function saveWorkSessionsToStorage() {
+    console.warn('saveWorkSessionsToStorage is deprecated. Use server-based attendance data storage instead.');
+    // 기능 비활성화됨 - 서버 기반 시스템 사용
+  }
+
+  // 작업 개수 업데이트 함수
+  function updateTaskCounts() {
+    if (!completedCount) return;
+    
+    // 완료된 작업 개수 계산
+    const completedTasks = tasks.filter(task => {
+      if (!task.stages) return false;
+      
+      const stages = ['correction1', 'correction2', 'correction3', 'transcription'];
+      return stages.every(stage => {
+        if (!task.stages[stage]) return true;
+        return task.stages[stage].status === 'completed' || task.stages[stage].status === 'not_applicable';
+      });
+    });
+    
+    completedCount.textContent = completedTasks.length;
   }
 
   function updateCurrentWorkersDisplay() {
@@ -3188,10 +3238,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Attendance Management Functions
-  function calculateAttendanceRecords() {
+  function calculateAttendanceRecords(sessionsData = []) {
     const attendanceRecords = new Map(); // worker -> date -> { startTime, endTime, workSessions, tasks }
     
-    workSessions.forEach(session => {
+    sessionsData.forEach(session => {
       if (!session.startTime || !session.endTime) return;
       
       const startDate = new Date(session.startTime).toDateString();
@@ -3230,498 +3280,42 @@ document.addEventListener("DOMContentLoaded", () => {
     return attendanceRecords;
   }
   
-  function loadAttendanceData() {
-    loadAttendanceDataForModal('attendance');
-  }
-
-  function loadAttendanceDataForModal(prefix) {
-    const attendanceYear = document.getElementById(`${prefix}-year`);
-    const attendanceMonth = document.getElementById(`${prefix}-month`);
-    const attendanceDate = document.getElementById(`${prefix}-date`);
-    const attendanceWorker = document.getElementById(`${prefix}-worker`);
-    
-    // Populate year dropdown with available years
-    populateYearDropdownForModal(prefix);
-    
-    // Set current year and month as default
-    const now = new Date();
-    const currentYear = now.getFullYear().toString();
-    const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
-    
-    if (attendanceYear && !attendanceYear.value) {
-      attendanceYear.value = currentYear;
-    }
-    if (attendanceMonth && !attendanceMonth.value) {
-      attendanceMonth.value = currentMonth;
-    }
-    
-    // Populate worker dropdown
-    attendanceWorker.innerHTML = '<option value="">모든 직원</option>';
-    const uniqueWorkers = [...new Set(workSessions.map(s => s.worker))].filter(w => w);
-    uniqueWorkers.forEach(worker => {
-      const option = document.createElement('option');
-      option.value = worker;
-      option.textContent = worker;
-      attendanceWorker.appendChild(option);
-    });
-    
-    renderAttendanceSummaryForModal(prefix);
-    renderAttendanceTableForModal(prefix);
-  }
-  
-  function populateYearDropdown() {
-    populateYearDropdownForModal('attendance');
-  }
-
-  function populateYearDropdownForModal(prefix) {
-    const attendanceYear = document.getElementById(`${prefix}-year`);
-    if (!attendanceYear) return;
-    
-    // Get unique years from work sessions
-    const years = new Set();
-    workSessions.forEach(session => {
-      if (session.startTime) {
-        const year = new Date(session.startTime).getFullYear();
-        years.add(year);
-      }
-    });
-    
-    // Add current year if not present
-    years.add(new Date().getFullYear());
-    
-    // Clear and populate year dropdown
-    attendanceYear.innerHTML = '<option value="">전체 연도</option>';
-    
-    // Sort years in descending order
-    const sortedYears = Array.from(years).sort((a, b) => b - a);
-    sortedYears.forEach(year => {
-      const option = document.createElement('option');
-      option.value = year.toString();
-      option.textContent = `${year}년`;
-      attendanceYear.appendChild(option);
-    });
-  }
-  
-  function renderAttendanceSummary() {
-    renderAttendanceSummaryForModal('attendance');
-  }
-
-  function renderAttendanceSummaryForModal(prefix) {
-    const today = new Date().toDateString();
-    const attendanceRecords = calculateAttendanceRecords();
-    const summaryContent = document.getElementById(`${prefix}-summary-content`);
-    
-    let todayWorkers = [];
-    attendanceRecords.forEach((workerDays, worker) => {
-      if (workerDays.has(today)) {
-        const todayRecord = workerDays.get(today);
-        const workTime = Math.round((todayRecord.endTime - todayRecord.startTime) / 1000 / 60); // minutes
+  async function loadAttendanceData() {
+    try {
+      // 서버에서 최신 출석부 데이터 로드
+      const response = await fetch(ATTENDANCE_DATA_API_URL);
+      if (response.ok) {
+        const serverWorkSessions = await response.json();
+        console.log('Loaded attendance data from server for admin modal:', serverWorkSessions.length, 'sessions');
         
-        // Calculate total pages worked today for this worker
-        let totalPagesWorked = 0;
-        const taskProgress = new Map(); // taskId -> { title, pagesWorked }
+        // 현재 관리자 데이터 캐시
+        currentAdminAttendanceData = serverWorkSessions;
         
-        todayRecord.workSessions.forEach(session => {
-          if (session.taskId && session.pagesWorked > 0) {
-            // Use directly stored pages worked from session
-            totalPagesWorked += session.pagesWorked;
-            
-            const task = tasks.find(t => t.id === session.taskId);
-            if (task) {
-              const taskKey = session.taskId;
-              if (!taskProgress.has(taskKey)) {
-                taskProgress.set(taskKey, {
-                  title: task.book.title,
-                  pagesWorked: 0
-                });
-              }
-              taskProgress.get(taskKey).pagesWorked += session.pagesWorked;
-            }
-          } else if (session.taskId) {
-            // Fallback to old method if pagesWorked not available
-            const task = tasks.find(t => t.id === session.taskId);
-            if (task && task.stages && task.stages[session.stage]) {
-              const stage = task.stages[session.stage];
-              if (stage.history && stage.history.length > 0) {
-                const sessionStart = new Date(session.startTime);
-                const sessionEnd = new Date(session.endTime);
-                
-                let sessionPages = 0;
-                stage.history.forEach(entry => {
-                  const entryDate = new Date(entry.date);
-                  if (entryDate >= sessionStart && entryDate <= sessionEnd) {
-                    const pagesInEntry = entry.endPage - entry.startPage + 1;
-                    sessionPages += pagesInEntry;
-                    totalPagesWorked += pagesInEntry;
-                  }
-                });
-                
-                if (sessionPages > 0) {
-                  const taskKey = session.taskId;
-                  if (!taskProgress.has(taskKey)) {
-                    taskProgress.set(taskKey, {
-                      title: task.book.title,
-                      pagesWorked: 0
-                    });
-                  }
-                  taskProgress.get(taskKey).pagesWorked += sessionPages;
-                }
-              }
-            }
-          }
-        });
-        
-        todayWorkers.push({
-          worker,
-          startTime: todayRecord.startTime,
-          endTime: todayRecord.endTime,
-          workTime,
-          tasks: Array.from(todayRecord.tasks),
-          totalPagesWorked,
-          taskProgress: Array.from(taskProgress.values())
-        });
-      }
-    });
-    
-    if (todayWorkers.length === 0) {
-      summaryContent.innerHTML = '<p>오늘 출근 기록이 없습니다.</p>';
-      return;
-    }
-    
-    const summaryHtml = todayWorkers.map(record => {
-      const hours = Math.floor(record.workTime / 60);
-      const minutes = record.workTime % 60;
-      
-      // Create detailed task progress string
-      let taskProgressStr = '';
-      if (record.taskProgress.length > 0) {
-        taskProgressStr = record.taskProgress.map(tp => 
-          `${tp.title} (${tp.pagesWorked}페이지)`
-        ).join(', ');
+        // 서버 데이터로 출석부 데이터 로드
+        loadAttendanceDataForModalWithData('attendance', serverWorkSessions);
       } else {
-        taskProgressStr = record.tasks.join(', ');
+        console.error('Failed to load attendance data from server - Status:', response.status);
+        // 빈 배열로 초기화하여 UI 표시
+        currentAdminAttendanceData = [];
+        loadAttendanceDataForModalWithData('attendance', []);
       }
-      
-      return `
-        <div class="attendance-summary-item">
-          <strong>${record.worker}</strong> - 
-          출근: ${record.startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}, 
-          퇴근: ${record.endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}, 
-          근무시간: ${hours}시간 ${minutes}분
-          ${record.totalPagesWorked > 0 ? `<br><span style="color: #28a745; font-weight: bold;">총 작업 페이지: ${record.totalPagesWorked}페이지</span>` : ''}
-          <br><small>작업: ${taskProgressStr}</small>
-        </div>
-      `;
-    }).join('');
-    
-    summaryContent.innerHTML = summaryHtml;
-  }
-  
-  function renderAttendanceTable() {
-    renderAttendanceTableForModal('attendance');
-  }
-
-  function renderAttendanceTableForModal(prefix) {
-    const attendanceYear = document.getElementById(`${prefix}-year`);
-    const attendanceMonth = document.getElementById(`${prefix}-month`);
-    const attendanceDate = document.getElementById(`${prefix}-date`);
-    const attendanceWorker = document.getElementById(`${prefix}-worker`);
-    const attendanceTbody = document.getElementById(`${prefix}-tbody`);
-    
-    const selectedYear = attendanceYear?.value;
-    const selectedMonth = attendanceMonth?.value;
-    const selectedDate = attendanceDate?.value;
-    const selectedWorker = attendanceWorker?.value;
-    
-    const attendanceRecords = calculateAttendanceRecords();
-    const tableData = [];
-    
-    attendanceRecords.forEach((workerDays, worker) => {
-      if (selectedWorker && worker !== selectedWorker) return;
-      
-      workerDays.forEach((dayRecord, dateStr) => {
-        const recordDate = new Date(dateStr);
-        
-        // Apply date filters
-        if (selectedDate) {
-          // Specific date filter takes priority
-          const filterDate = new Date(selectedDate);
-          if (recordDate.toDateString() !== filterDate.toDateString()) return;
-        } else {
-          // Year and month filters
-          if (selectedYear) {
-            if (recordDate.getFullYear().toString() !== selectedYear) return;
-          }
-          if (selectedMonth) {
-            const recordMonth = (recordDate.getMonth() + 1).toString().padStart(2, '0');
-            if (recordMonth !== selectedMonth) return;
-          }
-        }
-        
-        const workTime = Math.round((dayRecord.endTime - dayRecord.startTime) / 1000 / 60);
-        const hours = Math.floor(workTime / 60);
-        const minutes = workTime % 60;
-        
-        // Calculate pages worked for this day
-        let totalPagesWorked = 0;
-        const taskProgress = new Map(); // taskId -> { title, pagesWorked }
-        
-        dayRecord.workSessions.forEach(session => {
-          if (session.taskId && session.pagesWorked > 0) {
-            // Use directly stored pages worked from session
-            totalPagesWorked += session.pagesWorked;
-            
-            const task = tasks.find(t => t.id === session.taskId);
-            if (task) {
-              const taskKey = session.taskId;
-              if (!taskProgress.has(taskKey)) {
-                taskProgress.set(taskKey, {
-                  title: task.book.title,
-                  pagesWorked: 0
-                });
-              }
-              taskProgress.get(taskKey).pagesWorked += session.pagesWorked;
-            }
-          } else if (session.taskId) {
-            // Fallback to old method if pagesWorked not available
-            const task = tasks.find(t => t.id === session.taskId);
-            if (task && task.stages && task.stages[session.stage]) {
-              const stage = task.stages[session.stage];
-              if (stage.history && stage.history.length > 0) {
-                const sessionStart = new Date(session.startTime);
-                const sessionEnd = new Date(session.endTime);
-                
-                let sessionPages = 0;
-                stage.history.forEach(entry => {
-                  const entryDate = new Date(entry.date);
-                  if (entryDate >= sessionStart && entryDate <= sessionEnd) {
-                    const pagesInEntry = entry.endPage - entry.startPage + 1;
-                    sessionPages += pagesInEntry;
-                    totalPagesWorked += pagesInEntry;
-                  }
-                });
-                
-                if (sessionPages > 0) {
-                  const taskKey = session.taskId;
-                  if (!taskProgress.has(taskKey)) {
-                    taskProgress.set(taskKey, {
-                      title: task.book.title,
-                      pagesWorked: 0
-                    });
-                  }
-                  taskProgress.get(taskKey).pagesWorked += sessionPages;
-                }
-              }
-            }
-          }
-        });
-        
-        // Create task progress string with page counts
-        let taskProgressStr = '';
-        if (taskProgress.size > 0) {
-          taskProgressStr = Array.from(taskProgress.values()).map(tp => 
-            `${tp.title} (${tp.pagesWorked}페이지)`
-          ).join(', ');
-        } else {
-          taskProgressStr = Array.from(dayRecord.tasks).join(', ');
-        }
-        
-        tableData.push({
-          date: recordDate,
-          worker,
-          startTime: dayRecord.startTime,
-          endTime: dayRecord.endTime,
-          workTime: `${hours}시간 ${minutes}분`,
-          tasks: Array.from(dayRecord.tasks),
-          taskProgressStr,
-          totalPagesWorked
-        });
-      });
-    });
-    
-    // Sort by date and then by worker
-    tableData.sort((a, b) => {
-      const dateCompare = b.date - a.date; // Latest first
-      if (dateCompare !== 0) return dateCompare;
-      return a.worker.localeCompare(b.worker);
-    });
-    
-    if (tableData.length === 0) {
-      attendanceTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #666; padding: 20px;">출근 기록이 없습니다.</td></tr>';
-      return;
+    } catch (error) {
+      console.error('Error loading attendance data from server:', error);
+      // 빈 배열로 초기화하여 UI 표시
+      currentAdminAttendanceData = [];
+      loadAttendanceDataForModalWithData('attendance', []);
     }
-    
-    const tableHtml = tableData.map(record => {
-      return `
-        <tr>
-          <td>${record.date.toLocaleDateString('ko-KR')}</td>
-          <td>${record.worker}</td>
-          <td>${record.startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</td>
-          <td>${record.endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</td>
-          <td>${record.workTime}</td>
-          <td>
-            <small>${record.taskProgressStr}</small>
-            ${record.totalPagesWorked > 0 ? `<br><span style="color: #28a745; font-weight: bold; font-size: 0.8em;">총 ${record.totalPagesWorked}페이지 작업</span>` : ''}
-          </td>
-        </tr>
-      `;
-    }).join('');
-    
-    attendanceTbody.innerHTML = tableHtml;
-  }
-  
-  function exportAttendanceRecords() {
-    exportAttendanceRecordsForModal('attendance');
   }
 
-  function exportAttendanceRecordsForModal(prefix) {
-    const attendanceYear = document.getElementById(`${prefix}-year`);
-    const attendanceMonth = document.getElementById(`${prefix}-month`);
-    const attendanceDate = document.getElementById(`${prefix}-date`);
-    const attendanceWorker = document.getElementById(`${prefix}-worker`);
-    
-    const selectedYear = attendanceYear?.value;
-    const selectedMonth = attendanceMonth?.value;
-    const selectedDate = attendanceDate?.value;
-    const selectedWorker = attendanceWorker?.value;
-    
-    const attendanceRecords = calculateAttendanceRecords();
-    const csvData = [];
-    
-    // Header
-    csvData.push(['날짜', '직원', '출근시간', '퇴근시간', '근무시간', '작업페이지수', '작업내용'].join(','));
-    
-    const exportData = [];
-    attendanceRecords.forEach((workerDays, worker) => {
-      if (selectedWorker && worker !== selectedWorker) return;
-      
-      workerDays.forEach((dayRecord, dateStr) => {
-        const recordDate = new Date(dateStr);
-        
-        // Apply same date filters as table
-        if (selectedDate) {
-          const filterDate = new Date(selectedDate);
-          if (recordDate.toDateString() !== filterDate.toDateString()) return;
-        } else {
-          if (selectedYear) {
-            if (recordDate.getFullYear().toString() !== selectedYear) return;
-          }
-          if (selectedMonth) {
-            const recordMonth = (recordDate.getMonth() + 1).toString().padStart(2, '0');
-            if (recordMonth !== selectedMonth) return;
-          }
-        }
-        
-        const workTime = Math.round((dayRecord.endTime - dayRecord.startTime) / 1000 / 60);
-        const hours = Math.floor(workTime / 60);
-        const minutes = workTime % 60;
-        
-        // Calculate pages worked for export
-        let totalPagesWorked = 0;
-        const taskProgress = new Map();
-        
-        dayRecord.workSessions.forEach(session => {
-          if (session.taskId && session.pagesWorked > 0) {
-            // Use directly stored pages worked from session
-            totalPagesWorked += session.pagesWorked;
-            
-            const task = tasks.find(t => t.id === session.taskId);
-            if (task) {
-              const taskKey = session.taskId;
-              if (!taskProgress.has(taskKey)) {
-                taskProgress.set(taskKey, {
-                  title: task.book.title,
-                  pagesWorked: 0
-                });
-              }
-              taskProgress.get(taskKey).pagesWorked += session.pagesWorked;
-            }
-          } else if (session.taskId) {
-            // Fallback to old method if pagesWorked not available
-            const task = tasks.find(t => t.id === session.taskId);
-            if (task && task.stages && task.stages[session.stage]) {
-              const stage = task.stages[session.stage];
-              if (stage.history && stage.history.length > 0) {
-                const sessionStart = new Date(session.startTime);
-                const sessionEnd = new Date(session.endTime);
-                
-                let sessionPages = 0;
-                stage.history.forEach(entry => {
-                  const entryDate = new Date(entry.date);
-                  if (entryDate >= sessionStart && entryDate <= sessionEnd) {
-                    const pagesInEntry = entry.endPage - entry.startPage + 1;
-                    sessionPages += pagesInEntry;
-                    totalPagesWorked += pagesInEntry;
-                  }
-                });
-                
-                if (sessionPages > 0) {
-                  const taskKey = session.taskId;
-                  if (!taskProgress.has(taskKey)) {
-                    taskProgress.set(taskKey, {
-                      title: task.book.title,
-                      pagesWorked: 0
-                    });
-                  }
-                  taskProgress.get(taskKey).pagesWorked += sessionPages;
-                }
-              }
-            }
-          }
-        });
-        
-        let taskProgressStr = '';
-        if (taskProgress.size > 0) {
-          taskProgressStr = Array.from(taskProgress.values()).map(tp => 
-            `${stripHtmlTags(tp.title)} (${tp.pagesWorked}페이지)`
-          ).join(', ');
-        } else {
-          taskProgressStr = Array.from(dayRecord.tasks).map(title => stripHtmlTags(title)).join(', ');
-        }
-        
-        exportData.push({
-          date: recordDate,
-          worker: stripHtmlTags(worker),
-          startTime: dayRecord.startTime,
-          endTime: dayRecord.endTime,
-          workTime: `${hours}시간 ${minutes}분`,
-          totalPagesWorked,
-          tasks: taskProgressStr
-        });
-      });
-    });
-    
-    // Sort by date desc
-    exportData.sort((a, b) => b.date - a.date);
-    
-    exportData.forEach(record => {
-      csvData.push([
-        record.date.toLocaleDateString('ko-KR'),
-        `"${record.worker}"`,
-        record.startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-        record.endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-        record.workTime,
-        `${record.totalPagesWorked}페이지`,
-        `"${record.tasks}"`
-      ].join(','));
-    });
-    
-    const blob = new Blob(["\ufeff" + csvData.join('\n')], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `attendance_records_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    alert('출근 기록이 CSV 파일로 내보내졌습니다.');
-  }
   
-  // Load work sessions on startup
-  loadWorkSessionsFromStorage();
+
+  
+
+  
+
+
+  
+  // Load work sessions on startup - 이제 서버 기반으로 처리됨
   
   // Update current workers display periodically
   setInterval(updateCurrentWorkersDisplay, 60000); // Update every minute
@@ -3831,9 +3425,332 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 출퇴근 기록 전용 모달 함수들 - 기존 함수들을 재사용
-  function loadAttendanceOnlyData() {
-    loadAttendanceDataForModal('attendance-only');
+  // 서버 데이터를 직접 사용하는 출석부 데이터 로드 함수들
+  function loadAttendanceDataForModalWithData(prefix, sessionsData) {
+    const attendanceYear = document.getElementById(`${prefix}-year`);
+    const attendanceMonth = document.getElementById(`${prefix}-month`);
+    const attendanceWorker = document.getElementById(`${prefix}-worker`);
+    
+    // Populate year dropdown with available years from server data
+    populateYearDropdownForModalWithData(prefix, sessionsData);
+    
+    // Set current date as default if no selection
+    const now = new Date();
+    const currentYear = now.getFullYear().toString();
+    const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
+    
+    if (attendanceYear && !attendanceYear.value) {
+      attendanceYear.value = currentYear;
+    }
+    if (attendanceMonth && !attendanceMonth.value) {
+      attendanceMonth.value = currentMonth;
+    }
+    
+    // Populate worker dropdown from server data
+    attendanceWorker.innerHTML = '<option value="">모든 직원</option>';
+    const uniqueWorkers = [...new Set(sessionsData.map(s => s.worker))].filter(w => w);
+    uniqueWorkers.forEach(worker => {
+      const option = document.createElement('option');
+      option.value = worker;
+      option.textContent = worker;
+      attendanceWorker.appendChild(option);
+    });
+    
+    renderAttendanceSummaryForModalWithData(prefix, sessionsData);
+    renderAttendanceTableForModalWithData(prefix, sessionsData);
+  }
+
+  function populateYearDropdownForModalWithData(prefix, sessionsData) {
+    const attendanceYear = document.getElementById(`${prefix}-year`);
+    if (!attendanceYear) return;
+    
+    // Get unique years from sessions data
+    const years = new Set();
+    sessionsData.forEach(session => {
+      if (session.startTime) {
+        const year = new Date(session.startTime).getFullYear();
+        years.add(year);
+      }
+    });
+    
+    // Add current year even if no sessions
+    years.add(new Date().getFullYear());
+    
+    // Clear and populate year dropdown
+    attendanceYear.innerHTML = '<option value="">전체 연도</option>';
+    
+    // Sort years in descending order
+    const sortedYears = Array.from(years).sort((a, b) => b - a);
+    sortedYears.forEach(year => {
+      const option = document.createElement('option');
+      option.value = year.toString();
+      option.textContent = `${year}년`;
+      attendanceYear.appendChild(option);
+    });
+  }
+
+  function renderAttendanceSummaryForModalWithData(prefix, sessionsData) {
+    const today = new Date().toDateString();
+    const attendanceRecords = calculateAttendanceRecords(sessionsData);
+    const summaryContent = document.getElementById(`${prefix}-summary-content`);
+    
+    let todayWorkers = [];
+    attendanceRecords.forEach((workerDays, worker) => {
+      if (workerDays.has(today)) {
+        const todayRecord = workerDays.get(today);
+        const workTime = Math.round((todayRecord.endTime - todayRecord.startTime) / 1000 / 60); // minutes
+        todayWorkers.push({
+          worker,
+          startTime: todayRecord.startTime,
+          endTime: todayRecord.endTime,
+          workTime,
+          tasks: todayRecord.tasks
+        });
+      }
+    });
+    
+    if (todayWorkers.length === 0) {
+      summaryContent.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">오늘 출근한 직원이 없습니다.</p>';
+      return;
+    }
+    
+    // Sort by start time
+    todayWorkers.sort((a, b) => a.startTime - b.startTime);
+    
+    const summaryHtml = todayWorkers.map(record => {
+      const tasksHtml = record.tasks.length > 0 
+        ? `<div style="font-size: 0.9em; color: #666; margin-top: 5px;">작업: ${record.tasks.join(', ')}</div>`
+        : '';
+      
+      return `
+        <div class="attendance-summary-item">
+          <strong>${record.worker}</strong> - 
+          출근: ${record.startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}, 
+          퇴근: ${record.endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}, 
+          근무시간: ${Math.floor(record.workTime / 60)}시간 ${record.workTime % 60}분
+          ${tasksHtml}
+        </div>
+      `;
+    }).join('');
+    
+    summaryContent.innerHTML = `
+      <h4>오늘의 출근 현황 (${todayWorkers.length}명)</h4>
+      ${summaryHtml}
+    `;
+  }
+
+  function renderAttendanceTableForModalWithData(prefix, sessionsData) {
+    const attendanceYear = document.getElementById(`${prefix}-year`);
+    const attendanceMonth = document.getElementById(`${prefix}-month`);
+    const attendanceDate = document.getElementById(`${prefix}-date`);
+    const attendanceWorker = document.getElementById(`${prefix}-worker`);
+    const attendanceTbody = document.getElementById(`${prefix}-tbody`);
+    
+    const selectedYear = attendanceYear?.value;
+    const selectedMonth = attendanceMonth?.value;
+    const selectedDate = attendanceDate?.value;
+    const selectedWorker = attendanceWorker?.value;
+    
+    const attendanceRecords = calculateAttendanceRecords(sessionsData);
+    const tableData = [];
+    
+    attendanceRecords.forEach((workerDays, worker) => {
+      if (selectedWorker && worker !== selectedWorker) return;
+      
+      workerDays.forEach((dayRecord, dateStr) => {
+        const date = new Date(dateStr);
+        const year = date.getFullYear().toString();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        
+        // Apply filters
+        if (selectedYear && year !== selectedYear) return;
+        if (selectedMonth && month !== selectedMonth) return;
+        if (selectedDate && day !== selectedDate) return;
+        
+        const workTime = Math.round((dayRecord.endTime - dayRecord.startTime) / 1000 / 60);
+        const totalPages = dayRecord.workSessions.reduce((sum, session) => {
+          return sum + (session.pagesWorked || 0);
+        }, 0);
+        
+        tableData.push({
+          date: dateStr,
+          worker: worker,
+          startTime: dayRecord.startTime,
+          endTime: dayRecord.endTime,
+          workTime: workTime,
+          totalPages: totalPages,
+          tasks: dayRecord.tasks,
+          sortDate: date
+        });
+      });
+    });
+    
+    if (tableData.length === 0) {
+      attendanceTbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #666; padding: 20px;">출근 기록이 없습니다.</td></tr>';
+      return;
+    }
+    
+    // Sort by date (newest first)
+    tableData.sort((a, b) => b.sortDate - a.sortDate);
+    
+    const tableHtml = tableData.map(record => {
+      const tasksText = record.tasks.length > 0 ? record.tasks.join(', ') : '-';
+      
+      return `
+        <tr>
+          <td>${record.sortDate.toLocaleDateString('ko-KR')}</td>
+          <td>${record.worker}</td>
+          <td>${record.startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</td>
+          <td>${record.endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</td>
+          <td>${Math.floor(record.workTime / 60)}시간 ${record.workTime % 60}분</td>
+          <td>${record.totalPages}페이지</td>
+          <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${tasksText}">${tasksText}</td>
+        </tr>
+      `;
+    }).join('');
+    
+    attendanceTbody.innerHTML = tableHtml;
+  }
+
+  // 출퇴근 기록 전용 모달 함수들 - 서버 데이터 직접 사용
+  let currentAttendanceData = null;
+
+  async function loadAttendanceOnlyData() {
+    try {
+      // 서버에서 최신 출석부 데이터 로드
+      const response = await fetch(ATTENDANCE_DATA_API_URL);
+      if (response.ok) {
+        const serverWorkSessions = await response.json();
+        console.log('Loaded attendance data from server for modal:', serverWorkSessions.length, 'sessions');
+        
+        // 현재 데이터 캐시
+        currentAttendanceData = serverWorkSessions;
+        
+        // 서버 데이터로 출석부 데이터 로드
+        loadAttendanceDataForModalWithData('attendance-only', serverWorkSessions);
+      } else {
+        console.error('Failed to load attendance data from server');
+        // 빈 배열로 초기화
+        currentAttendanceData = [];
+        loadAttendanceDataForModalWithData('attendance-only', []);
+      }
+    } catch (error) {
+      console.error('Error loading attendance data from server:', error);
+      // 빈 배열로 초기화
+      currentAttendanceData = [];
+      loadAttendanceDataForModalWithData('attendance-only', []);
+    }
+  }
+
+  async function refreshAttendanceOnlyTable() {
+    if (currentAttendanceData) {
+      renderAttendanceTableForModalWithData('attendance-only', currentAttendanceData);
+    } else {
+      // 데이터가 없으면 새로고침
+      await loadAttendanceOnlyData();
+    }
+  }
+
+  async function exportAttendanceOnlyRecords() {
+    try {
+      // 서버에서 최신 출석부 데이터 로드
+      const response = await fetch(ATTENDANCE_DATA_API_URL);
+      if (response.ok) {
+        const serverWorkSessions = await response.json();
+        console.log('Exporting attendance data from server:', serverWorkSessions.length, 'sessions');
+        
+        // 서버 데이터로 내보내기
+        exportAttendanceRecordsForModalWithData('attendance-only', serverWorkSessions);
+      } else {
+        console.error('Failed to load attendance data from server for export');
+        alert('서버에서 출석부 데이터를 가져올 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('Error exporting attendance data from server:', error);
+      alert('출석부 데이터 내보내기 중 오류가 발생했습니다.');
+    }
+  }
+
+  function exportAttendanceRecordsForModalWithData(prefix, sessionsData) {
+    const attendanceYear = document.getElementById(`${prefix}-year`);
+    const attendanceMonth = document.getElementById(`${prefix}-month`);
+    const attendanceDate = document.getElementById(`${prefix}-date`);
+    const attendanceWorker = document.getElementById(`${prefix}-worker`);
+    
+    const selectedYear = attendanceYear?.value;
+    const selectedMonth = attendanceMonth?.value;
+    const selectedDate = attendanceDate?.value;
+    const selectedWorker = attendanceWorker?.value;
+    
+    const attendanceRecords = calculateAttendanceRecords(sessionsData);
+    const csvData = [];
+    
+    // Header
+    csvData.push(['날짜', '직원', '출근시간', '퇴근시간', '근무시간', '작업페이지수', '작업내용'].join(','));
+    
+    const exportData = [];
+    attendanceRecords.forEach((workerDays, worker) => {
+      if (selectedWorker && worker !== selectedWorker) return;
+      
+      workerDays.forEach((dayRecord, dateStr) => {
+        const date = new Date(dateStr);
+        const year = date.getFullYear().toString();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        
+        // Apply filters
+        if (selectedYear && year !== selectedYear) return;
+        if (selectedMonth && month !== selectedMonth) return;
+        if (selectedDate && day !== selectedDate) return;
+        
+        const workTime = Math.round((dayRecord.endTime - dayRecord.startTime) / 1000 / 60);
+        const totalPages = dayRecord.workSessions.reduce((sum, session) => {
+          return sum + (session.pagesWorked || 0);
+        }, 0);
+        
+        exportData.push({
+          date: date,
+          worker: worker,
+          startTime: dayRecord.startTime,
+          endTime: dayRecord.endTime,
+          workTime: workTime,
+          totalPages: totalPages,
+          tasks: dayRecord.tasks
+        });
+      });
+    });
+    
+    // Sort by date (newest first)
+    exportData.sort((a, b) => b.date - a.date);
+    
+    exportData.forEach(record => {
+      const tasksText = record.tasks.length > 0 ? record.tasks.join('; ') : '';
+      
+      csvData.push([
+        record.date.toLocaleDateString('ko-KR'),
+        record.worker,
+        record.startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+        record.endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+        `${Math.floor(record.workTime / 60)}시간 ${record.workTime % 60}분`,
+        record.totalPages,
+        tasksText
+      ].join(','));
+    });
+    
+    const csvContent = csvData.join('\n');
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `attendance_records_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    alert('출근 기록이 CSV 파일로 내보내졌습니다.');
   }
 
   // 출퇴근 기록 전용 모달 이벤트 리스너들
@@ -3855,13 +3772,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   
-  // 출퇴근 기록 전용 모달 내부 이벤트 리스너들
-  document.getElementById('attendance-only-year')?.addEventListener('change', () => renderAttendanceTableForModal('attendance-only'));
-  document.getElementById('attendance-only-month')?.addEventListener('change', () => renderAttendanceTableForModal('attendance-only'));
-  document.getElementById('attendance-only-date')?.addEventListener('change', () => renderAttendanceTableForModal('attendance-only'));
-  document.getElementById('attendance-only-worker')?.addEventListener('change', () => renderAttendanceTableForModal('attendance-only'));
+  // 출퇴근 기록 전용 모달 내부 이벤트 리스너들 - 서버 데이터 사용
+  document.getElementById('attendance-only-year')?.addEventListener('change', refreshAttendanceOnlyTable);
+  document.getElementById('attendance-only-month')?.addEventListener('change', refreshAttendanceOnlyTable);
+  document.getElementById('attendance-only-date')?.addEventListener('change', refreshAttendanceOnlyTable);
+  document.getElementById('attendance-only-worker')?.addEventListener('change', refreshAttendanceOnlyTable);
   document.getElementById('refresh-attendance-only-btn')?.addEventListener('click', loadAttendanceOnlyData);
-  document.getElementById('export-attendance-only-btn')?.addEventListener('click', () => exportAttendanceRecordsForModal('attendance-only'));
+  document.getElementById('export-attendance-only-btn')?.addEventListener('click', exportAttendanceOnlyRecords);
 
   // 로그인 관련 함수들
   function checkLoginStatus() {
@@ -4041,7 +3958,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // 완료된 작업 모달이 열려있다면 업데이트
     if (completedBooksModal.style.display === "flex") {
-      displayCompletedBooks();
+      loadCompletedBooks();
     }
     
     // 작업 세부사항 모달이 열려있고 현재 수정 중인 작업이라면 업데이트
@@ -4069,7 +3986,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // 완료된 작업 모달이 열려있다면 업데이트
     if (completedBooksModal.style.display === "flex") {
-      displayCompletedBooks();
+      loadCompletedBooks();
     }
     
     // 작업 세부사항 모달이 삭제된 작업을 보고 있다면 닫기
@@ -4178,11 +4095,10 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     
     workSessions.push(workSession);
-    saveWorkSessionsToStorage();
     
-    // UI 업데이트 (진행상황 모달이 열려있지 않을 때만)
+    // UI 업데이트 (진행상황 모달이 보호되지 않거나 열려있지 않을 때만)
     const progressModal = document.getElementById("progress-update-modal");
-    if (!progressModal || progressModal.style.display !== "flex") {
+    if (!isProgressModalProtected && (!progressModal || progressModal.style.display !== "flex")) {
       renderTasks();
     }
     updateCurrentWorkersDisplay();
@@ -4208,12 +4124,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       
       currentWorkSessions.delete(taskId);
-      saveWorkSessionsToStorage();
     }
     
-    // 진행상황 업데이트 모달이 열려있지 않을 때만 UI 업데이트
+    // 진행상황 업데이트 모달이 보호되지 않거나 열려있지 않을 때만 UI 업데이트
     const progressModal = document.getElementById("progress-update-modal");
-    if (!progressModal || progressModal.style.display !== "flex") {
+    if (!isProgressModalProtected && (!progressModal || progressModal.style.display !== "flex")) {
       renderTasks();
     }
     updateCurrentWorkersDisplay();

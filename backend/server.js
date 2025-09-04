@@ -10,6 +10,7 @@ const PORT = 3000;
 const DATA_FILE = path.join(__dirname, 'bookworklist.json');
 const STAFF_FILE = path.join(__dirname, 'staff.json');
 const WORK_SESSIONS_FILE = path.join(__dirname, 'work-sessions.json');
+const WORK_SESSIONS_HISTORY_FILE = path.join(__dirname, 'work-sessions-history.json');
 
 app.use(cors());
 app.use(express.json());
@@ -78,6 +79,29 @@ const writeWorkSessions = (sessions) => {
         fs.writeFileSync(WORK_SESSIONS_FILE, JSON.stringify(sessions, null, 2), 'utf8');
     } catch (error) {
         console.error('Error writing to work-sessions.json:', error);
+    }
+};
+
+// Helper function to read work sessions history
+const readWorkSessionsHistory = () => {
+    try {
+        if (!fs.existsSync(WORK_SESSIONS_HISTORY_FILE)) {
+            return [];
+        }
+        const data = fs.readFileSync(WORK_SESSIONS_HISTORY_FILE, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error reading work-sessions-history.json:', error);
+        return [];
+    }
+};
+
+// Helper function to write work sessions history
+const writeWorkSessionsHistory = (history) => {
+    try {
+        fs.writeFileSync(WORK_SESSIONS_HISTORY_FILE, JSON.stringify(history, null, 2), 'utf8');
+    } catch (error) {
+        console.error('Error writing to work-sessions-history.json:', error);
     }
 };
 
@@ -340,6 +364,18 @@ app.post('/work-sessions', (req, res) => {
     // End any existing session for this worker
     for (const [id, session] of Object.entries(sessions)) {
         if (session.worker === worker) {
+            // Save the existing session to history before ending
+            const completedSession = {
+                ...session,
+                endTime: new Date().toISOString(),
+                duration: new Date() - new Date(session.startTime)
+            };
+            
+            // Add to work sessions history
+            const history = readWorkSessionsHistory();
+            history.push(completedSession);
+            writeWorkSessionsHistory(history);
+            
             // Broadcast the existing session end to all connected clients
             broadcast({
                 type: 'work_session_ended',
@@ -376,6 +412,19 @@ app.delete('/work-sessions/:taskId', (req, res) => {
     
     if (sessions[taskId]) {
         const session = sessions[taskId];
+        
+        // Save completed session to history before deleting
+        const completedSession = {
+            ...session,
+            endTime: new Date().toISOString(),
+            duration: new Date() - new Date(session.startTime)
+        };
+        
+        // Add to work sessions history
+        const history = readWorkSessionsHistory();
+        history.push(completedSession);
+        writeWorkSessionsHistory(history);
+        
         delete sessions[taskId];
         writeWorkSessions(sessions);
         
@@ -389,6 +438,21 @@ app.delete('/work-sessions/:taskId', (req, res) => {
     } else {
         res.status(404).send('Work session not found');
     }
+});
+
+// Attendance Data related endpoints
+
+// GET attendance data (work sessions history)
+app.get('/attendance-data', (req, res) => {
+    const history = readWorkSessionsHistory();
+    res.json(history);
+});
+
+// POST attendance data (save work sessions history)
+app.post('/attendance-data', (req, res) => {
+    const historyData = req.body;
+    writeWorkSessionsHistory(historyData);
+    res.status(200).json({ message: 'Attendance data saved successfully' });
 });
 
 // Create HTTP server

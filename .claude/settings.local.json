@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(sed:*)",
+      "Bash(node server.js)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
