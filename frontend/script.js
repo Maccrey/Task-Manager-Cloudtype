@@ -2965,6 +2965,12 @@ document.addEventListener("DOMContentLoaded", () => {
       // 새로운 세션 시작 플래그 설정
       isStartingNewSession = true;
       
+      // 진행상황 모달이 열려있다면 닫기 (작업 시작 시에는 모달이 열리면 안됨)
+      const progressModal = document.getElementById("progress-update-modal");
+      if (progressModal && progressModal.style.display === "flex") {
+        progressModal.style.display = "none";
+      }
+      
       // API 호출로 작업 세션 시작
       const response = await fetch(WORK_SESSIONS_API_URL, {
         method: 'POST',
@@ -3033,8 +3039,16 @@ document.addEventListener("DOMContentLoaded", () => {
         // Store current session info for progress update
         window.currentStoppedSession = sessionInfo;
         
-        // 모달을 즉시 표시
-        openProgressUpdateModal(task);
+        // 더 안전한 모달 표시를 위해 지연 후 표시
+        const showModal = () => {
+          const progressModal = document.getElementById("progress-update-modal");
+          if (!progressModal || progressModal.style.display !== "flex") {
+            openProgressUpdateModal(task);
+          }
+        };
+        
+        // WebSocket 메시지 처리와 UI 업데이트 완료 후 모달 표시
+        setTimeout(showModal, 800);
       }
       
       // 로컬 처리는 WebSocket 메시지로 받을 때 처리됨
@@ -4166,8 +4180,11 @@ document.addEventListener("DOMContentLoaded", () => {
     workSessions.push(workSession);
     saveWorkSessionsToStorage();
     
-    // UI 업데이트
-    renderTasks();
+    // UI 업데이트 (진행상황 모달이 열려있지 않을 때만)
+    const progressModal = document.getElementById("progress-update-modal");
+    if (!progressModal || progressModal.style.display !== "flex") {
+      renderTasks();
+    }
     updateCurrentWorkersDisplay();
   }
 
