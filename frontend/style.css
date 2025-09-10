@@ -1341,6 +1341,14 @@ main {
   transform: translateY(-1px);
 }
 
+.work-session-button.disabled {
+  background-color: #ccc !important;
+  color: #666 !important;
+  cursor: not-allowed !important;
+  animation: none !important;
+  box-shadow: none !important;
+}
+
 .work-session-button.stop {
   background-color: #dc3545;
   color: white;

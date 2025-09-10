@@ -9,8 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const currentUserName = document.getElementById('current-user-name');
   const logoutBtn = document.getElementById('logout-btn');
   
-  // 페이지 로드 시 로그인 상태 확인 (모든 변수 초기화 후)
-  setTimeout(checkLoginStatus, 100);
+  
 
   const isbnTitleInput = document.getElementById("isbn-title-input");
   const searchButton = document.getElementById("search-button");
@@ -105,11 +104,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const apiKey =
     "e080d32c1a94808682a5c4fe268ba6f9e5aedf09c936f44ecb51272e59287233";
-  const API_URL = "http://localhost:3000/books";
-  const STAFF_API_URL = "http://localhost:3000/staff";
-  const WORK_SESSIONS_API_URL = "http://localhost:3000/work-sessions";
-  const ATTENDANCE_DATA_API_URL = "http://localhost:3000/attendance-data";
-  const WS_URL = "ws://localhost:3000";
+  const API_URL = "http://172.30.1.40:3005/books";
+  const STAFF_API_URL = "http://172.30.1.40:3005/staff";
+  const WORK_SESSIONS_API_URL = "http://172.30.1.40:3005/work-sessions";
+  const ATTENDANCE_DATA_API_URL = "http://172.30.1.40:3005/attendance-data";
+  const WS_URL = "ws://172.30.1.40:3005/";
+  // const API_URL = "http://localhost:3005/books";
+  // const STAFF_API_URL = "http://localhost:3005/staff";
+  // const WORK_SESSIONS_API_URL = "http://localhost:3005/work-sessions";
+  // const ATTENDANCE_DATA_API_URL = "http://localhost:3005/attendance-data";
+  // const WS_URL = "ws://localhost:3005/";
 
   // WebSocket 연결
   let socket = null;
@@ -995,6 +999,19 @@ document.addEventListener("DOMContentLoaded", () => {
         task.currentStage !== "completed" &&
         !task.stages[task.currentStage]?.assignedTo;
       const noteCount = task.notes ? task.notes.length : 0;
+      const isCurrentUserAssigned = currentUser === assignedTo;
+
+      let workSessionButtonHtml = "";
+      if (assignedTo !== "미정" && task.currentStage !== "completed") {
+        const isWorking = currentWorkSessions.has(task.id);
+        const buttonClass = `work-session-button ${
+          isWorking ? "stop" : "start"
+        } ${!isCurrentUserAssigned ? "disabled" : ""}`;
+        const buttonText = isWorking ? "작업중지" : "작업시작";
+        const disabledAttr = !isCurrentUserAssigned ? "disabled" : "";
+
+        workSessionButtonHtml = `<button data-id="${task.id}" class="${buttonClass}" data-worker="${assignedTo}" ${disabledAttr}>${buttonText}</button>`;
+      }
 
       taskItem.innerHTML = `
                 <h3 class="task-title" data-id="${
@@ -1033,15 +1050,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button data-id="${task.id}" class="notes-button ${
         noteCount === 0 ? "inactive" : ""
       }">특이사항 <span class="note-count">${noteCount}</span></button>
-                    ${
-                      assignedTo !== "미정" && task.currentStage !== "completed"
-                        ? `<button data-id="${task.id}" class="work-session-button ${
-                            currentWorkSessions.has(task.id) ? "stop" : "start"
-                          }" data-worker="${assignedTo}">${
-                            currentWorkSessions.has(task.id) ? "작업중지" : "작업시작"
-                          }</button>`
-                        : ""
-                    }
+                    ${workSessionButtonHtml}
                 </div>
             `;
       taskList.appendChild(taskItem);
@@ -1086,6 +1095,10 @@ document.addEventListener("DOMContentLoaded", () => {
         openNotesModal(task);
       }
     } else if (target.classList.contains("work-session-button")) {
+      if (target.classList.contains("disabled")) {
+        alert("해당 작업자가 아닙니다.");
+        return;
+      }
       const worker = target.dataset.worker;
       if (target.classList.contains("start")) {
         startWorkSession(task, worker);
@@ -1351,6 +1364,39 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // If a session was just stopped, we need to end it on the server
+    if (window.currentStoppedSession && window.currentStoppedSession.taskId === task.id) {
+        const pagesWorked = newPage - window.currentStoppedSession.startPage;
+        
+        try {
+            const response = await fetch(`${WORK_SESSIONS_API_URL}/end`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    taskId: task.id,
+                    pagesWorked: pagesWorked
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to end work session on server.');
+            }
+            
+            console.log(`Work session for task ${task.id} ended on server with ${pagesWorked} pages.`);
+            
+            // Clear the session info
+            window.currentStoppedSession = null;
+            currentWorkSessions.delete(task.id);
+
+        } catch (error) {
+            console.error('Error ending work session:', error);
+            alert(`작업 종료 처리에 실패했습니다: ${error.message}`);
+            // Don't proceed with UI updates if server call fails
+            return;
+        }
+    }
+
+
     // 진행 기록 추가
     const startPage = lastCompletedPage + 1;
     const newHistoryEntry = {
@@ -1379,18 +1425,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       await saveTask(task);
-
-      // Update work session with completed pages if session was just stopped
-      if (window.currentStoppedSession && window.currentStoppedSession.taskId === task.id) {
-        const sessionIndex = window.currentStoppedSession.sessionIndex;
-        if (sessionIndex !== -1 && workSessions[sessionIndex]) {
-          workSessions[sessionIndex].endPage = newPage;
-          workSessions[sessionIndex].pagesWorked = Math.max(0, newPage - window.currentStoppedSession.startPage);
-          console.log(`Updated session with pages worked: ${workSessions[sessionIndex].pagesWorked}`);
-        }
-        // Clear the session info
-        window.currentStoppedSession = null;
-      }
 
       // 단계 완료 시 다음 단계로 이동
       if (newPage === task.totalPages) {
@@ -3047,61 +3081,24 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  async function stopWorkSession(task, worker, showProgressModal = true) {
-    try {
-      // 진행상황 업데이트를 위해 현재 세션 정보를 미리 저장
-      const sessionData = currentWorkSessions.get(task.id);
-      let sessionInfo = null;
-      
-      if (showProgressModal && sessionData) {
-        const currentStage = task.stages[task.currentStage];
-        const startPage = currentStage && currentStage.history.length > 0 
-          ? currentStage.history[currentStage.history.length - 1].endPage 
-          : 0;
-          
-        sessionInfo = {
-          taskId: task.id,
-          worker,
-          startPage
-        };
-      }
-      
-      // API 호출로 작업 세션 종료
-      const response = await fetch(`${WORK_SESSIONS_API_URL}/${task.id}`, {
-        method: 'DELETE'
-      });
+  function stopWorkSession(task, worker, showProgressModal = true) {
+    console.log(`Stopping work session for task: ${task.id}, worker: ${worker}`);
+    
+    if (showProgressModal) {
+        const stage = task.stages[task.currentStage];
+        const lastCompletedPage = stage.history.length > 0 ? stage.history[stage.history.length - 1].endPage : 0;
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      console.log(`Work session stopped for ${worker} on task ${task.id}`);
-      
-      // 진행상황 업데이트 모달 표시 (필요한 경우)
-      if (showProgressModal && sessionInfo && !isStartingNewSession) {
-        // Store current session info for progress update
-        window.currentStoppedSession = sessionInfo;
-        
-        // 모달 보호 플래그 설정
-        isProgressModalProtected = true;
-        
-        // 더 안전한 모달 표시를 위해 지연 후 표시
-        const showModal = () => {
-          const progressModal = document.getElementById("progress-update-modal");
-          if (isProgressModalProtected && (!progressModal || progressModal.style.display !== "flex")) {
-            openProgressUpdateModal(task);
-          }
+        // Store session info to be used when progress is submitted
+        window.currentStoppedSession = {
+            taskId: task.id,
+            worker: worker,
+            startPage: lastCompletedPage,
         };
         
-        // WebSocket 메시지 처리와 UI 업데이트 완료 후 모달 표시
-        setTimeout(showModal, 1000);
-      }
-      
-      // 로컬 처리는 WebSocket 메시지로 받을 때 처리됨
-      
-    } catch (error) {
-      console.error('작업 세션 종료 실패:', error);
-      alert('작업 세션 종료에 실패했습니다: ' + error.message);
+        // Open progress modal
+        openProgressUpdateModal(task);
+    } else {
+        console.warn("stopWorkSession called without showing progress modal. This is not fully handled.");
     }
   }
 
@@ -3811,7 +3808,8 @@ document.addEventListener("DOMContentLoaded", () => {
   async function validateUser(name) {
     try {
       // 직원 목록을 서버에서 가져와서 확인
-      const response = await fetch('http://localhost:3000/staff');
+      const response = await fetch('http://172.30.1.40:3005/staff');
+      // const response = await fetch('http://localhost:3005/staff');
       let staffList = [];
       
       if (response.ok) {
@@ -4170,4 +4168,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error('현재 작업 세션 로드 실패:', error);
     }
   }
+
+  // 페이지 로드 시 로그인 상태 확인 (모든 변수 및 함수 선언 후)
+  setTimeout(checkLoginStatus, 100);
 });

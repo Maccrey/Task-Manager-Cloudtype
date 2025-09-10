@@ -7,7 +7,7 @@ const WebSocket = require("ws");
 
 const app = express();
 //const PORT = 3000;
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3005;
 const DATA_FILE = path.join(__dirname, "bookworklist.json");
 const STAFF_FILE = path.join(__dirname, "staff.json");
 const WORK_SESSIONS_FILE = path.join(__dirname, "work-sessions.json");
@@ -421,22 +421,21 @@ app.post("/work-sessions", (req, res) => {
   res.status(201).json(newSession);
 });
 
-// DELETE end a work session
-app.delete("/work-sessions/:taskId", (req, res) => {
+// POST end a work session
+app.post("/work-sessions/end", (req, res) => {
   const sessions = readWorkSessions();
-  const { taskId } = req.params;
+  const { taskId, pagesWorked } = req.body;
 
   if (sessions[taskId]) {
     const session = sessions[taskId];
 
-    // Save completed session to history before deleting
     const completedSession = {
       ...session,
       endTime: new Date().toISOString(),
       duration: new Date() - new Date(session.startTime),
+      pagesWorked: pagesWorked, // Add pagesWorked
     };
 
-    // Add to work sessions history
     const history = readWorkSessionsHistory();
     history.push(completedSession);
     writeWorkSessionsHistory(history);
@@ -444,13 +443,12 @@ app.delete("/work-sessions/:taskId", (req, res) => {
     delete sessions[taskId];
     writeWorkSessions(sessions);
 
-    // Broadcast the work session end to all connected clients
     broadcast({
       type: "work_session_ended",
       data: { taskId, worker: session.worker },
     });
 
-    res.status(204).send();
+    res.status(200).json(completedSession);
   } else {
     res.status(404).send("Work session not found");
   }
