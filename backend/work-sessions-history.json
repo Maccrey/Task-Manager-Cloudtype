@@ -1,1 +1,29 @@
-[]
+[
+  {
+    "taskId": "1757527426453",
+    "worker": "임석훈",
+    "startTime": "2025-09-10T18:03:49.830Z",
+    "isWorking": true,
+    "endTime": "2025-09-10T22:28:06.106Z",
+    "duration": 15856276,
+    "pagesWorked": 100
+  },
+  {
+    "taskId": "1757527777348",
+    "worker": "송지연",
+    "startTime": "2025-09-10T18:10:12.823Z",
+    "isWorking": true,
+    "endTime": "2025-09-10T22:28:19.137Z",
+    "duration": 15486314,
+    "pagesWorked": 80
+  },
+  {
+    "taskId": "1757527799962",
+    "worker": "최정윤",
+    "startTime": "2025-09-10T18:10:26.350Z",
+    "isWorking": true,
+    "endTime": "2025-09-10T22:28:33.452Z",
+    "duration": 15487102,
+    "pagesWorked": 70
+  }
+]

@@ -469,6 +469,179 @@ app.post("/attendance-data", (req, res) => {
   res.status(200).json({ message: "Attendance data saved successfully" });
 });
 
+// Data Management API endpoints
+
+// Staff data management
+app.get("/api/staff/backup", (req, res) => {
+  const staff = readStaff();
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=staff_backup_${new Date().toISOString().split("T")[0]}.json`
+  );
+  res.json(staff);
+});
+
+app.post("/api/staff/restore", (req, res) => {
+  try {
+    const staffData = req.body;
+    if (!Array.isArray(staffData)) {
+      return res.status(400).json({ error: "Invalid staff data format" });
+    }
+    writeStaff(staffData);
+    res.status(200).json({ message: "Staff data restored successfully", count: staffData.length });
+  } catch (error) {
+    console.error("Error restoring staff data:", error);
+    res.status(500).json({ error: "Failed to restore staff data" });
+  }
+});
+
+app.delete("/api/staff/clear", (req, res) => {
+  try {
+    const { password } = req.body;
+    if (password !== "재활용") {
+      return res.status(403).json({ error: "Invalid password" });
+    }
+    writeStaff([]);
+    res.status(200).json({ message: "Staff data cleared successfully" });
+  } catch (error) {
+    console.error("Error clearing staff data:", error);
+    res.status(500).json({ error: "Failed to clear staff data" });
+  }
+});
+
+app.get("/api/staff/info", (req, res) => {
+  try {
+    const staff = readStaff();
+    const stats = fs.statSync(STAFF_FILE);
+    res.json({
+      count: staff.length,
+      lastModified: stats.mtime,
+      size: stats.size
+    });
+  } catch (error) {
+    res.json({
+      count: 0,
+      lastModified: null,
+      size: 0
+    });
+  }
+});
+
+// Work sessions history data management
+app.get("/api/work-sessions-history/backup", (req, res) => {
+  const history = readWorkSessionsHistory();
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=work_sessions_history_backup_${new Date().toISOString().split("T")[0]}.json`
+  );
+  res.json(history);
+});
+
+app.post("/api/work-sessions-history/restore", (req, res) => {
+  try {
+    const historyData = req.body;
+    if (!Array.isArray(historyData)) {
+      return res.status(400).json({ error: "Invalid work sessions history data format" });
+    }
+    writeWorkSessionsHistory(historyData);
+    res.status(200).json({ message: "Work sessions history restored successfully", count: historyData.length });
+  } catch (error) {
+    console.error("Error restoring work sessions history:", error);
+    res.status(500).json({ error: "Failed to restore work sessions history" });
+  }
+});
+
+app.delete("/api/work-sessions-history/clear", (req, res) => {
+  try {
+    const { password } = req.body;
+    if (password !== "재활용") {
+      return res.status(403).json({ error: "Invalid password" });
+    }
+    writeWorkSessionsHistory([]);
+    res.status(200).json({ message: "Work sessions history cleared successfully" });
+  } catch (error) {
+    console.error("Error clearing work sessions history:", error);
+    res.status(500).json({ error: "Failed to clear work sessions history" });
+  }
+});
+
+app.get("/api/work-sessions-history/info", (req, res) => {
+  try {
+    const history = readWorkSessionsHistory();
+    const stats = fs.statSync(WORK_SESSIONS_HISTORY_FILE);
+    res.json({
+      count: history.length,
+      lastModified: stats.mtime,
+      size: stats.size
+    });
+  } catch (error) {
+    res.json({
+      count: 0,
+      lastModified: null,
+      size: 0
+    });
+  }
+});
+
+// Books data management (existing functionality enhanced)
+app.get("/api/books/backup", (req, res) => {
+  const books = readBooks();
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=books_backup_${new Date().toISOString().split("T")[0]}.json`
+  );
+  res.json(books);
+});
+
+app.post("/api/books/restore", (req, res) => {
+  try {
+    const booksData = req.body;
+    if (!Array.isArray(booksData)) {
+      return res.status(400).json({ error: "Invalid books data format" });
+    }
+    writeBooks(booksData);
+    res.status(200).json({ message: "Books data restored successfully", count: booksData.length });
+  } catch (error) {
+    console.error("Error restoring books data:", error);
+    res.status(500).json({ error: "Failed to restore books data" });
+  }
+});
+
+app.delete("/api/books/clear", (req, res) => {
+  try {
+    const { password } = req.body;
+    if (password !== "재활용") {
+      return res.status(403).json({ error: "Invalid password" });
+    }
+    writeBooks([]);
+    res.status(200).json({ message: "Books data cleared successfully" });
+  } catch (error) {
+    console.error("Error clearing books data:", error);
+    res.status(500).json({ error: "Failed to clear books data" });
+  }
+});
+
+app.get("/api/books/info", (req, res) => {
+  try {
+    const books = readBooks();
+    const stats = fs.statSync(DATA_FILE);
+    res.json({
+      count: books.length,
+      lastModified: stats.mtime,
+      size: stats.size
+    });
+  } catch (error) {
+    res.json({
+      count: 0,
+      lastModified: null,
+      size: 0
+    });
+  }
+});
+
 // Create HTTP server
 const server = http.createServer(app);
 

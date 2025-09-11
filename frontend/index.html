@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>점자 도서 작업 관리 대시보드</title>
     <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
   </head>
   <body>
     <!-- 로그인 페이지 -->
@@ -144,6 +145,7 @@
           <button class="tab-button" data-tab="staff">직원 관리</button>
           <button class="tab-button" data-tab="attendance">출퇴근 기록</button>
           <button class="tab-button" data-tab="stats">통계</button>
+          <button class="tab-button" data-tab="evaluation">업무평가서</button>
         </div>
 
         <div id="admin-tab-tasks" class="tab-content active">
@@ -171,29 +173,127 @@
         </div>
 
         <div id="admin-tab-data" class="tab-content">
-          <div class="admin-data-section">
-            <h3>데이터베이스 관리</h3>
-            <div class="admin-buttons">
-              <button id="backup-data-btn" class="admin-btn backup">
-                데이터 백업
-              </button>
-              <button id="restore-data-btn" class="admin-btn restore">
-                데이터 복원
-              </button>
-              <button id="clear-all-data-btn" class="admin-btn danger">
-                전체 데이터 삭제
-              </button>
+          <div class="data-management-container">
+            <!-- 책 정보 데이터 관리 -->
+            <div class="admin-data-section">
+              <div class="data-section-header">
+                <h3>📚 책 정보 데이터 (bookworklist.json)</h3>
+                <div class="data-status" id="books-status">
+                  <span class="data-count">0개 항목</span>
+                  <span class="data-modified">최종 수정: -</span>
+                </div>
+              </div>
+              <div class="admin-buttons">
+                <button id="backup-books-btn" class="admin-btn backup">
+                  📥 백업
+                </button>
+                <button id="restore-books-btn" class="admin-btn restore">
+                  📤 복원
+                </button>
+                <button id="clear-books-btn" class="admin-btn danger">
+                  🗑️ 삭제
+                </button>
+              </div>
+              <input
+                type="file"
+                id="restore-books-input"
+                style="display: none"
+                accept=".json"
+              />
             </div>
-            <input
-              type="file"
-              id="restore-file-input"
-              style="display: none"
-              accept=".json"
-            />
 
-            <h3>데이터 정보</h3>
-            <div id="data-info" class="data-info">
-              <!-- 데이터 정보가 여기에 표시됩니다 -->
+            <!-- 직원 정보 데이터 관리 -->
+            <div class="admin-data-section">
+              <div class="data-section-header">
+                <h3>👥 직원 정보 데이터 (staff.json)</h3>
+                <div class="data-status" id="staff-status">
+                  <span class="data-count">0개 항목</span>
+                  <span class="data-modified">최종 수정: -</span>
+                </div>
+              </div>
+              <div class="admin-buttons">
+                <button id="backup-staff-btn" class="admin-btn backup">
+                  📥 백업
+                </button>
+                <button id="restore-staff-btn" class="admin-btn restore">
+                  📤 복원
+                </button>
+                <button id="clear-staff-btn" class="admin-btn danger">
+                  🗑️ 삭제
+                </button>
+              </div>
+              <input
+                type="file"
+                id="restore-staff-input"
+                style="display: none"
+                accept=".json"
+              />
+            </div>
+
+            <!-- 출퇴근 기록 데이터 관리 -->
+            <div class="admin-data-section">
+              <div class="data-section-header">
+                <h3>⏰ 출퇴근 기록 데이터 (work-sessions-history.json)</h3>
+                <div class="data-status" id="work-sessions-status">
+                  <span class="data-count">0개 항목</span>
+                  <span class="data-modified">최종 수정: -</span>
+                </div>
+              </div>
+              <div class="admin-buttons">
+                <button id="backup-work-sessions-btn" class="admin-btn backup">
+                  📥 백업
+                </button>
+                <button id="restore-work-sessions-btn" class="admin-btn restore">
+                  📤 복원
+                </button>
+                <button id="clear-work-sessions-btn" class="admin-btn danger">
+                  🗑️ 삭제
+                </button>
+              </div>
+              <input
+                type="file"
+                id="restore-work-sessions-input"
+                style="display: none"
+                accept=".json"
+              />
+            </div>
+
+            <!-- 전체 관리 -->
+            <div class="admin-data-section global-actions">
+              <div class="data-section-header">
+                <h3>🔧 전체 관리</h3>
+                <p class="section-description">모든 데이터를 한번에 관리합니다</p>
+              </div>
+              <div class="admin-buttons">
+                <button id="backup-all-btn" class="admin-btn backup-all">
+                  📦 전체 백업
+                </button>
+                <button id="clear-all-data-btn" class="admin-btn danger">
+                  🗑️ 전체 삭제
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 데이터 삭제 확인 모달 -->
+        <div id="delete-confirm-modal" class="modal" style="display: none">
+          <div class="modal-content delete-confirm-content">
+            <h3>⚠️ 데이터 삭제 확인</h3>
+            <p id="delete-confirm-message">정말로 이 데이터를 삭제하시겠습니까?</p>
+            <div class="password-input-group">
+              <label for="delete-password">삭제 확인 암호:</label>
+              <input
+                type="password"
+                id="delete-password"
+                placeholder="삭제 암호를 입력하세요"
+                class="password-input"
+              />
+              <div class="password-hint">힌트: 환경을 생각하는 단어</div>
+            </div>
+            <div class="modal-buttons">
+              <button id="confirm-delete-btn" class="btn danger">삭제</button>
+              <button id="cancel-delete-btn" class="btn secondary">취소</button>
             </div>
           </div>
         </div>
@@ -287,13 +387,6 @@
               </div>
             </div>
 
-            <div class="attendance-summary">
-              <h4>오늘의 출퇴근 현황</h4>
-              <div id="attendance-summary-content">
-                <!-- 출퇴근 현황이 여기에 표시됩니다 -->
-              </div>
-            </div>
-
             <div class="attendance-table-container">
               <h4>출퇴근 기록 상세</h4>
               <div class="admin-table-container">
@@ -341,6 +434,171 @@
             <h3>단계별 작업 분포</h3>
             <div id="stage-distribution" class="stage-chart">
               <!-- 단계별 차트가 여기에 표시됩니다 -->
+            </div>
+          </div>
+        </div>
+
+        <div id="admin-tab-evaluation" class="tab-content">
+          <div class="evaluation-controls">
+            <div class="control-group">
+              <label for="evaluation-year">년도:</label>
+              <select id="evaluation-year"></select>
+            </div>
+            <div class="control-group">
+              <label for="evaluation-month">월:</label>
+              <select id="evaluation-month">
+                <option value="1">1월</option>
+                <option value="2">2월</option>
+                <option value="3">3월</option>
+                <option value="4">4월</option>
+                <option value="5">5월</option>
+                <option value="6">6월</option>
+                <option value="7">7월</option>
+                <option value="8">8월</option>
+                <option value="9">9월</option>
+                <option value="10">10월</option>
+                <option value="11">11월</option>
+                <option value="12">12월</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label for="evaluation-staff">직원:</label>
+              <select id="evaluation-staff"></select>
+            </div>
+            <button id="generate-evaluation-btn" class="primary-btn">
+              평가서 생성
+            </button>
+          </div>
+
+          <div
+            id="evaluation-content"
+            class="evaluation-report"
+            style="display: none"
+          >
+            <div class="report-header">
+              <h2 id="evaluation-title">업무평가서</h2>
+              <div class="report-info">
+                <div class="info-item">
+                  <span class="label">평가 대상:</span>
+                  <span id="eval-staff-name"></span>
+                </div>
+                <div class="info-item">
+                  <span class="label">평가 기간:</span>
+                  <span id="eval-period"></span>
+                </div>
+                <div class="info-item">
+                  <span class="label">작성 일시:</span>
+                  <span id="eval-generated-date"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="performance-summary">
+              <h3>성과 요약</h3>
+              <div class="summary-grid">
+                <div class="summary-card">
+                  <h4>총 처리 페이지 수</h4>
+                  <div class="summary-value" id="total-pages-processed">0</div>
+                </div>
+                <div class="summary-card">
+                  <h4>하루 평균 처리 페이지</h4>
+                  <div class="summary-value" id="avg-daily-pages">0</div>
+                </div>
+                <div class="summary-card">
+                  <h4>근무 일수</h4>
+                  <div class="summary-value" id="work-days">0</div>
+                </div>
+                <div class="summary-card">
+                  <h4>부서 내 순위</h4>
+                  <div class="summary-value" id="department-rank">-</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="performance-charts">
+              <div class="chart-section">
+                <h3>일일 처리량 추이</h3>
+                <canvas
+                  id="daily-performance-chart"
+                  width="380"
+                  height="250"
+                ></canvas>
+              </div>
+
+              <div class="chart-section">
+                <h3>주간 처리량 비교</h3>
+                <canvas
+                  id="weekly-performance-chart"
+                  width="380"
+                  height="250"
+                ></canvas>
+              </div>
+
+              <div class="chart-section">
+                <h3>출퇴근 현황</h3>
+                <canvas id="attendance-chart" width="380" height="250"></canvas>
+              </div>
+
+              <div class="chart-section">
+                <h3>직원별 성과 비교</h3>
+                <canvas
+                  id="staff-comparison-chart"
+                  width="380"
+                  height="250"
+                ></canvas>
+              </div>
+            </div>
+
+            <!-- 출퇴근 상세 정보 -->
+            <div class="attendance-details">
+              <h3>📅 출퇴근 상세 분석</h3>
+              <div class="attendance-summary">
+                <div class="attendance-card">
+                  <h4>정상 출근</h4>
+                  <div class="attendance-value normal" id="normal-attendance">
+                    0일
+                  </div>
+                </div>
+                <div class="attendance-card">
+                  <h4>지각</h4>
+                  <div class="attendance-value late" id="late-count">0일</div>
+                </div>
+                <div class="attendance-card">
+                  <h4>조퇴</h4>
+                  <div class="attendance-value early" id="early-leave-count">
+                    0일
+                  </div>
+                </div>
+                <div class="attendance-card">
+                  <h4>연장근무</h4>
+                  <div class="attendance-value overtime" id="overtime-count">
+                    0일
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detailed-stats">
+              <h3>상세 통계</h3>
+              <table class="stats-table">
+                <thead>
+                  <tr>
+                    <th>구분</th>
+                    <th>1차 교정</th>
+                    <th>2차 교정</th>
+                    <th>3차 교정</th>
+                    <th>점역</th>
+                    <th>총계</th>
+                  </tr>
+                </thead>
+                <tbody id="detailed-stats-tbody"></tbody>
+              </table>
+            </div>
+
+            <div class="report-actions">
+              <button id="print-report-btn" class="action-btn print-btn">
+                🖨️ 프린트
+              </button>
             </div>
           </div>
         </div>
@@ -631,7 +889,6 @@
           </div>
 
           <div class="attendance-summary">
-            <h4>오늘의 출퇴근 현황</h4>
             <div id="attendance-only-summary-content">
               <!-- 출퇴근 현황이 여기에 표시됩니다 -->
             </div>

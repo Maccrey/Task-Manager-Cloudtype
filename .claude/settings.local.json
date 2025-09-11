@@ -3,7 +3,12 @@
     "allow": [
       "Bash(grep:*)",
       "Bash(sed:*)",
-      "Bash(node server.js)"
+      "Bash(node server.js)",
+      "Bash(npm start)",
+      "Bash(kill:*)",
+      "Bash(curl:*)",
+      "Bash(open \"http://localhost:3005\")",
+      "Bash(lsof:*)"
     ],
     "deny": [],
     "ask": []

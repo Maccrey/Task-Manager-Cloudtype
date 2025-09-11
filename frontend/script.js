@@ -1,15 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
   // 로그인 관련 변수
   let currentUser = null;
-  const loginPage = document.getElementById('login-page');
-  const mainDashboard = document.getElementById('main-dashboard');
-  const loginForm = document.getElementById('login-form');
-  const staffNameInput = document.getElementById('staff-name-login');
-  const loginError = document.getElementById('login-error');
-  const currentUserName = document.getElementById('current-user-name');
-  const logoutBtn = document.getElementById('logout-btn');
-  
-  
+  const loginPage = document.getElementById("login-page");
+  const mainDashboard = document.getElementById("main-dashboard");
+  const loginForm = document.getElementById("login-form");
+  const staffNameInput = document.getElementById("staff-name-login");
+  const loginError = document.getElementById("login-error");
+  const currentUserName = document.getElementById("current-user-name");
+  const logoutBtn = document.getElementById("logout-btn");
 
   const isbnTitleInput = document.getElementById("isbn-title-input");
   const searchButton = document.getElementById("search-button");
@@ -94,26 +92,31 @@ document.addEventListener("DOMContentLoaded", () => {
   const passwordModalCloseButton = passwordModal.querySelector(".close-button");
 
   // Assign Corrector Modal Elements
-  const assignCorrectorModal = document.getElementById("assign-corrector-modal");
+  const assignCorrectorModal = document.getElementById(
+    "assign-corrector-modal"
+  );
   const assignCorrectorForm = document.getElementById("assign-corrector-form");
   const assignModalTitle = document.getElementById("assign-modal-title");
   const assignTaskInfo = document.getElementById("assign-task-info");
-  const assignCorrectorSelect = document.getElementById("assign-corrector-select");
+  const assignCorrectorSelect = document.getElementById(
+    "assign-corrector-select"
+  );
   const assignCancelBtn = document.getElementById("assign-cancel-btn");
-  const assignModalCloseButton = assignCorrectorModal.querySelector(".close-button");
+  const assignModalCloseButton =
+    assignCorrectorModal.querySelector(".close-button");
 
   const apiKey =
     "e080d32c1a94808682a5c4fe268ba6f9e5aedf09c936f44ecb51272e59287233";
-  const API_URL = "http://172.30.1.40:3005/books";
-  const STAFF_API_URL = "http://172.30.1.40:3005/staff";
-  const WORK_SESSIONS_API_URL = "http://172.30.1.40:3005/work-sessions";
-  const ATTENDANCE_DATA_API_URL = "http://172.30.1.40:3005/attendance-data";
-  const WS_URL = "ws://172.30.1.40:3005/";
-  // const API_URL = "http://localhost:3005/books";
-  // const STAFF_API_URL = "http://localhost:3005/staff";
-  // const WORK_SESSIONS_API_URL = "http://localhost:3005/work-sessions";
-  // const ATTENDANCE_DATA_API_URL = "http://localhost:3005/attendance-data";
-  // const WS_URL = "ws://localhost:3005/";
+  // const API_URL = "http://172.30.1.40:3005/books";
+  // const STAFF_API_URL = "http://172.30.1.40:3005/staff";
+  // const WORK_SESSIONS_API_URL = "http://172.30.1.40:3005/work-sessions";
+  // const ATTENDANCE_DATA_API_URL = "http://172.30.1.40:3005/attendance-data";
+  // const WS_URL = "ws://172.30.1.40:3005/";
+  const API_URL = "http://localhost:3005/books";
+  const STAFF_API_URL = "http://localhost:3005/staff";
+  const WORK_SESSIONS_API_URL = "http://localhost:3005/work-sessions";
+  const ATTENDANCE_DATA_API_URL = "http://localhost:3005/attendance-data";
+  const WS_URL = "ws://localhost:3005/";
 
   // WebSocket 연결
   let socket = null;
@@ -136,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Korean date parsing function
   function parseKoreanDate(dateStr) {
-    if (!dateStr || typeof dateStr !== 'string') {
+    if (!dateStr || typeof dateStr !== "string") {
       return null;
     }
 
@@ -147,20 +150,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Korean date format: "2025. 7. 10. 오후 5:45:00"
-    const koreanDateRegex = /(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.\s*(오전|오후)\s*(\d{1,2}):(\d{2}):(\d{2})/;
+    const koreanDateRegex =
+      /(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.\s*(오전|오후)\s*(\d{1,2}):(\d{2}):(\d{2})/;
     const match = dateStr.match(koreanDateRegex);
-    
+
     if (match) {
       const [, year, month, day, ampm, hour, minute, second] = match;
       let hour24 = parseInt(hour, 10);
-      
+
       // Convert to 24-hour format
-      if (ampm === '오후' && hour24 !== 12) {
+      if (ampm === "오후" && hour24 !== 12) {
         hour24 += 12;
-      } else if (ampm === '오전' && hour24 === 12) {
+      } else if (ampm === "오전" && hour24 === 12) {
         hour24 = 0;
       }
-      
+
       return new Date(
         parseInt(year, 10),
         parseInt(month, 10) - 1, // Month is 0-indexed
@@ -170,7 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
         parseInt(second, 10)
       );
     }
-    
+
     return null;
   }
 
@@ -178,13 +182,13 @@ document.addEventListener("DOMContentLoaded", () => {
   function initializeWebSocket() {
     try {
       socket = new WebSocket(WS_URL);
-      
-      socket.onopen = function(event) {
+
+      socket.onopen = function (event) {
         console.log("WebSocket 연결이 열렸습니다.");
         updateStatusDisplay();
       };
-      
-      socket.onmessage = function(event) {
+
+      socket.onmessage = function (event) {
         try {
           const message = JSON.parse(event.data);
           handleWebSocketMessage(message);
@@ -192,12 +196,12 @@ document.addEventListener("DOMContentLoaded", () => {
           console.error("WebSocket 메시지 처리 오류:", error);
         }
       };
-      
-      socket.onclose = function(event) {
+
+      socket.onclose = function (event) {
         console.log("WebSocket 연결이 닫혔습니다.");
         socket = null;
         updateStatusDisplay();
-        
+
         // 5초 후 재연결 시도
         setTimeout(() => {
           if (!socket || socket.readyState === WebSocket.CLOSED) {
@@ -206,8 +210,8 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }, 5000);
       };
-      
-      socket.onerror = function(error) {
+
+      socket.onerror = function (error) {
         console.error("WebSocket 오류:", error);
       };
     } catch (error) {
@@ -218,30 +222,30 @@ document.addEventListener("DOMContentLoaded", () => {
   // WebSocket 메시지 처리
   function handleWebSocketMessage(message) {
     console.log("WebSocket 메시지 수신:", message);
-    
+
     switch (message.type) {
-      case 'book_added':
+      case "book_added":
         handleBookAdded(message.data);
         break;
-      case 'book_updated':
+      case "book_updated":
         handleBookUpdated(message.data);
         break;
-      case 'book_deleted':
+      case "book_deleted":
         handleBookDeleted(message.data);
         break;
-      case 'note_added':
+      case "note_added":
         handleNoteAdded(message.data);
         break;
-      case 'note_updated':
+      case "note_updated":
         handleNoteUpdated(message.data);
         break;
-      case 'note_deleted':
+      case "note_deleted":
         handleNoteDeleted(message.data);
         break;
-      case 'work_session_started':
+      case "work_session_started":
         handleWorkSessionStarted(message.data);
         break;
-      case 'work_session_ended':
+      case "work_session_ended":
         handleWorkSessionEnded(message.data);
         break;
       default:
@@ -263,12 +267,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (response.ok) {
         serverStatus = "online";
         console.log("Server is online");
-        
+
         // WebSocket 연결이 없거나 닫혀있다면 초기화
         if (!socket || socket.readyState === WebSocket.CLOSED) {
           initializeWebSocket();
         }
-        
+
         return true;
       } else {
         serverStatus = "offline";
@@ -338,7 +342,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await response.json();
         tasks = Array.isArray(data) ? data : [];
         console.log(`Loaded ${tasks.length} tasks from server`);
-        
+
         // 현재 작업 세션도 서버에서 로드
         await loadCurrentWorkSessions();
       } else {
@@ -347,7 +351,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       updateStatusDisplay();
       renderTasks();
-      
+
       // 작업 세션 로드
       await loadCurrentWorkSessions();
     } catch (error) {
@@ -359,7 +363,6 @@ document.addEventListener("DOMContentLoaded", () => {
       renderTasks();
     }
   }
-
 
   // 작업 저장/업데이트 함수
   async function saveTask(task, isNewTask = false) {
@@ -398,22 +401,22 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Full error details:", {
         name: error.name,
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
-      
+
       serverStatus = "offline";
       updateStatusDisplay();
-      
+
       // 네트워크 오류인지 확인
       if (error instanceof TypeError && error.message.includes("fetch")) {
         throw new Error(`네트워크 연결 실패: ${API_URL}에 접근할 수 없습니다.`);
       }
-      
+
       // 타임아웃 오류인지 확인
       if (error.name === "AbortError") {
         throw new Error("요청 시간 초과: 서버 응답이 너무 오래 걸립니다.");
       }
-      
+
       throw error;
     }
   }
@@ -468,11 +471,11 @@ document.addEventListener("DOMContentLoaded", () => {
         updateAssignCorrectorDropdownIfOpen(); // Update assign corrector dropdown if modal is open
         console.log(`Loaded ${staff.length} staff members`);
       } else {
-        console.warn('Failed to load staff data');
+        console.warn("Failed to load staff data");
         staff = [];
       }
     } catch (error) {
-      console.error('Error loading staff:', error);
+      console.error("Error loading staff:", error);
       staff = [];
     }
   }
@@ -480,29 +483,29 @@ document.addEventListener("DOMContentLoaded", () => {
   async function addStaff(name, role) {
     try {
       const response = await fetch(STAFF_API_URL, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ name, role }),
       });
-      
+
       if (response.ok) {
         const newStaff = await response.json();
         staff.push(newStaff);
         updateStaffDropdowns();
         updateAssignCorrectorDropdownIfOpen(); // Update assign corrector dropdown if modal is open
-        
+
         // 항상 직원 리스트 렌더링
         renderStaffList();
         // 직원 탭 강제 유지
-        switchTab('staff');
+        switchTab("staff");
         return newStaff;
       } else {
-        throw new Error('Failed to add staff member');
+        throw new Error("Failed to add staff member");
       }
     } catch (error) {
-      console.error('Error adding staff:', error);
+      console.error("Error adding staff:", error);
       throw error;
     }
   }
@@ -510,23 +513,23 @@ document.addEventListener("DOMContentLoaded", () => {
   async function deleteStaff(staffId) {
     try {
       const response = await fetch(`${STAFF_API_URL}/${staffId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
-      
+
       if (response.ok || response.status === 404) {
-        staff = staff.filter(s => s.id !== staffId);
+        staff = staff.filter((s) => s.id !== staffId);
         updateStaffDropdowns();
         updateAssignCorrectorDropdownIfOpen(); // Update assign corrector dropdown if modal is open
-        
+
         // 항상 직원 리스트 렌더링
         renderStaffList();
         // 직원 탭 강제 유지
-        switchTab('staff');
+        switchTab("staff");
       } else {
-        throw new Error('Failed to delete staff member');
+        throw new Error("Failed to delete staff member");
       }
     } catch (error) {
-      console.error('Error deleting staff:', error);
+      console.error("Error deleting staff:", error);
       throw error;
     }
   }
@@ -534,43 +537,52 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateStaffDropdowns() {
     // Get all dropdown elements
     const dropdowns = [
-      document.getElementById('corrector1'),
-      document.getElementById('corrector2'),
-      document.getElementById('corrector3'),
-      document.getElementById('transcriber'),
-      document.getElementById('corrector1-assigned'),
-      document.getElementById('corrector2-assigned'),
-      document.getElementById('corrector3-assigned'),
-      document.getElementById('transcriber-assigned'),
+      document.getElementById("corrector1"),
+      document.getElementById("corrector2"),
+      document.getElementById("corrector3"),
+      document.getElementById("transcriber"),
+      document.getElementById("corrector1-assigned"),
+      document.getElementById("corrector2-assigned"),
+      document.getElementById("corrector3-assigned"),
+      document.getElementById("transcriber-assigned"),
     ];
 
-    dropdowns.forEach(dropdown => {
+    dropdowns.forEach((dropdown) => {
       if (dropdown) {
         // Save current value
         const currentValue = dropdown.value;
-        
+
         // Clear existing options except first one
         dropdown.innerHTML = '<option value="">담당자 선택</option>';
-        
+
         // Add staff options based on dropdown type
-        const isTranscriber = dropdown.id.includes('transcriber');
-        const filteredStaff = staff.filter(s => {
+        const isTranscriber = dropdown.id.includes("transcriber");
+        const filteredStaff = staff.filter((s) => {
           if (isTranscriber) {
-            return s.role === 'transcriber' || s.role === 'both' || s.role === 'admin';
+            return (
+              s.role === "transcriber" ||
+              s.role === "both" ||
+              s.role === "admin"
+            );
           } else {
-            return s.role === 'corrector' || s.role === 'both' || s.role === 'admin';
+            return (
+              s.role === "corrector" || s.role === "both" || s.role === "admin"
+            );
           }
         });
 
-        filteredStaff.forEach(s => {
-          const option = document.createElement('option');
+        filteredStaff.forEach((s) => {
+          const option = document.createElement("option");
           option.value = s.name;
           option.textContent = s.name;
           dropdown.appendChild(option);
         });
 
         // Restore previous value if it still exists
-        if (currentValue && Array.from(dropdown.options).some(opt => opt.value === currentValue)) {
+        if (
+          currentValue &&
+          Array.from(dropdown.options).some((opt) => opt.value === currentValue)
+        ) {
           dropdown.value = currentValue;
         }
       }
@@ -578,27 +590,29 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderStaffList() {
-    const staffTbody = document.getElementById('staff-tbody');
+    const staffTbody = document.getElementById("staff-tbody");
     if (!staffTbody) return;
 
-    staffTbody.innerHTML = '';
+    staffTbody.innerHTML = "";
 
     if (staff.length === 0) {
-      staffTbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666; padding: 20px;">등록된 직원이 없습니다.</td></tr>';
+      staffTbody.innerHTML =
+        '<tr><td colspan="5" style="text-align: center; color: #666; padding: 20px;">등록된 직원이 없습니다.</td></tr>';
       return;
     }
 
-    staff.forEach(s => {
-      const row = document.createElement('tr');
-      
-      const roleText = {
-        'corrector': '교정자',
-        'transcriber': '점역자',
-        'both': '교정자+점역자',
-        'admin': '관리자'
-      }[s.role] || s.role;
+    staff.forEach((s) => {
+      const row = document.createElement("tr");
 
-      const createdDate = new Date(s.createdAt).toLocaleDateString('ko-KR');
+      const roleText =
+        {
+          corrector: "교정자",
+          transcriber: "점역자",
+          both: "교정자+점역자",
+          admin: "관리자",
+        }[s.role] || s.role;
+
+      const createdDate = new Date(s.createdAt).toLocaleDateString("ko-KR");
 
       row.innerHTML = `
         <td>${s.name}</td>
@@ -614,38 +628,42 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Debug function to test API connectivity
-  window.testAPIConnection = async function() {
+  window.testAPIConnection = async function () {
     console.log("=== API Connection Test ===");
     console.log("API_URL:", API_URL);
-    
+
     try {
       // Test GET request
       console.log("Testing GET request...");
       const getResponse = await fetch(API_URL);
       console.log("GET Response:", getResponse.status, getResponse.statusText);
-      
+
       if (getResponse.ok) {
         const data = await getResponse.json();
         console.log("GET Data length:", data.length);
-        
+
         if (data.length > 0) {
           const testTask = data[0];
           console.log("Testing PUT request with task:", testTask.id);
-          
+
           // Test PUT request
           const putResponse = await fetch(`${API_URL}/${testTask.id}`, {
-            method: 'PUT',
+            method: "PUT",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({
               ...testTask,
-              testField: `test-${Date.now()}`
-            })
+              testField: `test-${Date.now()}`,
+            }),
           });
-          
-          console.log("PUT Response:", putResponse.status, putResponse.statusText);
-          
+
+          console.log(
+            "PUT Response:",
+            putResponse.status,
+            putResponse.statusText
+          );
+
           if (putResponse.ok) {
             const putData = await putResponse.json();
             console.log("PUT Success, updated task:", putData.id);
@@ -658,7 +676,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error("API Test Error:", error);
     }
-    
+
     console.log("=== End API Test ===");
   };
 
@@ -807,8 +825,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.target === adminPanelModal && !isStaffOperationInProgress) {
       closeAdminPanel();
     }
-    if (event.target === document.getElementById('attendance-only-modal')) {
-      document.getElementById('attendance-only-modal').style.display = 'none';
+    if (event.target === document.getElementById("attendance-only-modal")) {
+      document.getElementById("attendance-only-modal").style.display = "none";
     }
   });
 
@@ -901,7 +919,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 서버 연결 상태에 따른 메시지 표시
     if (serverStatus === "offline") {
-      taskList.innerHTML = 
+      taskList.innerHTML =
         '<div style="display: flex; justify-content: center; align-items: center; min-height: 300px; padding: 40px;">' +
         '<div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 30px; max-width: 500px; text-align: center; color: #856404; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">' +
         '<h3 style="margin-top: 0; color: #856404; font-size: 1.3em;">⚠️ 서버 연결 실패</h3>' +
@@ -910,9 +928,9 @@ document.addEventListener("DOMContentLoaded", () => {
         '<div style="background: #f8f9fa; border-radius: 4px; padding: 10px; margin: 15px 0;">' +
         '<p style="font-size: 0.9em; color: #6c757d; margin: 0;">서버 실행 명령어:</p>' +
         '<code style="color: #495057; font-weight: bold;">cd backend && npm start</code>' +
-        '</div>' +
-        '</div>' +
-        '</div>';
+        "</div>" +
+        "</div>" +
+        "</div>";
       return;
     }
 
@@ -928,8 +946,8 @@ document.addEventListener("DOMContentLoaded", () => {
         '<h3 style="margin-top: 0; color: #6c757d; font-size: 1.3em;">📚 작업 목록이 비어있습니다</h3>' +
         '<p style="margin: 15px 0; line-height: 1.5;">현재 진행 중인 작업이 없습니다.</p>' +
         '<p style="margin: 15px 0; line-height: 1.5;">새 도서를 등록하거나 검색하여 작업을 시작하세요.</p>' +
-        '</div>' +
-        '</div>';
+        "</div>" +
+        "</div>";
       return;
     }
 
@@ -1121,7 +1139,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const stageName = stageNames[stageKey] || stageKey;
-    
+
     assignModalTitle.textContent = "담당자 지정";
     assignTaskInfo.innerHTML = `
       <strong>도서:</strong> ${stripHtmlTags(task.book.title)}<br>
@@ -1130,36 +1148,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 드롭다운에 최신 직원 목록 채우기 (모달 열 때마다 최신 데이터 사용)
     populateAssignCorrectorDropdown(stageKey);
-    
+
     assignCorrectorModal.style.display = "flex";
   }
 
   // 담당자 지정 드롭다운 채우기
   function populateAssignCorrectorDropdown(stageKey) {
-    assignCorrectorSelect.innerHTML = '<option value="">담당자를 선택해주세요</option>';
-    
+    assignCorrectorSelect.innerHTML =
+      '<option value="">담당자를 선택해주세요</option>';
+
     if (staff.length === 0) {
-      assignCorrectorSelect.innerHTML = '<option value="">등록된 직원이 없습니다</option>';
+      assignCorrectorSelect.innerHTML =
+        '<option value="">등록된 직원이 없습니다</option>';
       return;
     }
 
-    const isTranscriber = stageKey === 'transcription';
-    const filteredStaff = staff.filter(s => {
+    const isTranscriber = stageKey === "transcription";
+    const filteredStaff = staff.filter((s) => {
       if (isTranscriber) {
-        return s.role === 'transcriber' || s.role === 'both' || s.role === 'admin';
+        return (
+          s.role === "transcriber" || s.role === "both" || s.role === "admin"
+        );
       } else {
-        return s.role === 'corrector' || s.role === 'both' || s.role === 'admin';
+        return (
+          s.role === "corrector" || s.role === "both" || s.role === "admin"
+        );
       }
     });
 
     if (filteredStaff.length === 0) {
-      const roleText = isTranscriber ? '점역자' : '교정자';
+      const roleText = isTranscriber ? "점역자" : "교정자";
       assignCorrectorSelect.innerHTML = `<option value="">등록된 ${roleText}가 없습니다</option>`;
       return;
     }
 
-    filteredStaff.forEach(s => {
-      const option = document.createElement('option');
+    filteredStaff.forEach((s) => {
+      const option = document.createElement("option");
       option.value = s.name;
       option.textContent = s.name;
       assignCorrectorSelect.appendChild(option);
@@ -1177,17 +1201,21 @@ document.addEventListener("DOMContentLoaded", () => {
   // 담당자 지정 모달이 열려있다면 드롭다운 업데이트
   function updateAssignCorrectorDropdownIfOpen() {
     // Check if assign corrector modal is currently open
-    if (assignCorrectorModal && assignCorrectorModal.style.display === "flex" && currentAssignStage) {
+    if (
+      assignCorrectorModal &&
+      assignCorrectorModal.style.display === "flex" &&
+      currentAssignStage
+    ) {
       // Save current selection
       const currentValue = assignCorrectorSelect.value;
-      
+
       // Repopulate dropdown with latest staff data
       populateAssignCorrectorDropdown(currentAssignStage);
-      
+
       // Restore selection if it's still valid
       if (currentValue) {
         const options = Array.from(assignCorrectorSelect.options);
-        if (options.some(opt => opt.value === currentValue)) {
+        if (options.some((opt) => opt.value === currentValue)) {
           assignCorrectorSelect.value = currentValue;
         }
       }
@@ -1197,7 +1225,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 담당자 지정 처리
   async function handleAssignCorrectorSubmit(e) {
     e.preventDefault();
-    
+
     const selectedWorker = assignCorrectorSelect.value;
     if (!selectedWorker) {
       alert("담당자를 선택해주세요.");
@@ -1209,13 +1237,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const originalAssignedTo = currentAssignTask.stages[currentAssignStage].assignedTo;
+    const originalAssignedTo =
+      currentAssignTask.stages[currentAssignStage].assignedTo;
     currentAssignTask.stages[currentAssignStage].assignedTo = selectedWorker;
 
     try {
       await saveTask(currentAssignTask);
       renderTasks();
-      
+
       // If this was triggered from progress update, continue with progress modal
       if (window.pendingProgressUpdateTask) {
         const pendingTask = window.pendingProgressUpdateTask;
@@ -1230,7 +1259,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (error) {
       console.error("Error assigning corrector:", error);
-      currentAssignTask.stages[currentAssignStage].assignedTo = originalAssignedTo;
+      currentAssignTask.stages[currentAssignStage].assignedTo =
+        originalAssignedTo;
       alert(`담당자 지정에 실패했습니다: ${error.message}`);
     }
   }
@@ -1304,10 +1334,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function closeProgressUpdateModal() {
     progressUpdateModal.style.display = "none";
     currentTaskForUpdate = null;
-    
+
     // 모달 보호 플래그 해제
     isProgressModalProtected = false;
-    
+
     // 모달이 닫힐 때 UI 업데이트
     renderTasks();
   }
@@ -1365,37 +1395,40 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // If a session was just stopped, we need to end it on the server
-    if (window.currentStoppedSession && window.currentStoppedSession.taskId === task.id) {
-        const pagesWorked = newPage - window.currentStoppedSession.startPage;
-        
-        try {
-            const response = await fetch(`${WORK_SESSIONS_API_URL}/end`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    taskId: task.id,
-                    pagesWorked: pagesWorked
-                })
-            });
+    if (
+      window.currentStoppedSession &&
+      window.currentStoppedSession.taskId === task.id
+    ) {
+      const pagesWorked = newPage - window.currentStoppedSession.startPage;
 
-            if (!response.ok) {
-                throw new Error('Failed to end work session on server.');
-            }
-            
-            console.log(`Work session for task ${task.id} ended on server with ${pagesWorked} pages.`);
-            
-            // Clear the session info
-            window.currentStoppedSession = null;
-            currentWorkSessions.delete(task.id);
+      try {
+        const response = await fetch(`${WORK_SESSIONS_API_URL}/end`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            taskId: task.id,
+            pagesWorked: pagesWorked,
+          }),
+        });
 
-        } catch (error) {
-            console.error('Error ending work session:', error);
-            alert(`작업 종료 처리에 실패했습니다: ${error.message}`);
-            // Don't proceed with UI updates if server call fails
-            return;
+        if (!response.ok) {
+          throw new Error("Failed to end work session on server.");
         }
-    }
 
+        console.log(
+          `Work session for task ${task.id} ended on server with ${pagesWorked} pages.`
+        );
+
+        // Clear the session info
+        window.currentStoppedSession = null;
+        currentWorkSessions.delete(task.id);
+      } catch (error) {
+        console.error("Error ending work session:", error);
+        alert(`작업 종료 처리에 실패했습니다: ${error.message}`);
+        // Don't proceed with UI updates if server call fails
+        return;
+      }
+    }
 
     // 진행 기록 추가
     const startPage = lastCompletedPage + 1;
@@ -1530,19 +1563,23 @@ document.addEventListener("DOMContentLoaded", () => {
         name: error.name,
         message: error.message,
         stack: error.stack,
-        cause: error.cause
+        cause: error.cause,
       });
-      
+
       let errorMessage = "다음 단계로 이동하는 데 실패했습니다: ";
-      
+
       if (error.name === "TypeError" && error.message.includes("fetch")) {
-        errorMessage += "서버 연결 실패. 백엔드 서버가 실행 중인지 확인해주세요.";
-      } else if (error.name === "AbortError" || error.message.includes("timeout")) {
+        errorMessage +=
+          "서버 연결 실패. 백엔드 서버가 실행 중인지 확인해주세요.";
+      } else if (
+        error.name === "AbortError" ||
+        error.message.includes("timeout")
+      ) {
         errorMessage += "요청 시간 초과. 네트워크 연결을 확인해주세요.";
       } else {
         errorMessage += error.message;
       }
-      
+
       alert(errorMessage);
     }
   }
@@ -1884,12 +1921,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 관리자 모드 기능
   function authenticateAdmin() {
-    console.log('Admin button clicked');
+    console.log("Admin button clicked");
     openPasswordModal();
   }
 
   function openPasswordModal() {
-    console.log('Opening password modal');
+    console.log("Opening password modal");
     adminPasswordInput.value = "";
     passwordModal.style.display = "flex";
     setTimeout(() => adminPasswordInput.focus(), 100);
@@ -1903,15 +1940,15 @@ document.addEventListener("DOMContentLoaded", () => {
   function handlePasswordSubmit(e) {
     e.preventDefault();
     const password = adminPasswordInput.value;
-    console.log('Password submitted:', password);
+    console.log("Password submitted:", password);
 
     if (password === "maccrey") {
-      console.log('Password correct, opening admin panel');
+      console.log("Password correct, opening admin panel");
       isAdminMode = true;
       closePasswordModal();
       openAdminPanel();
     } else {
-      console.log('Password incorrect');
+      console.log("Password incorrect");
       adminPasswordInput.value = "";
       adminPasswordInput.style.borderColor = "#dc3545";
       adminPasswordInput.style.backgroundColor = "#fff5f5";
@@ -1945,14 +1982,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 현재 활성 탭을 추적하는 변수
   let currentActiveTab = "tasks";
-  
+
   // 직원 작업 중 모달 닫기 방지 플래그
   let isStaffOperationInProgress = false;
 
   function switchTab(tabName) {
-    console.log(`Switching to tab: ${tabName}, previous tab: ${currentActiveTab}`);
+    console.log(
+      `Switching to tab: ${tabName}, previous tab: ${currentActiveTab}`
+    );
     currentActiveTab = tabName;
-    
+
     // 탭 버튼 활성화
     tabButtons.forEach((btn) => {
       btn.classList.remove("active");
@@ -1981,7 +2020,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (tabName === "stats") {
       loadStatistics();
     }
-    
+
     console.log(`Tab switched successfully to: ${currentActiveTab}`);
   }
 
@@ -1993,6 +2032,7 @@ document.addEventListener("DOMContentLoaded", () => {
         loadAdminTasks();
         loadDataInfo();
         loadStatistics();
+        loadDataStatus(); // 새로운 데이터 상태 로드
       }
     } catch (error) {
       console.error("Failed to load admin data:", error);
@@ -2053,7 +2093,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loadDataInfo() {
     const dataInfo = document.getElementById("data-info");
-    dataInfo.innerHTML = `
+    // 구 버전 호환성을 위해 요소가 존재할 때만 업데이트
+    if (dataInfo) {
+      dataInfo.innerHTML = `
             <p><strong>총 작업 수:</strong> ${tasks.length}개</p>
             <p><strong>마지막 업데이트:</strong> ${new Date().toLocaleString(
               "ko-KR"
@@ -2065,6 +2107,7 @@ document.addEventListener("DOMContentLoaded", () => {
               JSON.stringify(tasks).length / 1024
             )}KB</p>
         `;
+    }
   }
 
   function loadStatistics() {
@@ -2106,30 +2149,144 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 데이터 관리 기능
-  function backupData() {
-    const dataStr = JSON.stringify(tasks, null, 2);
-    const dataBlob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(dataBlob);
+  // 개선된 데이터 관리 기능
+  
+  // 데이터 상태 정보 로드
+  async function loadDataStatus() {
+    try {
+      const [booksInfo, staffInfo, workSessionsInfo] = await Promise.all([
+        fetch('/api/books/info').then(r => r.json()),
+        fetch('/api/staff/info').then(r => r.json()),
+        fetch('/api/work-sessions-history/info').then(r => r.json())
+      ]);
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `bookworklist_backup_${
-      new Date().toISOString().split("T")[0]
-    }.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    alert("데이터가 백업되었습니다.");
+      updateDataStatus('books', booksInfo);
+      updateDataStatus('staff', staffInfo);
+      updateDataStatus('work-sessions', workSessionsInfo);
+    } catch (error) {
+      console.error('데이터 상태 로드 실패:', error);
+    }
   }
 
-  function restoreData() {
-    document.getElementById("restore-file-input").click();
+  function updateDataStatus(type, info) {
+    const statusElement = document.getElementById(`${type}-status`);
+    if (!statusElement) return;
+
+    const countElement = statusElement.querySelector('.data-count');
+    const modifiedElement = statusElement.querySelector('.data-modified');
+
+    if (countElement) {
+      countElement.textContent = `${info.count}개 항목`;
+    }
+
+    if (modifiedElement && info.lastModified) {
+      const date = new Date(info.lastModified);
+      modifiedElement.textContent = `최종 수정: ${date.toLocaleString('ko-KR')}`;
+    } else if (modifiedElement) {
+      modifiedElement.textContent = '최종 수정: -';
+    }
   }
 
-  async function handleRestore(event) {
+  // 백업 함수들
+  async function backupBooks() {
+    try {
+      const response = await fetch('/api/books/backup');
+      const blob = await response.blob();
+      downloadFile(blob, `books_backup_${getDateString()}.json`);
+      showSuccessMessage('책 정보 데이터가 백업되었습니다.');
+    } catch (error) {
+      console.error('책 정보 백업 실패:', error);
+      showErrorMessage('책 정보 백업 중 오류가 발생했습니다.');
+    }
+  }
+
+  async function backupStaff() {
+    try {
+      const response = await fetch('/api/staff/backup');
+      const blob = await response.blob();
+      downloadFile(blob, `staff_backup_${getDateString()}.json`);
+      showSuccessMessage('직원 정보 데이터가 백업되었습니다.');
+    } catch (error) {
+      console.error('직원 정보 백업 실패:', error);
+      showErrorMessage('직원 정보 백업 중 오류가 발생했습니다.');
+    }
+  }
+
+  async function backupWorkSessions() {
+    try {
+      const response = await fetch('/api/work-sessions-history/backup');
+      const blob = await response.blob();
+      downloadFile(blob, `work_sessions_backup_${getDateString()}.json`);
+      showSuccessMessage('출퇴근 기록 데이터가 백업되었습니다.');
+    } catch (error) {
+      console.error('출퇴근 기록 백업 실패:', error);
+      showErrorMessage('출퇴근 기록 백업 중 오류가 발생했습니다.');
+    }
+  }
+
+  async function backupAll() {
+    try {
+      showLoadingMessage('전체 데이터를 백업하는 중...');
+      
+      const [booksResponse, staffResponse, workSessionsResponse] = await Promise.all([
+        fetch('/api/books/backup'),
+        fetch('/api/staff/backup'),
+        fetch('/api/work-sessions-history/backup')
+      ]);
+
+      const [booksData, staffData, workSessionsData] = await Promise.all([
+        booksResponse.json(),
+        staffResponse.json(),
+        workSessionsResponse.json()
+      ]);
+
+      const allData = {
+        books: booksData,
+        staff: staffData,
+        workSessions: workSessionsData,
+        backupDate: new Date().toISOString(),
+        version: "1.0"
+      };
+
+      const dataStr = JSON.stringify(allData, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      downloadFile(blob, `complete_backup_${getDateString()}.json`);
+      
+      hideLoadingMessage();
+      showSuccessMessage('전체 데이터가 백업되었습니다.');
+    } catch (error) {
+      console.error('전체 백업 실패:', error);
+      hideLoadingMessage();
+      showErrorMessage('전체 백업 중 오류가 발생했습니다.');
+    }
+  }
+
+  // 복원 함수들
+  function restoreBooks() {
+    document.getElementById('restore-books-input').click();
+  }
+
+  function restoreStaff() {
+    document.getElementById('restore-staff-input').click();
+  }
+
+  function restoreWorkSessions() {
+    document.getElementById('restore-work-sessions-input').click();
+  }
+
+  async function handleBooksRestore(event) {
+    await handleRestore(event, 'books', '/api/books/restore', '책 정보');
+  }
+
+  async function handleStaffRestore(event) {
+    await handleRestore(event, 'staff', '/api/staff/restore', '직원 정보');
+  }
+
+  async function handleWorkSessionsRestore(event) {
+    await handleRestore(event, 'work-sessions', '/api/work-sessions-history/restore', '출퇴근 기록');
+  }
+
+  async function handleRestore(event, type, endpoint, dataName) {
     const file = event.target.files[0];
     if (!file) return;
 
@@ -2137,32 +2294,213 @@ document.addEventListener("DOMContentLoaded", () => {
       const text = await file.text();
       const backupData = JSON.parse(text);
 
-      if (
-        confirm(
-          `${backupData.length}개의 작업을 복원하시겠습니까? 현재 데이터는 모두 삭제됩니다.`
-        )
-      ) {
-        // 기존 데이터 삭제
-        await clearAllData(false);
+      if (!Array.isArray(backupData)) {
+        throw new Error('잘못된 백업 파일 형식입니다.');
+      }
 
-        // 백업 데이터 복원
-        for (const task of backupData) {
-          await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(task),
-          });
+      if (confirm(`${backupData.length}개의 ${dataName} 항목을 복원하시겠습니까? 현재 데이터는 모두 교체됩니다.`)) {
+        showLoadingMessage(`${dataName} 데이터를 복원하는 중...`);
+        
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(backupData)
+        });
+
+        if (!response.ok) {
+          throw new Error(`복원 실패: ${response.statusText}`);
         }
 
-        await loadTasks();
+        const result = await response.json();
+        
+        hideLoadingMessage();
+        showSuccessMessage(`${dataName} 데이터가 성공적으로 복원되었습니다. (${result.count}개 항목)`);
+        
+        // 관련 데이터 새로고침
+        if (type === 'books') {
+          await loadTasks();
+        }
         loadAdminData();
-        alert("데이터가 성공적으로 복원되었습니다.");
+        loadDataStatus();
       }
     } catch (error) {
-      alert("복원 실패: 올바른 백업 파일이 아닙니다.");
+      console.error(`${dataName} 복원 중 오류:`, error);
+      hideLoadingMessage();
+      showErrorMessage(`${dataName} 데이터 복원 중 오류가 발생했습니다: ${error.message}`);
     }
 
-    event.target.value = "";
+    event.target.value = '';
+  }
+
+  // 삭제 관련 변수
+  let pendingDeleteAction = null;
+
+  // 삭제 확인 모달 관련 함수들
+  function showDeleteConfirmModal(message, deleteAction) {
+    const modal = document.getElementById('delete-confirm-modal');
+    const messageElement = document.getElementById('delete-confirm-message');
+    const passwordInput = document.getElementById('delete-password');
+    
+    messageElement.textContent = message;
+    passwordInput.value = '';
+    pendingDeleteAction = deleteAction;
+    
+    modal.style.display = 'flex';
+    passwordInput.focus();
+  }
+
+  function hideDeleteConfirmModal() {
+    const modal = document.getElementById('delete-confirm-modal');
+    modal.style.display = 'none';
+    pendingDeleteAction = null;
+  }
+
+  async function confirmDelete() {
+    const password = document.getElementById('delete-password').value;
+    
+    if (password !== '재활용') {
+      showErrorMessage('올바른 삭제 암호를 입력해주세요.');
+      return;
+    }
+
+    if (pendingDeleteAction) {
+      hideDeleteConfirmModal();
+      await pendingDeleteAction();
+    }
+  }
+
+  // 삭제 함수들
+  async function clearBooks() {
+    showDeleteConfirmModal(
+      '정말로 모든 책 정보 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+      async () => {
+        try {
+          showLoadingMessage('책 정보 데이터를 삭제하는 중...');
+          
+          const response = await fetch('/api/books/clear', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: '재활용' })
+          });
+
+          if (!response.ok) {
+            throw new Error('삭제 실패');
+          }
+
+          hideLoadingMessage();
+          showSuccessMessage('책 정보 데이터가 삭제되었습니다.');
+          await loadTasks();
+          loadAdminData();
+          loadDataStatus();
+        } catch (error) {
+          console.error('책 정보 삭제 실패:', error);
+          hideLoadingMessage();
+          showErrorMessage('책 정보 삭제 중 오류가 발생했습니다.');
+        }
+      }
+    );
+  }
+
+  async function clearStaff() {
+    showDeleteConfirmModal(
+      '정말로 모든 직원 정보 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+      async () => {
+        try {
+          showLoadingMessage('직원 정보 데이터를 삭제하는 중...');
+          
+          const response = await fetch('/api/staff/clear', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: '재활용' })
+          });
+
+          if (!response.ok) {
+            throw new Error('삭제 실패');
+          }
+
+          hideLoadingMessage();
+          showSuccessMessage('직원 정보 데이터가 삭제되었습니다.');
+          loadAdminData();
+          loadDataStatus();
+        } catch (error) {
+          console.error('직원 정보 삭제 실패:', error);
+          hideLoadingMessage();
+          showErrorMessage('직원 정보 삭제 중 오류가 발생했습니다.');
+        }
+      }
+    );
+  }
+
+  async function clearWorkSessions() {
+    showDeleteConfirmModal(
+      '정말로 모든 출퇴근 기록 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+      async () => {
+        try {
+          showLoadingMessage('출퇴근 기록 데이터를 삭제하는 중...');
+          
+          const response = await fetch('/api/work-sessions-history/clear', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: '재활용' })
+          });
+
+          if (!response.ok) {
+            throw new Error('삭제 실패');
+          }
+
+          hideLoadingMessage();
+          showSuccessMessage('출퇴근 기록 데이터가 삭제되었습니다.');
+          loadAdminData();
+          loadDataStatus();
+        } catch (error) {
+          console.error('출퇴근 기록 삭제 실패:', error);
+          hideLoadingMessage();
+          showErrorMessage('출퇴근 기록 삭제 중 오류가 발생했습니다.');
+        }
+      }
+    );
+  }
+
+  // 유틸리티 함수들
+  function downloadFile(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function getDateString() {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  function showSuccessMessage(message) {
+    alert(`✅ ${message}`);
+  }
+
+  function showErrorMessage(message) {
+    alert(`❌ ${message}`);
+  }
+
+  function showLoadingMessage(message) {
+    // 간단한 로딩 메시지 (나중에 더 예쁜 로딩 UI로 교체 가능)
+    console.log(`🔄 ${message}`);
+  }
+
+  function hideLoadingMessage() {
+    console.log('✅ 작업 완료');
+  }
+
+  // 기존 함수들 (호환성 유지)
+  function backupData() {
+    backupBooks();
+  }
+
+  function restoreData() {
+    restoreBooks();
   }
 
   async function clearAllData(confirm = true) {
@@ -2285,15 +2623,15 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // 이벤트 리스너들
-  console.log('adminModeButton:', adminModeButton);
-  console.log('passwordModal:', passwordModal);
-  console.log('passwordForm:', passwordForm);
-  
+  console.log("adminModeButton:", adminModeButton);
+  console.log("passwordModal:", passwordModal);
+  console.log("passwordForm:", passwordForm);
+
   if (adminModeButton) {
     adminModeButton.addEventListener("click", authenticateAdmin);
-    console.log('Admin button event listener added');
+    console.log("Admin button event listener added");
   } else {
-    console.error('Admin mode button not found!');
+    console.error("Admin mode button not found!");
   }
   adminPanelCloseButton.addEventListener("click", closeAdminPanel);
 
@@ -2301,19 +2639,84 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", () => switchTab(btn.dataset.tab));
   });
 
-  // 데이터 관리 버튼들
-  document
-    .getElementById("backup-data-btn")
-    .addEventListener("click", backupData);
-  document
-    .getElementById("restore-data-btn")
-    .addEventListener("click", restoreData);
-  document
-    .getElementById("clear-all-data-btn")
-    .addEventListener("click", () => clearAllData(true));
-  document
-    .getElementById("restore-file-input")
-    .addEventListener("change", handleRestore);
+  // 새로운 데이터 관리 버튼들
+  
+  // 책 정보 관리
+  document.getElementById("backup-books-btn").addEventListener("click", backupBooks);
+  document.getElementById("restore-books-btn").addEventListener("click", restoreBooks);
+  document.getElementById("clear-books-btn").addEventListener("click", clearBooks);
+  document.getElementById("restore-books-input").addEventListener("change", handleBooksRestore);
+
+  // 직원 정보 관리
+  document.getElementById("backup-staff-btn").addEventListener("click", backupStaff);
+  document.getElementById("restore-staff-btn").addEventListener("click", restoreStaff);
+  document.getElementById("clear-staff-btn").addEventListener("click", clearStaff);
+  document.getElementById("restore-staff-input").addEventListener("change", handleStaffRestore);
+
+  // 출퇴근 기록 관리
+  document.getElementById("backup-work-sessions-btn").addEventListener("click", backupWorkSessions);
+  document.getElementById("restore-work-sessions-btn").addEventListener("click", restoreWorkSessions);
+  document.getElementById("clear-work-sessions-btn").addEventListener("click", clearWorkSessions);
+  document.getElementById("restore-work-sessions-input").addEventListener("change", handleWorkSessionsRestore);
+
+  // 전체 관리
+  document.getElementById("backup-all-btn").addEventListener("click", backupAll);
+  document.getElementById("clear-all-data-btn").addEventListener("click", () => {
+    showDeleteConfirmModal(
+      '정말로 모든 데이터를 삭제하시겠습니까? 책 정보, 직원 정보, 출퇴근 기록이 모두 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
+      async () => {
+        try {
+          showLoadingMessage('모든 데이터를 삭제하는 중...');
+          
+          await Promise.all([
+            fetch('/api/books/clear', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ password: '재활용' })
+            }),
+            fetch('/api/staff/clear', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ password: '재활용' })
+            }),
+            fetch('/api/work-sessions-history/clear', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ password: '재활용' })
+            })
+          ]);
+
+          hideLoadingMessage();
+          showSuccessMessage('모든 데이터가 삭제되었습니다.');
+          await loadTasks();
+          loadAdminData();
+          loadDataStatus();
+        } catch (error) {
+          console.error('전체 데이터 삭제 실패:', error);
+          hideLoadingMessage();
+          showErrorMessage('데이터 삭제 중 오류가 발생했습니다.');
+        }
+      }
+    );
+  });
+
+  // 삭제 확인 모달 버튼들
+  document.getElementById("confirm-delete-btn").addEventListener("click", confirmDelete);
+  document.getElementById("cancel-delete-btn").addEventListener("click", hideDeleteConfirmModal);
+  
+  // 암호 입력 시 엔터키 처리
+  document.getElementById("delete-password").addEventListener("keypress", (e) => {
+    if (e.key === 'Enter') {
+      confirmDelete();
+    }
+  });
+
+  // 모달 외부 클릭 시 닫기
+  document.getElementById("delete-confirm-modal").addEventListener("click", (e) => {
+    if (e.target.id === "delete-confirm-modal") {
+      hideDeleteConfirmModal();
+    }
+  });
 
   // 새로고침 및 내보내기 버튼
   document
@@ -2366,12 +2769,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (assignedSelect) {
         // 현재 값 임시 저장
         const currentValue = stageData?.assignedTo || "";
-        
+
         // 드롭다운이 이미 업데이트되어 있어야 함
         updateStaffDropdowns();
-        
+
         // 값 설정
-        if (currentValue && Array.from(assignedSelect.options).some(opt => opt.value === currentValue)) {
+        if (
+          currentValue &&
+          Array.from(assignedSelect.options).some(
+            (opt) => opt.value === currentValue
+          )
+        ) {
           assignedSelect.value = currentValue;
         }
       }
@@ -2423,7 +2831,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const parsedDate = parseKoreanDate(entry.date);
             date = parsedDate ? parsedDate.toLocaleString("ko-KR") : entry.date;
           } catch (error) {
-            console.warn('Date parsing error:', error);
+            console.warn("Date parsing error:", error);
             date = entry.date || "날짜 정보 없음";
           }
           historyHtml += `
@@ -2924,109 +3332,140 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 출퇴근 기록 이벤트 리스너들 - 서버 데이터 사용
   let currentAdminAttendanceData = null;
-  
+
   async function refreshAdminAttendanceTable() {
     if (currentAdminAttendanceData) {
-      renderAttendanceTableForModalWithData('attendance', currentAdminAttendanceData);
+      renderAttendanceTableForModalWithData(
+        "attendance",
+        currentAdminAttendanceData
+      );
     } else {
       // 데이터가 없으면 새로고침
       await loadAttendanceData();
     }
   }
-  
+
   async function exportAdminAttendanceRecords() {
     try {
       // 서버에서 최신 출석부 데이터 로드
       const response = await fetch(ATTENDANCE_DATA_API_URL);
       if (response.ok) {
         const serverWorkSessions = await response.json();
-        console.log('Exporting admin attendance data from server:', serverWorkSessions.length, 'sessions');
-        
+        console.log(
+          "Exporting admin attendance data from server:",
+          serverWorkSessions.length,
+          "sessions"
+        );
+
         // 서버 데이터로 내보내기
-        exportAttendanceRecordsForModalWithData('attendance', serverWorkSessions);
+        exportAttendanceRecordsForModalWithData(
+          "attendance",
+          serverWorkSessions
+        );
       } else {
-        console.error('Failed to load attendance data from server for export');
+        console.error("Failed to load attendance data from server for export");
         // 폴백으로 기존 방식 사용
-        exportAttendanceRecordsForModal('attendance');
+        exportAttendanceRecordsForModal("attendance");
       }
     } catch (error) {
-      console.error('Error exporting admin attendance data from server:', error);
+      console.error(
+        "Error exporting admin attendance data from server:",
+        error
+      );
       // 폴백으로 기존 방식 사용
-      exportAttendanceRecordsForModal('attendance');
+      exportAttendanceRecordsForModal("attendance");
     }
   }
-  
-  document.getElementById('attendance-year')?.addEventListener('change', refreshAdminAttendanceTable);
-  document.getElementById('attendance-month')?.addEventListener('change', refreshAdminAttendanceTable);
-  document.getElementById('attendance-date')?.addEventListener('change', refreshAdminAttendanceTable);
-  document.getElementById('attendance-worker')?.addEventListener('change', refreshAdminAttendanceTable);
-  document.getElementById('refresh-attendance-btn')?.addEventListener('click', loadAttendanceData);
-  document.getElementById('export-attendance-btn')?.addEventListener('click', exportAdminAttendanceRecords);
-  
+
+  document
+    .getElementById("attendance-year")
+    ?.addEventListener("change", refreshAdminAttendanceTable);
+  document
+    .getElementById("attendance-month")
+    ?.addEventListener("change", refreshAdminAttendanceTable);
+  document
+    .getElementById("attendance-date")
+    ?.addEventListener("change", refreshAdminAttendanceTable);
+  document
+    .getElementById("attendance-worker")
+    ?.addEventListener("change", refreshAdminAttendanceTable);
+  document
+    .getElementById("refresh-attendance-btn")
+    ?.addEventListener("click", loadAttendanceData);
+  document
+    .getElementById("export-attendance-btn")
+    ?.addEventListener("click", exportAdminAttendanceRecords);
+
   // 직원 관리 이벤트 리스너들
-  const staffForm = document.getElementById('staff-form');
+  const staffForm = document.getElementById("staff-form");
   if (staffForm) {
-    staffForm.addEventListener('submit', async (e) => {
+    staffForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      
-      const nameInput = document.getElementById('staff-name');
-      const roleSelect = document.getElementById('staff-role');
-      
+
+      const nameInput = document.getElementById("staff-name");
+      const roleSelect = document.getElementById("staff-role");
+
       const name = nameInput.value.trim();
       const role = roleSelect.value;
-      
+
       if (!name) {
-        alert('직원 이름을 입력해주세요.');
+        alert("직원 이름을 입력해주세요.");
         return;
       }
-      
+
       try {
         isStaffOperationInProgress = true; // 직원 작업 시작
-        
+
         if (currentEditingStaff) {
           // 편집 모드: 기존 직원 정보 업데이트
           // 중복 이름 체크 (자기 자신 제외)
-          if (staff.some(s => s.name === name && s.id !== currentEditingStaff)) {
-            alert('이미 등록된 직원입니다.');
+          if (
+            staff.some((s) => s.name === name && s.id !== currentEditingStaff)
+          ) {
+            alert("이미 등록된 직원입니다.");
             isStaffOperationInProgress = false; // 작업 종료
             return;
           }
-          
+
           await updateStaff(currentEditingStaff, name, role);
           exitEditMode();
-          alert('직원 정보가 성공적으로 수정되었습니다.');
+          alert("직원 정보가 성공적으로 수정되었습니다.");
           // alert 후 관리자 패널과 직원 탭 유지
           setTimeout(() => {
             adminPanelModal.style.display = "flex";
-            switchTab('staff');
+            switchTab("staff");
             isStaffOperationInProgress = false; // 작업 완료
           }, 100);
         } else {
           // 새로 추가 모드
           // 중복 이름 체크
-          if (staff.some(s => s.name === name)) {
-            alert('이미 등록된 직원입니다.');
+          if (staff.some((s) => s.name === name)) {
+            alert("이미 등록된 직원입니다.");
             isStaffOperationInProgress = false; // 작업 종료
             return;
           }
-          
+
           await addStaff(name, role);
-          nameInput.value = '';
-          roleSelect.value = 'corrector';
-          alert('직원이 성공적으로 등록되었습니다.');
+          nameInput.value = "";
+          roleSelect.value = "corrector";
+          alert("직원이 성공적으로 등록되었습니다.");
           // alert 후 관리자 패널과 직원 탭 유지
           setTimeout(() => {
             adminPanelModal.style.display = "flex";
-            switchTab('staff');
+            switchTab("staff");
             isStaffOperationInProgress = false; // 작업 완료
           }, 100);
         }
       } catch (error) {
-        alert(currentEditingStaff ? '직원 수정에 실패했습니다: ' + error.message : '직원 등록에 실패했습니다: ' + error.message);
+        alert(
+          currentEditingStaff
+            ? "직원 수정에 실패했습니다: " + error.message
+            : "직원 등록에 실패했습니다: " + error.message
+        );
         // 오류 시에도 관리자 패널과 직원 탭 유지
         setTimeout(() => {
           adminPanelModal.style.display = "flex";
-          switchTab('staff');
+          switchTab("staff");
           isStaffOperationInProgress = false; // 작업 완료
         }, 100);
       }
@@ -3038,26 +3477,26 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       // 새로운 세션 시작 플래그 설정
       isStartingNewSession = true;
-      
+
       // 진행상황 모달 보호 플래그 해제 (작업 시작 시에는 모달이 열리면 안됨)
       isProgressModalProtected = false;
-      
+
       // 진행상황 모달이 열려있다면 닫기 (작업 시작 시에는 모달이 열리면 안됨)
       const progressModal = document.getElementById("progress-update-modal");
       if (progressModal && progressModal.style.display === "flex") {
         progressModal.style.display = "none";
       }
-      
+
       // API 호출로 작업 세션 시작
       const response = await fetch(WORK_SESSIONS_API_URL, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           taskId: task.id,
-          worker: worker
-        })
+          worker: worker,
+        }),
       });
 
       if (!response.ok) {
@@ -3066,39 +3505,45 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const newSession = await response.json();
       console.log(`Work session started for ${worker} on task ${task.id}`);
-      
+
       // 플래그 해제 (약간의 지연 후)
       setTimeout(() => {
         isStartingNewSession = false;
       }, 1000);
-      
+
       // 로컬 처리는 WebSocket 메시지로 받을 때 처리됨
-      
     } catch (error) {
-      console.error('작업 세션 시작 실패:', error);
-      alert('작업 세션 시작에 실패했습니다: ' + error.message);
+      console.error("작업 세션 시작 실패:", error);
+      alert("작업 세션 시작에 실패했습니다: " + error.message);
       isStartingNewSession = false; // 에러 시에도 플래그 해제
     }
   }
 
   function stopWorkSession(task, worker, showProgressModal = true) {
-    console.log(`Stopping work session for task: ${task.id}, worker: ${worker}`);
-    
-    if (showProgressModal) {
-        const stage = task.stages[task.currentStage];
-        const lastCompletedPage = stage.history.length > 0 ? stage.history[stage.history.length - 1].endPage : 0;
+    console.log(
+      `Stopping work session for task: ${task.id}, worker: ${worker}`
+    );
 
-        // Store session info to be used when progress is submitted
-        window.currentStoppedSession = {
-            taskId: task.id,
-            worker: worker,
-            startPage: lastCompletedPage,
-        };
-        
-        // Open progress modal
-        openProgressUpdateModal(task);
+    if (showProgressModal) {
+      const stage = task.stages[task.currentStage];
+      const lastCompletedPage =
+        stage.history.length > 0
+          ? stage.history[stage.history.length - 1].endPage
+          : 0;
+
+      // Store session info to be used when progress is submitted
+      window.currentStoppedSession = {
+        taskId: task.id,
+        worker: worker,
+        startPage: lastCompletedPage,
+      };
+
+      // Open progress modal
+      openProgressUpdateModal(task);
     } else {
-        console.warn("stopWorkSession called without showing progress modal. This is not fully handled.");
+      console.warn(
+        "stopWorkSession called without showing progress modal. This is not fully handled."
+      );
     }
   }
 
@@ -3109,7 +3554,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (response.ok) {
         const sessions = await response.json();
         currentWorkSessions.clear();
-        
+
         // 서버 데이터를 currentWorkSessions Map에 로드
         Object.entries(sessions).forEach(([taskId, session]) => {
           if (session.isWorking) {
@@ -3118,55 +3563,67 @@ document.addEventListener("DOMContentLoaded", () => {
               worker: session.worker,
               isWorking: true,
               taskTitle: session.taskTitle,
-              stage: session.stage
+              stage: session.stage,
             });
           }
         });
-        
-        console.log(`Loaded ${currentWorkSessions.size} current work sessions from server`);
+
+        console.log(
+          `Loaded ${currentWorkSessions.size} current work sessions from server`
+        );
       }
     } catch (error) {
-      console.error('Error loading current work sessions:', error);
+      console.error("Error loading current work sessions:", error);
     }
   }
 
   // DEPRECATED: 로컬스토리지 기반 출퇴근 기록 저장 - 이제 서버 기반으로 대체됨
   function saveWorkSessionsToStorage() {
-    console.warn('saveWorkSessionsToStorage is deprecated. Use server-based attendance data storage instead.');
+    console.warn(
+      "saveWorkSessionsToStorage is deprecated. Use server-based attendance data storage instead."
+    );
     // 기능 비활성화됨 - 서버 기반 시스템 사용
   }
 
   // 작업 개수 업데이트 함수
   function updateTaskCounts() {
     if (!completedCount) return;
-    
+
     // 완료된 작업 개수 계산
-    const completedTasks = tasks.filter(task => {
+    const completedTasks = tasks.filter((task) => {
       if (!task.stages) return false;
-      
-      const stages = ['correction1', 'correction2', 'correction3', 'transcription'];
-      return stages.every(stage => {
+
+      const stages = [
+        "correction1",
+        "correction2",
+        "correction3",
+        "transcription",
+      ];
+      return stages.every((stage) => {
         if (!task.stages[stage]) return true;
-        return task.stages[stage].status === 'completed' || task.stages[stage].status === 'not_applicable';
+        return (
+          task.stages[stage].status === "completed" ||
+          task.stages[stage].status === "not_applicable"
+        );
       });
     });
-    
+
     completedCount.textContent = completedTasks.length;
   }
 
   function updateCurrentWorkersDisplay() {
     // 로그인되지 않은 상태에서는 실행하지 않음
-    if (!currentUser || mainDashboard.style.display === 'none') {
+    if (!currentUser || mainDashboard.style.display === "none") {
       return;
     }
-    
-    let currentWorkersDiv = document.getElementById('current-workers-display');
+
+    let currentWorkersDiv = document.getElementById("current-workers-display");
     if (!currentWorkersDiv) {
       // Create the display element
-      const headerContent = document.querySelector('.header-content');
-      
-      currentWorkersDiv = document.createElement('div');
-      currentWorkersDiv.id = 'current-workers-display';
+      const headerContent = document.querySelector(".header-content");
+
+      currentWorkersDiv = document.createElement("div");
+      currentWorkersDiv.id = "current-workers-display";
       currentWorkersDiv.style.cssText = `
         background: #e8f5e8;
         border: 1px solid #4CAF50;
@@ -3177,57 +3634,67 @@ document.addEventListener("DOMContentLoaded", () => {
         max-width: 1200px;
         text-align: center;
       `;
-      
+
       // 더 안전한 방법으로 요소 추가 - 메인 섹션에 추가하도록 수정
-      const searchSection = document.querySelector('.search-section');
+      const searchSection = document.querySelector(".search-section");
       if (searchSection) {
         // search-section 다음에 추가
-        searchSection.parentNode.insertBefore(currentWorkersDiv, searchSection.nextSibling);
+        searchSection.parentNode.insertBefore(
+          currentWorkersDiv,
+          searchSection.nextSibling
+        );
       } else {
         // search-section이 없으면 main 시작 부분에 추가
-        const main = document.querySelector('main');
+        const main = document.querySelector("main");
         if (main) {
           main.insertBefore(currentWorkersDiv, main.firstChild);
         } else {
-          console.warn('Main element not found, skipping current workers display');
+          console.warn(
+            "Main element not found, skipping current workers display"
+          );
           return;
         }
       }
-      
+
       // Add click handler for debugging
-      currentWorkersDiv.addEventListener('click', () => {
-        console.log('Current work sessions debug:', {
+      currentWorkersDiv.addEventListener("click", () => {
+        console.log("Current work sessions debug:", {
           size: currentWorkSessions.size,
           entries: Array.from(currentWorkSessions.entries()),
-          raw: currentWorkSessions
+          raw: currentWorkSessions,
         });
       });
     }
-    
+
     if (currentWorkSessions.size === 0) {
-      currentWorkersDiv.innerHTML = '<div style="text-align: center; color: #666;">현재 작업 중인 담당자가 없습니다.</div>';
+      currentWorkersDiv.innerHTML =
+        '<div style="text-align: center; color: #666;">현재 작업 중인 담당자가 없습니다.</div>';
       return;
     }
-    
-    const workersHtml = Array.from(currentWorkSessions.entries()).map(([taskId, session]) => {
-      const duration = Math.round((new Date() - session.startTime) / 1000 / 60);
-      const stageNames = {
-        correction1: '1차 교정',
-        correction2: '2차 교정', 
-        correction3: '3차 교정',
-        transcription: '점역'
-      };
-      const stageName = stageNames[session.stage] || session.stage;
-      
-      const workerName = session.worker || 'Unknown';
-      
-      return `
+
+    const workersHtml = Array.from(currentWorkSessions.entries())
+      .map(([taskId, session]) => {
+        const duration = Math.round(
+          (new Date() - session.startTime) / 1000 / 60
+        );
+        const stageNames = {
+          correction1: "1차 교정",
+          correction2: "2차 교정",
+          correction3: "3차 교정",
+          transcription: "점역",
+        };
+        const stageName = stageNames[session.stage] || session.stage;
+
+        const workerName = session.worker || "Unknown";
+
+        return `
         <div style="display: inline-block; background: white; padding: 5px 10px; margin: 2px; border-radius: 20px; border: 1px solid #4CAF50; color: #333;">
           <strong style="color: #2e7d32;">${workerName}</strong> - ${stageName} (작업시간: ${duration}분)
         </div>
       `;
-    }).join('');
-    
+      })
+      .join("");
+
     currentWorkersDiv.innerHTML = `
       <div style="font-weight: bold; margin-bottom: 5px;">현재 작업 중 (${currentWorkSessions.size}명)</div>
       <div>${workersHtml}</div>
@@ -3237,35 +3704,35 @@ document.addEventListener("DOMContentLoaded", () => {
   // Attendance Management Functions
   function calculateAttendanceRecords(sessionsData = []) {
     const attendanceRecords = new Map(); // worker -> date -> { startTime, endTime, workSessions, tasks }
-    
-    sessionsData.forEach(session => {
+
+    sessionsData.forEach((session) => {
       if (!session.startTime || !session.endTime) return;
-      
+
       const startDate = new Date(session.startTime).toDateString();
       const worker = session.worker;
-      
+
       if (!attendanceRecords.has(worker)) {
         attendanceRecords.set(worker, new Map());
       }
-      
+
       const workerRecords = attendanceRecords.get(worker);
       if (!workerRecords.has(startDate)) {
         workerRecords.set(startDate, {
           startTime: new Date(session.startTime),
           endTime: new Date(session.endTime),
           workSessions: [],
-          tasks: new Set()
+          tasks: new Set(),
         });
       }
-      
+
       const dayRecord = workerRecords.get(startDate);
       dayRecord.workSessions.push(session);
       dayRecord.tasks.add(session.taskTitle);
-      
+
       // Update start/end times for the day
       const sessionStart = new Date(session.startTime);
       const sessionEnd = new Date(session.endTime);
-      
+
       if (sessionStart < dayRecord.startTime) {
         dayRecord.startTime = sessionStart;
       }
@@ -3273,47 +3740,46 @@ document.addEventListener("DOMContentLoaded", () => {
         dayRecord.endTime = sessionEnd;
       }
     });
-    
+
     return attendanceRecords;
   }
-  
+
   async function loadAttendanceData() {
     try {
       // 서버에서 최신 출석부 데이터 로드
       const response = await fetch(ATTENDANCE_DATA_API_URL);
       if (response.ok) {
         const serverWorkSessions = await response.json();
-        console.log('Loaded attendance data from server for admin modal:', serverWorkSessions.length, 'sessions');
-        
+        console.log(
+          "Loaded attendance data from server for admin modal:",
+          serverWorkSessions.length,
+          "sessions"
+        );
+
         // 현재 관리자 데이터 캐시
         currentAdminAttendanceData = serverWorkSessions;
-        
+
         // 서버 데이터로 출석부 데이터 로드
-        loadAttendanceDataForModalWithData('attendance', serverWorkSessions);
+        loadAttendanceDataForModalWithData("attendance", serverWorkSessions);
       } else {
-        console.error('Failed to load attendance data from server - Status:', response.status);
+        console.error(
+          "Failed to load attendance data from server - Status:",
+          response.status
+        );
         // 빈 배열로 초기화하여 UI 표시
         currentAdminAttendanceData = [];
-        loadAttendanceDataForModalWithData('attendance', []);
+        loadAttendanceDataForModalWithData("attendance", []);
       }
     } catch (error) {
-      console.error('Error loading attendance data from server:', error);
+      console.error("Error loading attendance data from server:", error);
       // 빈 배열로 초기화하여 UI 표시
       currentAdminAttendanceData = [];
-      loadAttendanceDataForModalWithData('attendance', []);
+      loadAttendanceDataForModalWithData("attendance", []);
     }
   }
 
-  
-
-  
-
-  
-
-
-  
   // Load work sessions on startup - 이제 서버 기반으로 처리됨
-  
+
   // Update current workers display periodically
   setInterval(updateCurrentWorkersDisplay, 60000); // Update every minute
 
@@ -3323,101 +3789,105 @@ document.addEventListener("DOMContentLoaded", () => {
   async function updateStaff(staffId, name, role) {
     try {
       const response = await fetch(`${STAFF_API_URL}/${staffId}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ name, role }),
       });
-      
+
       if (response.ok) {
         const updatedStaff = await response.json();
         // Update staff array
-        const index = staff.findIndex(s => s.id === staffId);
+        const index = staff.findIndex((s) => s.id === staffId);
         if (index !== -1) {
           staff[index] = updatedStaff;
         }
         updateStaffDropdowns();
         updateAssignCorrectorDropdownIfOpen();
-        
+
         // 항상 직원 리스트 렌더링
         renderStaffList();
         // 직원 탭 강제 유지
-        switchTab('staff');
+        switchTab("staff");
         return updatedStaff;
       } else {
-        throw new Error('Failed to update staff member');
+        throw new Error("Failed to update staff member");
       }
     } catch (error) {
-      console.error('Error updating staff:', error);
+      console.error("Error updating staff:", error);
       throw error;
     }
   }
 
   function enterEditMode(staffId) {
-    const staffMember = staff.find(s => s.id === staffId);
+    const staffMember = staff.find((s) => s.id === staffId);
     if (!staffMember) return;
 
     currentEditingStaff = staffId;
-    
+
     // Find the staff form elements
-    const nameInput = document.getElementById('staff-name');
-    const roleSelect = document.getElementById('staff-role');
-    const submitBtn = document.querySelector('#staff-form button[type="submit"]');
-    
+    const nameInput = document.getElementById("staff-name");
+    const roleSelect = document.getElementById("staff-role");
+    const submitBtn = document.querySelector(
+      '#staff-form button[type="submit"]'
+    );
+
     if (nameInput && roleSelect && submitBtn) {
       // Fill form with current staff data
       nameInput.value = staffMember.name;
       roleSelect.value = staffMember.role;
-      
+
       // Change button text to indicate editing mode
-      submitBtn.textContent = '수정 완료';
-      
+      submitBtn.textContent = "수정 완료";
+
       // Scroll to form
-      nameInput.scrollIntoView({ behavior: 'smooth' });
+      nameInput.scrollIntoView({ behavior: "smooth" });
       nameInput.focus();
-      
+
       // Add visual indicator
-      const form = document.getElementById('staff-form');
-      form.classList.add('editing');
-      
+      const form = document.getElementById("staff-form");
+      form.classList.add("editing");
+
       // Add cancel button if it doesn't exist
-      let cancelBtn = document.getElementById('edit-cancel-btn');
+      let cancelBtn = document.getElementById("edit-cancel-btn");
       if (!cancelBtn) {
-        cancelBtn = document.createElement('button');
-        cancelBtn.id = 'edit-cancel-btn';
-        cancelBtn.type = 'button';
-        cancelBtn.className = 'small-btn cancel-btn';
-        cancelBtn.textContent = '취소';
-        cancelBtn.style.marginLeft = '10px';
+        cancelBtn = document.createElement("button");
+        cancelBtn.id = "edit-cancel-btn";
+        cancelBtn.type = "button";
+        cancelBtn.className = "small-btn cancel-btn";
+        cancelBtn.textContent = "취소";
+        cancelBtn.style.marginLeft = "10px";
         cancelBtn.onclick = exitEditMode;
         submitBtn.parentNode.appendChild(cancelBtn);
       }
-      cancelBtn.style.display = 'inline-block';
+      cancelBtn.style.display = "inline-block";
     }
   }
 
   function exitEditMode() {
     currentEditingStaff = null;
-    
+
     // Reset form
-    const nameInput = document.getElementById('staff-name');
-    const roleSelect = document.getElementById('staff-role');
-    const submitBtn = document.querySelector('#staff-form button[type="submit"]');
-    const cancelBtn = document.getElementById('edit-cancel-btn');
-    
+    const nameInput = document.getElementById("staff-name");
+    const roleSelect = document.getElementById("staff-role");
+    const submitBtn = document.querySelector(
+      '#staff-form button[type="submit"]'
+    );
+    const cancelBtn = document.getElementById("edit-cancel-btn");
+
     if (nameInput && roleSelect && submitBtn) {
-      nameInput.value = '';
-      roleSelect.value = 'corrector';
-      submitBtn.textContent = '등록';
-      
+      nameInput.value = "";
+      roleSelect.value = "corrector";
+      submitBtn.textContent = "등록";
+
       // Remove visual indicators
-      const form = document.getElementById('staff-form');
-      form.classList.remove('editing');
-      
+      const form = document.getElementById("staff-form");
+      form.classList.remove("editing");
+
       // Hide cancel button
       if (cancelBtn) {
-        cancelBtn.style.display = 'none';
+        cancelBtn.style.display = "none";
       }
     }
   }
@@ -3427,59 +3897,64 @@ document.addEventListener("DOMContentLoaded", () => {
     const attendanceYear = document.getElementById(`${prefix}-year`);
     const attendanceMonth = document.getElementById(`${prefix}-month`);
     const attendanceWorker = document.getElementById(`${prefix}-worker`);
-    
+
     // Populate year dropdown with available years from server data
     populateYearDropdownForModalWithData(prefix, sessionsData);
-    
+
     // Set current date as default if no selection
     const now = new Date();
     const currentYear = now.getFullYear().toString();
-    const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
-    
+    const currentMonth = (now.getMonth() + 1).toString().padStart(2, "0");
+
     if (attendanceYear && !attendanceYear.value) {
       attendanceYear.value = currentYear;
     }
     if (attendanceMonth && !attendanceMonth.value) {
       attendanceMonth.value = currentMonth;
     }
-    
+
     // Populate worker dropdown from server data
     attendanceWorker.innerHTML = '<option value="">모든 직원</option>';
-    const uniqueWorkers = [...new Set(sessionsData.map(s => s.worker))].filter(w => w);
-    uniqueWorkers.forEach(worker => {
-      const option = document.createElement('option');
+    const uniqueWorkers = [
+      ...new Set(sessionsData.map((s) => s.worker)),
+    ].filter((w) => w);
+    uniqueWorkers.forEach((worker) => {
+      const option = document.createElement("option");
       option.value = worker;
       option.textContent = worker;
       attendanceWorker.appendChild(option);
     });
-    
-    renderAttendanceSummaryForModalWithData(prefix, sessionsData);
+
+    // "attendance-only" prefix일 때만 summary 렌더링 (출퇴근 기록 확인 모달)
+    if (prefix === "attendance-only") {
+      renderAttendanceSummaryForModalWithData(prefix, sessionsData);
+    }
     renderAttendanceTableForModalWithData(prefix, sessionsData);
   }
 
   function populateYearDropdownForModalWithData(prefix, sessionsData) {
     const attendanceYear = document.getElementById(`${prefix}-year`);
     if (!attendanceYear) return;
-    
+
     // Get unique years from sessions data
     const years = new Set();
-    sessionsData.forEach(session => {
+    sessionsData.forEach((session) => {
       if (session.startTime) {
         const year = new Date(session.startTime).getFullYear();
         years.add(year);
       }
     });
-    
+
     // Add current year even if no sessions
     years.add(new Date().getFullYear());
-    
+
     // Clear and populate year dropdown
     attendanceYear.innerHTML = '<option value="">전체 연도</option>';
-    
+
     // Sort years in descending order
     const sortedYears = Array.from(years).sort((a, b) => b - a);
-    sortedYears.forEach(year => {
-      const option = document.createElement('option');
+    sortedYears.forEach((year) => {
+      const option = document.createElement("option");
       option.value = year.toString();
       option.textContent = `${year}년`;
       attendanceYear.appendChild(option);
@@ -3490,46 +3965,62 @@ document.addEventListener("DOMContentLoaded", () => {
     const today = new Date().toDateString();
     const attendanceRecords = calculateAttendanceRecords(sessionsData);
     const summaryContent = document.getElementById(`${prefix}-summary-content`);
-    
+
     let todayWorkers = [];
     attendanceRecords.forEach((workerDays, worker) => {
       if (workerDays.has(today)) {
         const todayRecord = workerDays.get(today);
-        const workTime = Math.round((todayRecord.endTime - todayRecord.startTime) / 1000 / 60); // minutes
+        const workTime = Math.round(
+          (todayRecord.endTime - todayRecord.startTime) / 1000 / 60
+        ); // minutes
         todayWorkers.push({
           worker,
           startTime: todayRecord.startTime,
           endTime: todayRecord.endTime,
           workTime,
-          tasks: todayRecord.tasks
+          tasks: todayRecord.tasks,
         });
       }
     });
-    
+
     if (todayWorkers.length === 0) {
-      summaryContent.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">오늘 출근한 직원이 없습니다.</p>';
+      summaryContent.innerHTML =
+        '<p style="text-align: center; color: #666; padding: 20px;">오늘 출근한 직원이 없습니다.</p>';
       return;
     }
-    
+
     // Sort by start time
     todayWorkers.sort((a, b) => a.startTime - b.startTime);
-    
-    const summaryHtml = todayWorkers.map(record => {
-      const tasksHtml = record.tasks.length > 0 
-        ? `<div style="font-size: 0.9em; color: #666; margin-top: 5px;">작업: ${record.tasks.join(', ')}</div>`
-        : '';
-      
-      return `
+
+    const summaryHtml = todayWorkers
+      .map((record) => {
+        const tasksHtml =
+          record.tasks.length > 0
+            ? `<div style="font-size: 0.9em; color: #666; margin-top: 5px;">작업: ${record.tasks.join(
+                ", "
+              )}</div>`
+            : "";
+
+        return `
         <div class="attendance-summary-item">
           <strong>${record.worker}</strong> - 
-          출근: ${record.startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}, 
-          퇴근: ${record.endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}, 
-          근무시간: ${Math.floor(record.workTime / 60)}시간 ${record.workTime % 60}분
+          출근: ${record.startTime.toLocaleTimeString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}, 
+          퇴근: ${record.endTime.toLocaleTimeString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}, 
+          근무시간: ${Math.floor(record.workTime / 60)}시간 ${
+          record.workTime % 60
+        }분
           ${tasksHtml}
         </div>
       `;
-    }).join('');
-    
+      })
+      .join("");
+
     summaryContent.innerHTML = `
       <h4>오늘의 출근 현황 (${todayWorkers.length}명)</h4>
       ${summaryHtml}
@@ -3542,34 +4033,36 @@ document.addEventListener("DOMContentLoaded", () => {
     const attendanceDate = document.getElementById(`${prefix}-date`);
     const attendanceWorker = document.getElementById(`${prefix}-worker`);
     const attendanceTbody = document.getElementById(`${prefix}-tbody`);
-    
+
     const selectedYear = attendanceYear?.value;
     const selectedMonth = attendanceMonth?.value;
     const selectedDate = attendanceDate?.value;
     const selectedWorker = attendanceWorker?.value;
-    
+
     const attendanceRecords = calculateAttendanceRecords(sessionsData);
     const tableData = [];
-    
+
     attendanceRecords.forEach((workerDays, worker) => {
       if (selectedWorker && worker !== selectedWorker) return;
-      
+
       workerDays.forEach((dayRecord, dateStr) => {
         const date = new Date(dateStr);
         const year = date.getFullYear().toString();
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const day = date.getDate().toString().padStart(2, '0');
-        
+        const month = (date.getMonth() + 1).toString().padStart(2, "0");
+        const day = date.getDate().toString().padStart(2, "0");
+
         // Apply filters
         if (selectedYear && year !== selectedYear) return;
         if (selectedMonth && month !== selectedMonth) return;
         if (selectedDate && day !== selectedDate) return;
-        
-        const workTime = Math.round((dayRecord.endTime - dayRecord.startTime) / 1000 / 60);
+
+        const workTime = Math.round(
+          (dayRecord.endTime - dayRecord.startTime) / 1000 / 60
+        );
         const totalPages = dayRecord.workSessions.reduce((sum, session) => {
           return sum + (session.pagesWorked || 0);
         }, 0);
-        
+
         tableData.push({
           date: dateStr,
           worker: worker,
@@ -3578,35 +4071,47 @@ document.addEventListener("DOMContentLoaded", () => {
           workTime: workTime,
           totalPages: totalPages,
           tasks: dayRecord.tasks,
-          sortDate: date
+          sortDate: date,
         });
       });
     });
-    
+
     if (tableData.length === 0) {
-      attendanceTbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #666; padding: 20px;">출근 기록이 없습니다.</td></tr>';
+      attendanceTbody.innerHTML =
+        '<tr><td colspan="7" style="text-align: center; color: #666; padding: 20px;">출근 기록이 없습니다.</td></tr>';
       return;
     }
-    
+
     // Sort by date (newest first)
     tableData.sort((a, b) => b.sortDate - a.sortDate);
-    
-    const tableHtml = tableData.map(record => {
-      const tasksText = record.tasks.length > 0 ? record.tasks.join(', ') : '-';
-      
-      return `
+
+    const tableHtml = tableData
+      .map((record) => {
+        const tasksText =
+          record.tasks.length > 0 ? record.tasks.join(", ") : "-";
+
+        return `
         <tr>
-          <td>${record.sortDate.toLocaleDateString('ko-KR')}</td>
+          <td>${record.sortDate.toLocaleDateString("ko-KR")}</td>
           <td>${record.worker}</td>
-          <td>${record.startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</td>
-          <td>${record.endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</td>
-          <td>${Math.floor(record.workTime / 60)}시간 ${record.workTime % 60}분</td>
+          <td>${record.startTime.toLocaleTimeString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}</td>
+          <td>${record.endTime.toLocaleTimeString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}</td>
+          <td>${Math.floor(record.workTime / 60)}시간 ${
+          record.workTime % 60
+        }분</td>
           <td>${record.totalPages}페이지</td>
           <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${tasksText}">${tasksText}</td>
         </tr>
       `;
-    }).join('');
-    
+      })
+      .join("");
+
     attendanceTbody.innerHTML = tableHtml;
   }
 
@@ -3619,30 +4124,40 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch(ATTENDANCE_DATA_API_URL);
       if (response.ok) {
         const serverWorkSessions = await response.json();
-        console.log('Loaded attendance data from server for modal:', serverWorkSessions.length, 'sessions');
-        
+        console.log(
+          "Loaded attendance data from server for modal:",
+          serverWorkSessions.length,
+          "sessions"
+        );
+
         // 현재 데이터 캐시
         currentAttendanceData = serverWorkSessions;
-        
+
         // 서버 데이터로 출석부 데이터 로드
-        loadAttendanceDataForModalWithData('attendance-only', serverWorkSessions);
+        loadAttendanceDataForModalWithData(
+          "attendance-only",
+          serverWorkSessions
+        );
       } else {
-        console.error('Failed to load attendance data from server');
+        console.error("Failed to load attendance data from server");
         // 빈 배열로 초기화
         currentAttendanceData = [];
-        loadAttendanceDataForModalWithData('attendance-only', []);
+        loadAttendanceDataForModalWithData("attendance-only", []);
       }
     } catch (error) {
-      console.error('Error loading attendance data from server:', error);
+      console.error("Error loading attendance data from server:", error);
       // 빈 배열로 초기화
       currentAttendanceData = [];
-      loadAttendanceDataForModalWithData('attendance-only', []);
+      loadAttendanceDataForModalWithData("attendance-only", []);
     }
   }
 
   async function refreshAttendanceOnlyTable() {
     if (currentAttendanceData) {
-      renderAttendanceTableForModalWithData('attendance-only', currentAttendanceData);
+      renderAttendanceTableForModalWithData(
+        "attendance-only",
+        currentAttendanceData
+      );
     } else {
       // 데이터가 없으면 새로고침
       await loadAttendanceOnlyData();
@@ -3655,17 +4170,24 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch(ATTENDANCE_DATA_API_URL);
       if (response.ok) {
         const serverWorkSessions = await response.json();
-        console.log('Exporting attendance data from server:', serverWorkSessions.length, 'sessions');
-        
+        console.log(
+          "Exporting attendance data from server:",
+          serverWorkSessions.length,
+          "sessions"
+        );
+
         // 서버 데이터로 내보내기
-        exportAttendanceRecordsForModalWithData('attendance-only', serverWorkSessions);
+        exportAttendanceRecordsForModalWithData(
+          "attendance-only",
+          serverWorkSessions
+        );
       } else {
-        console.error('Failed to load attendance data from server for export');
-        alert('서버에서 출석부 데이터를 가져올 수 없습니다.');
+        console.error("Failed to load attendance data from server for export");
+        alert("서버에서 출석부 데이터를 가져올 수 없습니다.");
       }
     } catch (error) {
-      console.error('Error exporting attendance data from server:', error);
-      alert('출석부 데이터 내보내기 중 오류가 발생했습니다.');
+      console.error("Error exporting attendance data from server:", error);
+      alert("출석부 데이터 내보내기 중 오류가 발생했습니다.");
     }
   }
 
@@ -3674,38 +4196,50 @@ document.addEventListener("DOMContentLoaded", () => {
     const attendanceMonth = document.getElementById(`${prefix}-month`);
     const attendanceDate = document.getElementById(`${prefix}-date`);
     const attendanceWorker = document.getElementById(`${prefix}-worker`);
-    
+
     const selectedYear = attendanceYear?.value;
     const selectedMonth = attendanceMonth?.value;
     const selectedDate = attendanceDate?.value;
     const selectedWorker = attendanceWorker?.value;
-    
+
     const attendanceRecords = calculateAttendanceRecords(sessionsData);
     const csvData = [];
-    
+
     // Header
-    csvData.push(['날짜', '직원', '출근시간', '퇴근시간', '근무시간', '작업페이지수', '작업내용'].join(','));
-    
+    csvData.push(
+      [
+        "날짜",
+        "직원",
+        "출근시간",
+        "퇴근시간",
+        "근무시간",
+        "작업페이지수",
+        "작업내용",
+      ].join(",")
+    );
+
     const exportData = [];
     attendanceRecords.forEach((workerDays, worker) => {
       if (selectedWorker && worker !== selectedWorker) return;
-      
+
       workerDays.forEach((dayRecord, dateStr) => {
         const date = new Date(dateStr);
         const year = date.getFullYear().toString();
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const day = date.getDate().toString().padStart(2, '0');
-        
+        const month = (date.getMonth() + 1).toString().padStart(2, "0");
+        const day = date.getDate().toString().padStart(2, "0");
+
         // Apply filters
         if (selectedYear && year !== selectedYear) return;
         if (selectedMonth && month !== selectedMonth) return;
         if (selectedDate && day !== selectedDate) return;
-        
-        const workTime = Math.round((dayRecord.endTime - dayRecord.startTime) / 1000 / 60);
+
+        const workTime = Math.round(
+          (dayRecord.endTime - dayRecord.startTime) / 1000 / 60
+        );
         const totalPages = dayRecord.workSessions.reduce((sum, session) => {
           return sum + (session.pagesWorked || 0);
         }, 0);
-        
+
         exportData.push({
           date: date,
           worker: worker,
@@ -3713,73 +4247,100 @@ document.addEventListener("DOMContentLoaded", () => {
           endTime: dayRecord.endTime,
           workTime: workTime,
           totalPages: totalPages,
-          tasks: dayRecord.tasks
+          tasks: dayRecord.tasks,
         });
       });
     });
-    
+
     // Sort by date (newest first)
     exportData.sort((a, b) => b.date - a.date);
-    
-    exportData.forEach(record => {
-      const tasksText = record.tasks.length > 0 ? record.tasks.join('; ') : '';
-      
-      csvData.push([
-        record.date.toLocaleDateString('ko-KR'),
-        record.worker,
-        record.startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-        record.endTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-        `${Math.floor(record.workTime / 60)}시간 ${record.workTime % 60}분`,
-        record.totalPages,
-        tasksText
-      ].join(','));
+
+    exportData.forEach((record) => {
+      const tasksText = record.tasks.length > 0 ? record.tasks.join("; ") : "";
+
+      csvData.push(
+        [
+          record.date.toLocaleDateString("ko-KR"),
+          record.worker,
+          record.startTime.toLocaleTimeString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          record.endTime.toLocaleTimeString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          `${Math.floor(record.workTime / 60)}시간 ${record.workTime % 60}분`,
+          record.totalPages,
+          tasksText,
+        ].join(",")
+      );
     });
-    
-    const csvContent = csvData.join('\n');
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    const csvContent = csvData.join("\n");
+    const blob = new Blob(["\ufeff" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
+
+    const link = document.createElement("a");
     link.href = url;
-    link.download = `attendance_records_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `attendance_records_${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    
-    alert('출근 기록이 CSV 파일로 내보내졌습니다.');
+
+    alert("출근 기록이 CSV 파일로 내보내졌습니다.");
   }
 
   // 출퇴근 기록 전용 모달 이벤트 리스너들
-  const attendanceOnlyModal = document.getElementById('attendance-only-modal');
-  const attendanceCheckButton = document.getElementById('attendance-check-button');
-  const attendanceOnlyCloseButton = attendanceOnlyModal?.querySelector('.close-button');
-  
+  const attendanceOnlyModal = document.getElementById("attendance-only-modal");
+  const attendanceCheckButton = document.getElementById(
+    "attendance-check-button"
+  );
+  const attendanceOnlyCloseButton =
+    attendanceOnlyModal?.querySelector(".close-button");
+
   if (attendanceCheckButton) {
-    attendanceCheckButton.addEventListener('click', function() {
-      attendanceOnlyModal.style.display = 'flex';
+    attendanceCheckButton.addEventListener("click", function () {
+      attendanceOnlyModal.style.display = "flex";
       loadAttendanceOnlyData();
     });
   }
 
   // 출퇴근 기록 전용 모달 닫기 버튼 이벤트
   if (attendanceOnlyCloseButton) {
-    attendanceOnlyCloseButton.addEventListener('click', function() {
-      attendanceOnlyModal.style.display = 'none';
+    attendanceOnlyCloseButton.addEventListener("click", function () {
+      attendanceOnlyModal.style.display = "none";
     });
   }
-  
+
   // 출퇴근 기록 전용 모달 내부 이벤트 리스너들 - 서버 데이터 사용
-  document.getElementById('attendance-only-year')?.addEventListener('change', refreshAttendanceOnlyTable);
-  document.getElementById('attendance-only-month')?.addEventListener('change', refreshAttendanceOnlyTable);
-  document.getElementById('attendance-only-date')?.addEventListener('change', refreshAttendanceOnlyTable);
-  document.getElementById('attendance-only-worker')?.addEventListener('change', refreshAttendanceOnlyTable);
-  document.getElementById('refresh-attendance-only-btn')?.addEventListener('click', loadAttendanceOnlyData);
-  document.getElementById('export-attendance-only-btn')?.addEventListener('click', exportAttendanceOnlyRecords);
+  document
+    .getElementById("attendance-only-year")
+    ?.addEventListener("change", refreshAttendanceOnlyTable);
+  document
+    .getElementById("attendance-only-month")
+    ?.addEventListener("change", refreshAttendanceOnlyTable);
+  document
+    .getElementById("attendance-only-date")
+    ?.addEventListener("change", refreshAttendanceOnlyTable);
+  document
+    .getElementById("attendance-only-worker")
+    ?.addEventListener("change", refreshAttendanceOnlyTable);
+  document
+    .getElementById("refresh-attendance-only-btn")
+    ?.addEventListener("click", loadAttendanceOnlyData);
+  document
+    .getElementById("export-attendance-only-btn")
+    ?.addEventListener("click", exportAttendanceOnlyRecords);
 
   // 로그인 관련 함수들
   function checkLoginStatus() {
-    const savedUser = localStorage.getItem('currentUser');
+    const savedUser = localStorage.getItem("currentUser");
     if (savedUser) {
       currentUser = savedUser;
       showMainDashboard();
@@ -3787,127 +4348,145 @@ document.addEventListener("DOMContentLoaded", () => {
       showLoginPage();
     }
   }
-  
+
   function showLoginPage() {
-    loginPage.style.display = 'flex';
-    mainDashboard.style.display = 'none';
+    loginPage.style.display = "flex";
+    mainDashboard.style.display = "none";
   }
-  
+
   function showMainDashboard() {
-    loginPage.style.display = 'none';
-    mainDashboard.style.display = 'block';
+    loginPage.style.display = "none";
+    mainDashboard.style.display = "block";
     if (currentUserName && currentUser) {
       currentUserName.textContent = `${currentUser}님`;
     }
+
+    // 관리자모드 버튼 권한 체크
+    checkAdminButtonPermission();
+
     // 메인 대시보드가 표시될 때 필요한 데이터들 로드
     loadTasks();
     loadStaff();
     setTimeout(updateCurrentWorkersDisplay, 1000); // Show current workers after initial load
   }
-  
+
   async function validateUser(name) {
     try {
       // 직원 목록을 서버에서 가져와서 확인
-      const response = await fetch('http://172.30.1.40:3005/staff');
-      // const response = await fetch('http://localhost:3005/staff');
+      // const response = await fetch('http://172.30.1.40:3005/staff');
+      const response = await fetch("http://localhost:3005/staff");
       let staffList = [];
-      
+
       if (response.ok) {
         staffList = await response.json();
       } else {
         // 서버에서 직원 목록을 가져올 수 없는 경우, 로컬 데이터 사용
-        const savedStaff = localStorage.getItem('staff');
+        const savedStaff = localStorage.getItem("staff");
         if (savedStaff) {
           staffList = JSON.parse(savedStaff);
         }
       }
-      
+
       // 직원 목록에서 해당 이름이 있는지 확인
-      return staffList.some(staff => staff.name === name);
+      return staffList.some((staff) => staff.name === name);
     } catch (error) {
-      console.error('직원 검증 중 오류:', error);
+      console.error("직원 검증 중 오류:", error);
       // 오류가 발생한 경우 로컬 데이터로 확인
-      const savedStaff = localStorage.getItem('staff');
+      const savedStaff = localStorage.getItem("staff");
       if (savedStaff) {
         const staffList = JSON.parse(savedStaff);
-        return staffList.some(staff => staff.name === name);
+        return staffList.some((staff) => staff.name === name);
       }
       return false;
     }
   }
-  
+
+  // 관리자모드 버튼 권한 체크
+  function checkAdminButtonPermission() {
+    const adminModeButton = document.getElementById("admin-mode-button");
+
+    if (adminModeButton && currentUser) {
+      // "관리자" 또는 "임석훈"인 경우에만 관리자모드 버튼 표시
+      if (currentUser === "유진선" || currentUser === "임석훈") {
+        adminModeButton.style.display = "inline-block";
+      } else {
+        adminModeButton.style.display = "none";
+      }
+    }
+  }
+
   function showLoginError(message) {
     loginError.textContent = message;
-    loginError.style.display = 'block';
+    loginError.style.display = "block";
     setTimeout(() => {
-      loginError.style.display = 'none';
+      loginError.style.display = "none";
     }, 3000);
   }
-  
+
   async function handleLogin(event) {
     event.preventDefault();
     const staffName = staffNameInput.value.trim();
-    
+
     if (!staffName) {
-      showLoginError('직원 이름을 입력해주세요.');
+      showLoginError("직원 이름을 입력해주세요.");
       return;
     }
-    
+
     // 직원 목록에서 해당 이름이 등록되어 있는지 확인
     const isValidUser = await validateUser(staffName);
-    
+
     if (isValidUser) {
       currentUser = staffName;
-      localStorage.setItem('currentUser', currentUser);
+      localStorage.setItem("currentUser", currentUser);
       showMainDashboard();
     } else {
-      showLoginError('등록되지 않은 직원입니다. 관리자에게 문의하세요.');
-      staffNameInput.value = '';
+      showLoginError("등록되지 않은 직원입니다. 관리자에게 문의하세요.");
+      staffNameInput.value = "";
     }
   }
-  
+
   function handleLogout() {
     currentUser = null;
-    localStorage.removeItem('currentUser');
-    staffNameInput.value = '';
+    localStorage.removeItem("currentUser");
+    staffNameInput.value = "";
     showLoginPage();
   }
-  
+
   // 로그인 이벤트 리스너
   if (loginForm) {
-    loginForm.addEventListener('submit', handleLogin);
+    loginForm.addEventListener("submit", handleLogin);
   }
-  
+
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', handleLogout);
+    logoutBtn.addEventListener("click", handleLogout);
   }
 
   // 전역 함수들
-  window.handleEditStaff = function(staffId) {
+  window.handleEditStaff = function (staffId) {
     enterEditMode(staffId);
   };
 
-  window.handleDeleteStaff = async function(staffId) {
-    const staffMember = staff.find(s => s.id === staffId);
+  window.handleDeleteStaff = async function (staffId) {
+    const staffMember = staff.find((s) => s.id === staffId);
     if (!staffMember) return;
-    
+
     if (confirm(`'${staffMember.name}' 직원을 삭제하시겠습니까?`)) {
       try {
         isStaffOperationInProgress = true; // 직원 작업 시작
         await deleteStaff(staffId);
-        alert('직원이 삭제되었습니다.');
+        alert("직원이 삭제되었습니다.");
         // alert 후 관리자 패널과 직원 탭 유지
         setTimeout(() => {
           adminPanelModal.style.display = "flex";
-          switchTab('staff');
+          switchTab("staff");
           isStaffOperationInProgress = false; // 작업 완료
         }, 100);
       } catch (error) {
-        alert('직원 삭제에 실패했습니다: ' + error.message);
+        alert("직원 삭제에 실패했습니다: " + error.message);
         // 오류 시에도 관리자 패널과 직원 탭 유지
         setTimeout(() => {
           adminPanelModal.style.display = "flex";
-          switchTab('staff');
+          switchTab("staff");
           isStaffOperationInProgress = false; // 작업 완료
         }, 100);
       }
@@ -3915,153 +4494,173 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // WebSocket 실시간 업데이트 핸들러 함수들
-  
+
   // 책이 추가된 경우
   function handleBookAdded(book) {
     console.log("새 책 추가됨:", book);
-    
+
     // tasks 배열에 추가
-    if (!tasks.find(task => task.id === book.id)) {
+    if (!tasks.find((task) => task.id === book.id)) {
       tasks.push(book);
     }
-    
+
     // UI 업데이트
     renderTasks();
     updateTaskCounts();
-    
+
     // 관리자 패널이 열려있다면 업데이트
     if (adminPanelModal.style.display === "flex") {
       displayAdminTasks();
     }
   }
-  
+
   // 책이 업데이트된 경우
   function handleBookUpdated(book) {
     console.log("책 업데이트됨:", book);
-    
+
     // tasks 배열에서 해당 책 찾아서 업데이트
-    const index = tasks.findIndex(task => task.id === book.id);
+    const index = tasks.findIndex((task) => task.id === book.id);
     if (index !== -1) {
       tasks[index] = book;
     }
-    
+
     // UI 업데이트
     renderTasks();
     updateTaskCounts();
-    
+
     // 관리자 패널이 열려있다면 업데이트
     if (adminPanelModal.style.display === "flex") {
       displayAdminTasks();
     }
-    
+
     // 완료된 작업 모달이 열려있다면 업데이트
     if (completedBooksModal.style.display === "flex") {
       loadCompletedBooks();
     }
-    
+
     // 작업 세부사항 모달이 열려있고 현재 수정 중인 작업이라면 업데이트
-    if (taskDetailModal.style.display === "flex" && currentDetailTask && currentDetailTask.id === book.id) {
+    if (
+      taskDetailModal.style.display === "flex" &&
+      currentDetailTask &&
+      currentDetailTask.id === book.id
+    ) {
       currentDetailTask = book;
       populateTaskDetailForm(book);
     }
   }
-  
+
   // 책이 삭제된 경우
   function handleBookDeleted(data) {
     console.log("책 삭제됨:", data);
-    
+
     // tasks 배열에서 제거
-    tasks = tasks.filter(task => task.id !== data.id);
-    
+    tasks = tasks.filter((task) => task.id !== data.id);
+
     // UI 업데이트
     renderTasks();
     updateTaskCounts();
-    
+
     // 관리자 패널이 열려있다면 업데이트
     if (adminPanelModal.style.display === "flex") {
       displayAdminTasks();
     }
-    
+
     // 완료된 작업 모달이 열려있다면 업데이트
     if (completedBooksModal.style.display === "flex") {
       loadCompletedBooks();
     }
-    
+
     // 작업 세부사항 모달이 삭제된 작업을 보고 있다면 닫기
-    if (taskDetailModal.style.display === "flex" && currentDetailTask && currentDetailTask.id === data.id) {
+    if (
+      taskDetailModal.style.display === "flex" &&
+      currentDetailTask &&
+      currentDetailTask.id === data.id
+    ) {
       taskDetailModal.style.display = "none";
       currentDetailTask = null;
     }
   }
-  
+
   // 노트가 추가된 경우
   function handleNoteAdded(data) {
     console.log("노트 추가됨:", data);
-    
+
     const { bookId, note } = data;
-    
+
     // tasks 배열에서 해당 책 찾아서 노트 추가
-    const book = tasks.find(task => task.id === bookId);
+    const book = tasks.find((task) => task.id === bookId);
     if (book) {
       if (!book.notes) {
         book.notes = [];
       }
-      
+
       // 이미 존재하지 않는 경우에만 추가
-      if (!book.notes.find(n => n.noteId === note.noteId)) {
+      if (!book.notes.find((n) => n.noteId === note.noteId)) {
         book.notes.push(note);
       }
-      
+
       // UI 업데이트
       renderTasks();
-      
+
       // 노트 모달이 열려있고 해당 책의 노트를 보고 있다면 업데이트
-      if (notesModal.style.display === "flex" && currentTaskForNotes && currentTaskForNotes.id === bookId) {
+      if (
+        notesModal.style.display === "flex" &&
+        currentTaskForNotes &&
+        currentTaskForNotes.id === bookId
+      ) {
         displayNotes(bookId);
       }
     }
   }
-  
+
   // 노트가 업데이트된 경우
   function handleNoteUpdated(data) {
     console.log("노트 업데이트됨:", data);
-    
+
     const { bookId, note } = data;
-    
+
     // tasks 배열에서 해당 책의 노트 업데이트
-    const book = tasks.find(task => task.id === bookId);
+    const book = tasks.find((task) => task.id === bookId);
     if (book && book.notes) {
-      const noteIndex = book.notes.findIndex(n => n.noteId === note.noteId);
+      const noteIndex = book.notes.findIndex((n) => n.noteId === note.noteId);
       if (noteIndex !== -1) {
         book.notes[noteIndex] = note;
       }
-      
+
       // UI 업데이트
       renderTasks();
-      
+
       // 노트 모달이 열려있고 해당 책의 노트를 보고 있다면 업데이트
-      if (notesModal.style.display === "flex" && currentTaskForNotes && currentTaskForNotes.id === bookId) {
+      if (
+        notesModal.style.display === "flex" &&
+        currentTaskForNotes &&
+        currentTaskForNotes.id === bookId
+      ) {
         displayNotes(bookId);
       }
     }
   }
-  
+
   // 노트가 삭제된 경우
   function handleNoteDeleted(data) {
     console.log("노트 삭제됨:", data);
-    
+
     const { bookId, noteId } = data;
-    
+
     // tasks 배열에서 해당 책의 노트 삭제
-    const book = tasks.find(task => task.id === bookId);
+    const book = tasks.find((task) => task.id === bookId);
     if (book && book.notes) {
-      book.notes = book.notes.filter(n => n.noteId !== noteId);
-      
+      book.notes = book.notes.filter((n) => n.noteId !== noteId);
+
       // UI 업데이트
       renderTasks();
-      
+
       // 노트 모달이 열려있고 해당 책의 노트를 보고 있다면 업데이트
-      if (notesModal.style.display === "flex" && currentTaskForNotes && currentTaskForNotes.id === bookId) {
+      if (
+        notesModal.style.display === "flex" &&
+        currentTaskForNotes &&
+        currentTaskForNotes.id === bookId
+      ) {
         displayNotes(bookId);
       }
     }
@@ -4070,33 +4669,38 @@ document.addEventListener("DOMContentLoaded", () => {
   // 작업 세션 시작 처리
   function handleWorkSessionStarted(sessionData) {
     console.log("작업 세션 시작됨:", sessionData);
-    
+
     // 로컬 currentWorkSessions에 추가
     currentWorkSessions.set(sessionData.taskId, {
       startTime: new Date(sessionData.startTime),
       worker: sessionData.worker,
       isWorking: true,
       taskTitle: getTaskTitle(sessionData.taskId),
-      stage: getCurrentStage(sessionData.taskId)
+      stage: getCurrentStage(sessionData.taskId),
     });
 
     // Save to work sessions history
     const workSession = {
-      id: `${sessionData.taskId}_${sessionData.worker}_${new Date(sessionData.startTime).getTime()}`,
+      id: `${sessionData.taskId}_${sessionData.worker}_${new Date(
+        sessionData.startTime
+      ).getTime()}`,
       taskId: sessionData.taskId,
       taskTitle: getTaskTitle(sessionData.taskId),
       worker: sessionData.worker,
       stage: getCurrentStage(sessionData.taskId),
       startTime: sessionData.startTime,
       endTime: null,
-      isCompleted: false
+      isCompleted: false,
     };
-    
+
     workSessions.push(workSession);
-    
+
     // UI 업데이트 (진행상황 모달이 보호되지 않거나 열려있지 않을 때만)
     const progressModal = document.getElementById("progress-update-modal");
-    if (!isProgressModalProtected && (!progressModal || progressModal.style.display !== "flex")) {
+    if (
+      !isProgressModalProtected &&
+      (!progressModal || progressModal.style.display !== "flex")
+    ) {
       renderTasks();
     }
     updateCurrentWorkersDisplay();
@@ -4105,28 +4709,33 @@ document.addEventListener("DOMContentLoaded", () => {
   // 작업 세션 종료 처리
   function handleWorkSessionEnded(data) {
     console.log("작업 세션 종료됨:", data);
-    
+
     const { taskId, worker } = data;
     const sessionData = currentWorkSessions.get(taskId);
-    
+
     if (sessionData) {
       const endTime = new Date();
-      const duration = Math.round((endTime - sessionData.startTime) / 1000 / 60); // minutes
+      const duration = Math.round(
+        (endTime - sessionData.startTime) / 1000 / 60
+      ); // minutes
 
       // Update work session history
       const sessionId = `${taskId}_${worker}_${sessionData.startTime.getTime()}`;
-      const sessionIndex = workSessions.findIndex(s => s.id === sessionId);
+      const sessionIndex = workSessions.findIndex((s) => s.id === sessionId);
       if (sessionIndex !== -1) {
         workSessions[sessionIndex].endTime = endTime.toISOString();
         workSessions[sessionIndex].duration = duration;
       }
-      
+
       currentWorkSessions.delete(taskId);
     }
-    
+
     // 진행상황 업데이트 모달이 보호되지 않거나 열려있지 않을 때만 UI 업데이트
     const progressModal = document.getElementById("progress-update-modal");
-    if (!isProgressModalProtected && (!progressModal || progressModal.style.display !== "flex")) {
+    if (
+      !isProgressModalProtected &&
+      (!progressModal || progressModal.style.display !== "flex")
+    ) {
       renderTasks();
     }
     updateCurrentWorkersDisplay();
@@ -4134,13 +4743,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 헬퍼 함수들
   function getTaskTitle(taskId) {
-    const task = tasks.find(t => t.id === taskId);
-    return task && task.book ? task.book.title : '알 수 없는 작업';
+    const task = tasks.find((t) => t.id === taskId);
+    return task && task.book ? task.book.title : "알 수 없는 작업";
   }
 
   function getCurrentStage(taskId) {
-    const task = tasks.find(t => t.id === taskId);
-    return task ? task.currentStage : 'unknown';
+    const task = tasks.find((t) => t.id === taskId);
+    return task ? task.currentStage : "unknown";
   }
 
   // 페이지 로드 시 서버에서 현재 작업 세션 가져오기
@@ -4149,7 +4758,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch(WORK_SESSIONS_API_URL);
       if (response.ok) {
         const sessions = await response.json();
-        
+
         // 서버의 세션 데이터를 로컬에 동기화
         currentWorkSessions.clear();
         for (const [taskId, sessionData] of Object.entries(sessions)) {
@@ -4158,16 +4767,1645 @@ document.addEventListener("DOMContentLoaded", () => {
             worker: sessionData.worker,
             isWorking: sessionData.isWorking,
             taskTitle: getTaskTitle(taskId),
-            stage: getCurrentStage(taskId)
+            stage: getCurrentStage(taskId),
           });
         }
-        
+
         updateCurrentWorkersDisplay();
       }
     } catch (error) {
-      console.error('현재 작업 세션 로드 실패:', error);
+      console.error("현재 작업 세션 로드 실패:", error);
     }
   }
+
+  // 업무평가서 관련 변수
+  const evaluationYearSelect = document.getElementById("evaluation-year");
+  const evaluationMonthSelect = document.getElementById("evaluation-month");
+  const evaluationStaffSelect = document.getElementById("evaluation-staff");
+  const generateEvaluationBtn = document.getElementById(
+    "generate-evaluation-btn"
+  );
+  const evaluationContent = document.getElementById("evaluation-content");
+  const printReportBtn = document.getElementById("print-report-btn");
+
+  // 업무평가서 기능 초기화
+  function initializeEvaluationTab() {
+    // 년도 옵션 채우기 (현재년도 기준 3년)
+    const currentYear = new Date().getFullYear();
+    if (evaluationYearSelect) {
+      evaluationYearSelect.innerHTML = "";
+      for (let year = currentYear; year >= currentYear - 2; year--) {
+        const option = document.createElement("option");
+        option.value = year;
+        option.textContent = `${year}년`;
+        evaluationYearSelect.appendChild(option);
+      }
+    }
+
+    // 현재 월 선택
+    const currentMonth = new Date().getMonth() + 1;
+    if (evaluationMonthSelect) evaluationMonthSelect.value = currentMonth;
+
+    // 직원 목록 로드
+    loadStaffForEvaluation();
+
+    // 이벤트 리스너
+    if (generateEvaluationBtn)
+      generateEvaluationBtn.addEventListener("click", generateEvaluationReport);
+    if (printReportBtn) printReportBtn.addEventListener("click", printReport);
+  }
+
+  // 직원 목록 로드
+  async function loadStaffForEvaluation() {
+    try {
+      const response = await fetch(STAFF_API_URL);
+      if (response.ok && evaluationStaffSelect) {
+        const staffList = await response.json();
+
+        evaluationStaffSelect.innerHTML =
+          "<option value=''>직원을 선택하세요</option>";
+
+        staffList.forEach((staff) => {
+          if (staff.role !== "admin") {
+            const option = document.createElement("option");
+            option.value = staff.id;
+            option.textContent = staff.name;
+            evaluationStaffSelect.appendChild(option);
+          }
+        });
+      }
+    } catch (error) {
+      console.error("직원 목록 로드 실패:", error);
+    }
+  }
+
+  // 업무평가서 생성
+  async function generateEvaluationReport() {
+    const year = evaluationYearSelect.value;
+    const month = evaluationMonthSelect.value;
+    const staffId = evaluationStaffSelect.value;
+
+    if (!year || !month || !staffId) {
+      alert("년도, 월, 직원을 모두 선택해주세요.");
+      return;
+    }
+
+    try {
+      const staffName =
+        evaluationStaffSelect.options[evaluationStaffSelect.selectedIndex]
+          .textContent;
+      const evaluationData = await calculateEvaluationData(
+        year,
+        month,
+        staffId
+      );
+      renderEvaluationReport(evaluationData, staffName, year, month);
+      if (evaluationContent) evaluationContent.style.display = "block";
+    } catch (error) {
+      console.error("업무평가서 생성 실패:", error);
+      alert("업무평가서 생성 중 오류가 발생했습니다.");
+    }
+  }
+
+  // 평가 데이터 계산
+  async function calculateEvaluationData(year, month, staffId) {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+
+    const [attendanceData, allTasks, allStaff] = await Promise.all([
+      fetch(ATTENDANCE_DATA_API_URL).then((r) => r.json()),
+      fetch(API_URL).then((r) => r.json()),
+      fetch(STAFF_API_URL).then((r) => r.json()),
+    ]);
+
+    // 직원 ID로 이름 찾기
+    const selectedStaff = allStaff.find((s) => s.id === staffId);
+    const staffName = selectedStaff?.name;
+
+    if (!staffName) {
+      throw new Error("직원을 찾을 수 없습니다.");
+    }
+
+    const staffPerformance = calculateStaffPerformance(
+      allTasks,
+      staffName,
+      startDate,
+      endDate
+    );
+    const allStaffPerformance = allStaff
+      .filter((s) => s.role !== "admin")
+      .map((staff) => ({
+        id: staff.id,
+        name: staff.name,
+        ...calculateStaffPerformance(allTasks, staff.name, startDate, endDate),
+      }));
+
+    const workDays = await calculateWorkDays(
+      attendanceData,
+      staffId,
+      startDate,
+      endDate
+    );
+    const attendanceStats = await analyzeAttendanceTime(
+      attendanceData,
+      staffId,
+      startDate,
+      endDate
+    );
+
+    const sortedPerformance = allStaffPerformance.sort(
+      (a, b) => b.totalPages - a.totalPages
+    );
+    const currentStaffPerformance = sortedPerformance.find(
+      (p) => p.name === staffName
+    );
+    let rank;
+
+    if (currentStaffPerformance && currentStaffPerformance.totalPages > 0) {
+      // 실제 업무실적이 있는 경우 정상 순위 계산
+      rank = sortedPerformance.findIndex((p) => p.name === staffName) + 1;
+    } else {
+      // 업무실적이 없는 경우 최하위 순위
+      rank = allStaffPerformance.length;
+    }
+
+    return {
+      staff: { id: staffId, name: staffName },
+      period: { year, month, startDate, endDate },
+      performance: staffPerformance,
+      workDays,
+      attendanceStats,
+      rank,
+      totalStaff: allStaffPerformance.length,
+      allStaffPerformance,
+      dailyData: calculateDailyData(allTasks, staffName, startDate, endDate),
+      weeklyData: calculateWeeklyData(allTasks, staffName, startDate, endDate),
+    };
+  }
+
+  // 한국어 날짜 형식 파싱 함수
+  function parseKoreanDate(dateString) {
+    try {
+      // "2025. 9. 10. 오후 10:09:00" 형식 처리
+      if (dateString.includes("오전") || dateString.includes("오후")) {
+        const parts = dateString.split(" ");
+        const datePart = parts[0] + " " + parts[1] + " " + parts[2]; // "2025. 9. 10."
+        const timePart = parts[4]; // "10:09:00"
+        const isAfternoon = parts[3] === "오후";
+
+        // 날짜 부분 파싱
+        const dateNumbers = datePart
+          .replace(/\./g, "")
+          .split(" ")
+          .filter((x) => x);
+        const year = parseInt(dateNumbers[0]);
+        const month = parseInt(dateNumbers[1]) - 1; // 0-based
+        const day = parseInt(dateNumbers[2]);
+
+        // 시간 부분 파싱
+        const timeNumbers = timePart.split(":");
+        let hour = parseInt(timeNumbers[0]);
+        const minute = parseInt(timeNumbers[1]);
+        const second = parseInt(timeNumbers[2]);
+
+        // 12시간제를 24시간제로 변환
+        if (isAfternoon && hour !== 12) {
+          hour += 12;
+        } else if (!isAfternoon && hour === 12) {
+          hour = 0;
+        }
+
+        return new Date(year, month, day, hour, minute, second);
+      }
+
+      // 일반 형식은 그대로 파싱
+      return new Date(dateString);
+    } catch (error) {
+      console.error("날짜 파싱 오류:", dateString, error);
+      return new Date(dateString);
+    }
+  }
+
+  // 직원별 성과 계산 (실제 데이터 구조에 맞게 수정)
+  function calculateStaffPerformance(tasks, staffName, startDate, endDate) {
+    let totalPages = 0;
+    let corrector1Pages = 0;
+    let corrector2Pages = 0;
+    let corrector3Pages = 0;
+    let transcriberPages = 0;
+
+    console.log(`${staffName}의 성과 계산 시작:`, {
+      기간: `${startDate.toISOString().split("T")[0]} ~ ${
+        endDate.toISOString().split("T")[0]
+      }`,
+      총작업수: tasks.length,
+    });
+
+    tasks.forEach((task) => {
+      if (task.stages) {
+        // 1차 교정
+        if (
+          task.stages.correction1 &&
+          task.stages.correction1.assignedTo === staffName
+        ) {
+          console.log(
+            `${staffName} - 1차 교정 작업 발견:`,
+            task.book?.title,
+            task.stages.correction1
+          );
+          task.stages.correction1.history.forEach((historyItem) => {
+            const progressDate = parseKoreanDate(historyItem.date);
+            console.log(
+              `날짜 확인: ${historyItem.date} -> ${progressDate.toISOString()}`
+            );
+            if (progressDate >= startDate && progressDate <= endDate) {
+              const pages =
+                historyItem.endPage - historyItem.startPage + 1 || 0;
+              console.log(
+                `범위 내 작업: ${historyItem.startPage}-${historyItem.endPage} (${pages}페이지)`
+              );
+              corrector1Pages += pages;
+              totalPages += pages;
+            }
+          });
+        }
+
+        // 2차 교정
+        if (
+          task.stages.correction2 &&
+          task.stages.correction2.assignedTo === staffName
+        ) {
+          task.stages.correction2.history.forEach((historyItem) => {
+            const progressDate = parseKoreanDate(historyItem.date);
+            if (progressDate >= startDate && progressDate <= endDate) {
+              const pages =
+                historyItem.endPage - historyItem.startPage + 1 || 0;
+              corrector2Pages += pages;
+              totalPages += pages;
+            }
+          });
+        }
+
+        // 3차 교정
+        if (
+          task.stages.correction3 &&
+          task.stages.correction3.assignedTo === staffName
+        ) {
+          task.stages.correction3.history.forEach((historyItem) => {
+            const progressDate = parseKoreanDate(historyItem.date);
+            if (progressDate >= startDate && progressDate <= endDate) {
+              const pages =
+                historyItem.endPage - historyItem.startPage + 1 || 0;
+              corrector3Pages += pages;
+              totalPages += pages;
+            }
+          });
+        }
+
+        // 점역 작업
+        if (
+          task.stages.transcription &&
+          task.stages.transcription.assignedTo === staffName
+        ) {
+          task.stages.transcription.history.forEach((historyItem) => {
+            const progressDate = parseKoreanDate(historyItem.date);
+            if (progressDate >= startDate && progressDate <= endDate) {
+              const pages =
+                historyItem.endPage - historyItem.startPage + 1 || 0;
+              transcriberPages += pages;
+              totalPages += pages;
+            }
+          });
+        }
+      }
+    });
+
+    const result = {
+      totalPages,
+      corrector1Pages,
+      corrector2Pages,
+      corrector3Pages,
+      transcriberPages,
+    };
+    console.log(`${staffName} 성과 계산 완료:`, result);
+
+    return result;
+  }
+
+  // 일별 데이터 계산 (실제 데이터 구조에 맞게 수정)
+  function calculateDailyData(tasks, staffName, startDate, endDate) {
+    const dailyData = {};
+    const currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      const dateStr = currentDate.toISOString().split("T")[0];
+      dailyData[dateStr] = 0;
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    tasks.forEach((task) => {
+      if (task.stages) {
+        // 모든 단계 확인
+        ["correction1", "correction2", "correction3", "transcription"].forEach(
+          (stage) => {
+            if (
+              task.stages[stage] &&
+              task.stages[stage].assignedTo === staffName
+            ) {
+              task.stages[stage].history.forEach((historyItem) => {
+                const progressDate = parseKoreanDate(historyItem.date);
+                if (progressDate >= startDate && progressDate <= endDate) {
+                  const dateStr = progressDate.toISOString().split("T")[0];
+                  const pages =
+                    historyItem.endPage - historyItem.startPage + 1 || 0;
+                  dailyData[dateStr] += pages;
+                }
+              });
+            }
+          }
+        );
+      }
+    });
+
+    return dailyData;
+  }
+
+  // 주별 데이터 계산
+  function calculateWeeklyData(tasks, staffName, startDate, endDate) {
+    const dailyData = calculateDailyData(tasks, staffName, startDate, endDate);
+    const weeklyData = {};
+
+    for (let date in dailyData) {
+      const currentDate = new Date(date);
+      const weekStart = new Date(currentDate);
+      weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+      const weekKey = weekStart.toISOString().split("T")[0];
+
+      if (!weeklyData[weekKey]) {
+        weeklyData[weekKey] = 0;
+      }
+      weeklyData[weekKey] += dailyData[date];
+    }
+
+    return weeklyData;
+  }
+
+  // 출근 일수 계산
+  async function calculateWorkDays(
+    attendanceData,
+    staffId,
+    startDate,
+    endDate
+  ) {
+    // attendanceData가 배열인 경우 (work-sessions-history.json)
+    if (Array.isArray(attendanceData)) {
+      return await calculateWorkDaysFromWorkSessions(
+        staffId,
+        startDate,
+        endDate,
+        attendanceData
+      );
+    }
+
+    // 출퇴근 데이터가 있는 경우
+    if (attendanceData && attendanceData[staffId]) {
+      let workDays = 0;
+      const staffAttendance = attendanceData[staffId];
+
+      for (let date in staffAttendance) {
+        const checkDate = new Date(date);
+        if (checkDate >= startDate && checkDate <= endDate) {
+          const dayData = staffAttendance[date];
+          if (dayData.checkIn) {
+            workDays++;
+          }
+        }
+      }
+
+      return workDays;
+    }
+
+    // 출퇴근 데이터가 없는 경우, 작업 세션을 기반으로 계산
+    return await calculateWorkDaysFromWorkSessions(staffId, startDate, endDate);
+  }
+
+  // 작업 세션을 기반으로 출근일수 계산
+  async function calculateWorkDaysFromWorkSessions(
+    staffId,
+    startDate,
+    endDate,
+    workSessionsData = null
+  ) {
+    try {
+      let workSessions = workSessionsData;
+
+      // 데이터가 전달되지 않은 경우에만 가져오기
+      if (!workSessions) {
+        const response = await fetch(ATTENDANCE_DATA_API_URL);
+        if (!response.ok) {
+          return 0;
+        }
+        workSessions = await response.json();
+      }
+
+      const staffResponse = await fetch(STAFF_API_URL);
+      const allStaff = await staffResponse.json();
+
+      // staffId로 직원명 찾기
+      const selectedStaff = allStaff.find((s) => s.id === staffId);
+      const staffName = selectedStaff?.name;
+
+      if (!staffName) {
+        return 0;
+      }
+
+      // 해당 직원의 작업 세션만 필터링
+      const staffSessions = workSessions.filter(
+        (session) => session.worker === staffName
+      );
+
+      // 날짜별로 그룹화하여 근무일수 계산
+      const workDates = new Set();
+
+      staffSessions.forEach((session) => {
+        const sessionDate = new Date(session.startTime);
+        if (sessionDate >= startDate && sessionDate <= endDate) {
+          const dateStr = sessionDate.toISOString().split("T")[0];
+          workDates.add(dateStr);
+        }
+      });
+
+      return workDates.size;
+    } catch (error) {
+      console.error("작업 세션 기반 출근일수 계산 오류:", error);
+      return 0;
+    }
+  }
+
+  // 출퇴근 시간 분석 함수
+  async function analyzeAttendanceTime(
+    attendanceData,
+    staffId,
+    startDate,
+    endDate
+  ) {
+    const workStartTime = { hour: 9, minute: 5 }; // 09:05
+    const workEndTime = { hour: 17, minute: 45 }; // 17:45
+
+    const attendanceStats = {
+      totalDays: 0,
+      normalAttendance: 0, // 정상 출근
+      late: 0, // 지각
+      earlyLeave: 0, // 조퇴
+      lateAndEarlyLeave: 0, // 지각 + 조퇴
+      absent: 0, // 결근
+      overtime: 0, // 연장근무
+      attendanceDetails: [], // 일별 상세 정보
+    };
+
+    // attendanceData가 배열인 경우 (work-sessions-history.json)
+    if (Array.isArray(attendanceData)) {
+      return await analyzeAttendanceFromWorkSessions(
+        staffId,
+        startDate,
+        endDate,
+        attendanceData
+      );
+    }
+
+    if (!attendanceData || !attendanceData[staffId]) {
+      // 출퇴근 데이터가 없으면 작업 세션 데이터 활용
+      return await analyzeAttendanceFromWorkSessions(
+        staffId,
+        startDate,
+        endDate
+      );
+    }
+
+    const staffAttendance = attendanceData[staffId];
+    const currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      // 주말 제외 (토: 6, 일: 0)
+      if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+        attendanceStats.totalDays++;
+        const dateStr = currentDate.toISOString().split("T")[0];
+        const dayData = staffAttendance[dateStr];
+
+        if (dayData && dayData.checkIn) {
+          const checkInTime = new Date(dayData.checkIn);
+          const checkOutTime = dayData.checkOut
+            ? new Date(dayData.checkOut)
+            : null;
+
+          const isLate =
+            checkInTime.getHours() > workStartTime.hour ||
+            (checkInTime.getHours() === workStartTime.hour &&
+              checkInTime.getMinutes() > workStartTime.minute);
+
+          const isEarlyLeave =
+            checkOutTime &&
+            (checkOutTime.getHours() < workEndTime.hour ||
+              (checkOutTime.getHours() === workEndTime.hour &&
+                checkOutTime.getMinutes() < workEndTime.minute));
+
+          const isOvertime =
+            checkOutTime &&
+            (checkOutTime.getHours() > 18 ||
+              (checkOutTime.getHours() === 18 &&
+                checkOutTime.getMinutes() > 0));
+
+          let status = "정상";
+          if (isLate && isEarlyLeave) {
+            attendanceStats.lateAndEarlyLeave++;
+            status = "지각+조퇴";
+          } else if (isLate) {
+            attendanceStats.late++;
+            status = "지각";
+          } else if (isEarlyLeave) {
+            attendanceStats.earlyLeave++;
+            status = "조퇴";
+          } else {
+            attendanceStats.normalAttendance++;
+            status = "정상";
+          }
+
+          if (isOvertime) {
+            attendanceStats.overtime++;
+            status += "+연장";
+          }
+
+          attendanceStats.attendanceDetails.push({
+            date: dateStr,
+            checkIn: checkInTime,
+            checkOut: checkOutTime,
+            status: status,
+          });
+        } else {
+          attendanceStats.absent++;
+          attendanceStats.attendanceDetails.push({
+            date: dateStr,
+            checkIn: null,
+            checkOut: null,
+            status: "결근",
+          });
+        }
+      }
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return attendanceStats;
+  }
+
+  // 작업 세션을 기반으로 출퇴근 분석
+  async function analyzeAttendanceFromWorkSessions(
+    staffId,
+    startDate,
+    endDate,
+    workSessionsData = null
+  ) {
+    const attendanceStats = {
+      totalDays: 0,
+      normalAttendance: 0,
+      late: 0,
+      earlyLeave: 0,
+      lateAndEarlyLeave: 0,
+      absent: 0,
+      overtime: 0,
+      attendanceDetails: [],
+    };
+
+    try {
+      let workSessions = workSessionsData;
+
+      // 데이터가 전달되지 않은 경우에만 가져오기
+      if (!workSessions) {
+        const response = await fetch(ATTENDANCE_DATA_API_URL);
+        if (!response.ok) {
+          return attendanceStats;
+        }
+        workSessions = await response.json();
+      }
+      const staffResponse = await fetch(STAFF_API_URL);
+      const allStaff = await staffResponse.json();
+
+      // staffId로 직원명 찾기
+      const selectedStaff = allStaff.find((s) => s.id === staffId);
+      const staffName = selectedStaff?.name;
+
+      if (!staffName) {
+        return attendanceStats;
+      }
+
+      // 해당 직원의 작업 세션만 필터링
+      const staffSessions = workSessions.filter(
+        (session) => session.worker === staffName
+      );
+
+      // 날짜별 작업 세션 그룹화
+      const sessionsByDate = {};
+      staffSessions.forEach((session) => {
+        const sessionDate = new Date(session.startTime);
+        if (sessionDate >= startDate && sessionDate <= endDate) {
+          const dateStr = sessionDate.toISOString().split("T")[0];
+          if (!sessionsByDate[dateStr]) {
+            sessionsByDate[dateStr] = [];
+          }
+          sessionsByDate[dateStr].push(session);
+        }
+      });
+
+      // 각 날짜별 출퇴근 분석 (현재 날짜까지만)
+      const currentDate = new Date(startDate);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // 오늘 끝까지 포함
+
+      while (currentDate <= endDate && currentDate <= today) {
+        // 주말 제외 (토: 6, 일: 0)
+        if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+          attendanceStats.totalDays++;
+          const dateStr = currentDate.toISOString().split("T")[0];
+          const daySessions = sessionsByDate[dateStr] || [];
+
+          if (daySessions.length > 0) {
+            // 해당 날짜의 가장 이른 시작시간과 가장 늦은 종료시간 찾기
+            const startTimes = daySessions.map((s) => new Date(s.startTime));
+            const endTimes = daySessions
+              .filter((s) => s.endTime)
+              .map((s) => new Date(s.endTime));
+
+            const checkIn = new Date(Math.min(...startTimes));
+            const checkOut =
+              endTimes.length > 0 ? new Date(Math.max(...endTimes)) : null;
+
+            // 출퇴근 상태 분석
+            const workStartTime = { hour: 9, minute: 5 }; // 09:05
+            const workEndTime = { hour: 17, minute: 45 }; // 17:45
+
+            const isLate =
+              checkIn.getHours() > workStartTime.hour ||
+              (checkIn.getHours() === workStartTime.hour &&
+                checkIn.getMinutes() > workStartTime.minute);
+
+            const isEarlyLeave =
+              checkOut &&
+              (checkOut.getHours() < workEndTime.hour ||
+                (checkOut.getHours() === workEndTime.hour &&
+                  checkOut.getMinutes() < workEndTime.minute));
+
+            const isOvertime =
+              checkOut &&
+              (checkOut.getHours() > 18 ||
+                (checkOut.getHours() === 18 && checkOut.getMinutes() > 0));
+
+            let status = "정상";
+            if (isLate && isEarlyLeave) {
+              attendanceStats.lateAndEarlyLeave++;
+              status = "지각+조퇴";
+            } else if (isLate) {
+              attendanceStats.late++;
+              status = "지각";
+            } else if (isEarlyLeave) {
+              attendanceStats.earlyLeave++;
+              status = "조퇴";
+            } else {
+              attendanceStats.normalAttendance++;
+              status = "정상";
+            }
+
+            if (isOvertime) {
+              attendanceStats.overtime++;
+            }
+
+            attendanceStats.attendanceDetails.push({
+              date: dateStr,
+              checkIn: checkIn.toISOString(),
+              checkOut: checkOut ? checkOut.toISOString() : null,
+              status: status,
+            });
+          } else {
+            // 해당 날짜에 작업 세션이 없는 경우 - 결근 처리하지 않음
+            // (주말이 아닌 날에 작업이 없어도 결근으로 표시하지 않음)
+          }
+        }
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    } catch (error) {
+      console.error("작업 세션 기반 출퇴근 분석 오류:", error);
+    }
+
+    return attendanceStats;
+  }
+
+  // 작업 기록을 기반으로 출근일수 계산
+  async function calculateWorkDaysFromTasks(staffId, startDate, endDate) {
+    try {
+      const response = await fetch(API_URL);
+      const allTasks = await response.json();
+      const staffResponse = await fetch(STAFF_API_URL);
+      const allStaff = await staffResponse.json();
+
+      const selectedStaff = allStaff.find((s) => s.id === staffId);
+      const staffName = selectedStaff?.name;
+
+      if (!staffName) return 0;
+
+      const workDates = new Set();
+
+      allTasks.forEach((task) => {
+        if (task.stages) {
+          [
+            "correction1",
+            "correction2",
+            "correction3",
+            "transcription",
+          ].forEach((stage) => {
+            if (
+              task.stages[stage] &&
+              task.stages[stage].assignedTo === staffName
+            ) {
+              task.stages[stage].history.forEach((historyItem) => {
+                const progressDate = parseKoreanDate(historyItem.date);
+                if (progressDate >= startDate && progressDate <= endDate) {
+                  const dateStr = progressDate.toISOString().split("T")[0];
+                  workDates.add(dateStr);
+                }
+              });
+            }
+          });
+        }
+      });
+
+      return workDates.size;
+    } catch (error) {
+      console.error("작업 기록 기반 출근일수 계산 오류:", error);
+      return 0;
+    }
+  }
+
+  // 평가서 렌더링
+  function renderEvaluationReport(data, staffName, year, month) {
+    const evalStaffName = document.getElementById("eval-staff-name");
+    const evalPeriod = document.getElementById("eval-period");
+    const evalGeneratedDate = document.getElementById("eval-generated-date");
+
+    if (evalStaffName) evalStaffName.textContent = staffName;
+    if (evalPeriod) evalPeriod.textContent = `${year}년 ${month}월`;
+    if (evalGeneratedDate)
+      evalGeneratedDate.textContent = new Date().toLocaleString("ko-KR");
+
+    // 데이터가 없는 경우 처리
+    const hasData = data.performance.totalPages > 0 || data.workDays > 0;
+    const performanceCharts = document.querySelector(".performance-charts");
+    const detailedStats = document.querySelector(".detailed-stats");
+    const noDataMessage = document.getElementById("no-data-message");
+
+    if (!hasData) {
+      // 차트와 상세 통계 숨기기
+      if (performanceCharts) performanceCharts.style.display = "none";
+      if (detailedStats) detailedStats.style.display = "none";
+
+      // 데이터 없음 메시지 표시
+      if (!noDataMessage) {
+        const messageDiv = document.createElement("div");
+        messageDiv.id = "no-data-message";
+        messageDiv.className = "no-data-message";
+        messageDiv.innerHTML = `
+          <div class="no-data-content">
+            <h3>📊 데이터 없음</h3>
+            <p>${staffName}님의 ${year}년 ${month}월 작업 데이터가 없습니다.</p>
+            <p>해당 기간에 작업 기록이 없거나 출근 기록이 없는 것으로 확인됩니다.</p>
+          </div>
+        `;
+
+        const summaryCards = document.querySelector(".summary-cards");
+        if (summaryCards && summaryCards.parentNode) {
+          summaryCards.parentNode.insertBefore(
+            messageDiv,
+            summaryCards.nextSibling
+          );
+        }
+      } else {
+        noDataMessage.style.display = "block";
+      }
+
+      // 요약 카드는 0 값으로 표시
+    } else {
+      // 데이터가 있는 경우 차트와 통계 표시
+      if (performanceCharts) performanceCharts.style.display = "grid";
+      if (detailedStats) detailedStats.style.display = "block";
+      if (noDataMessage) noDataMessage.style.display = "none";
+    }
+
+    const avgDailyPages =
+      data.workDays > 0
+        ? Math.round(data.performance.totalPages / data.workDays)
+        : 0;
+
+    // 부서 평균 계산
+    const departmentAvg =
+      data.allStaffPerformance.length > 0
+        ? Math.round(
+            data.allStaffPerformance.reduce((sum, s) => sum + s.totalPages, 0) /
+              data.allStaffPerformance.length
+          )
+        : 0;
+
+    // 성과 비교 (부서 평균 대비)
+    const performanceRatio =
+      departmentAvg > 0
+        ? ((data.performance.totalPages / departmentAvg) * 100).toFixed(1)
+        : 100;
+
+    const totalPagesEl = document.getElementById("total-pages-processed");
+    const avgDailyPagesEl = document.getElementById("avg-daily-pages");
+    const workDaysEl = document.getElementById("work-days");
+    const departmentRankEl = document.getElementById("department-rank");
+
+    if (totalPagesEl)
+      totalPagesEl.textContent = data.performance.totalPages.toLocaleString();
+    if (avgDailyPagesEl)
+      avgDailyPagesEl.textContent = avgDailyPages.toLocaleString();
+    if (workDaysEl) {
+      workDaysEl.textContent = data.workDays;
+    }
+    if (departmentRankEl)
+      departmentRankEl.textContent = `${data.rank}/${data.totalStaff}위`;
+
+    const tbody = document.getElementById("detailed-stats-tbody");
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td>처리 페이지 수</td>
+          <td>${data.performance.corrector1Pages}</td>
+          <td>${data.performance.corrector2Pages}</td>
+          <td>${data.performance.corrector3Pages}</td>
+          <td>${data.performance.transcriberPages}</td>
+          <td><strong>${data.performance.totalPages}</strong></td>
+        </tr>
+        <tr>
+          <td>일평균 처리량</td>
+          <td>${
+            data.workDays > 0
+              ? Math.round(data.performance.corrector1Pages / data.workDays)
+              : 0
+          }</td>
+          <td>${
+            data.workDays > 0
+              ? Math.round(data.performance.corrector2Pages / data.workDays)
+              : 0
+          }</td>
+          <td>${
+            data.workDays > 0
+              ? Math.round(data.performance.corrector3Pages / data.workDays)
+              : 0
+          }</td>
+          <td>${
+            data.workDays > 0
+              ? Math.round(data.performance.transcriberPages / data.workDays)
+              : 0
+          }</td>
+          <td><strong>${avgDailyPages}</strong></td>
+        </tr>
+        <tr>
+          <td>부서 평균 대비</td>
+          <td colspan="5"><strong>${performanceRatio}%</strong> (부서 평균: ${departmentAvg}페이지)</td>
+        </tr>
+        <tr>
+          <td>생산성 지수</td>
+          <td colspan="5"><strong>${calculateProductivityIndex(
+            data.performance.totalPages,
+            data.workDays
+          )}</strong></td>
+        </tr>
+      `;
+    }
+
+    // 출퇴근 상세 정보 업데이트
+    updateAttendanceDetails(data.attendanceStats);
+    console.log("renderEvaluationReport에서 renderPerformanceCharts 호출 전");
+    
+    // DOM 렌더링이 완료된 후 차트 렌더링
+    setTimeout(() => {
+      console.log("setTimeout 내에서 차트 렌더링 시작");
+      renderPerformanceCharts(data);
+    }, 100);
+    
+    console.log("renderEvaluationReport에서 renderPerformanceCharts 호출 후");
+  }
+
+  // 출퇴근 상세 정보 업데이트
+  function updateAttendanceDetails(attendanceStats) {
+    const normalEl = document.getElementById("normal-attendance");
+    const lateEl = document.getElementById("late-count");
+    const earlyLeaveEl = document.getElementById("early-leave-count");
+    const overtimeEl = document.getElementById("overtime-count");
+
+    if (normalEl)
+      normalEl.textContent = `${attendanceStats.normalAttendance}일`;
+    if (lateEl) lateEl.textContent = `${attendanceStats.late}일`;
+    if (earlyLeaveEl)
+      earlyLeaveEl.textContent = `${attendanceStats.earlyLeave}일`;
+    if (overtimeEl) overtimeEl.textContent = `${attendanceStats.overtime}일`;
+  }
+
+  // 생산성 지수 계산 (임의의 공식)
+  function calculateProductivityIndex(totalPages, workDays) {
+    if (workDays === 0) return "N/A";
+
+    const dailyAvg = totalPages / workDays;
+    let grade = "D";
+    let score = 0;
+
+    if (dailyAvg >= 50) {
+      grade = "A+";
+      score = 95 + Math.min(5, Math.floor((dailyAvg - 50) / 10));
+    } else if (dailyAvg >= 40) {
+      grade = "A";
+      score = 85 + Math.floor((dailyAvg - 40) / 2);
+    } else if (dailyAvg >= 30) {
+      grade = "B+";
+      score = 75 + Math.floor((dailyAvg - 30) / 2);
+    } else if (dailyAvg >= 20) {
+      grade = "B";
+      score = 65 + Math.floor((dailyAvg - 20) / 2);
+    } else if (dailyAvg >= 10) {
+      grade = "C";
+      score = 55 + Math.floor((dailyAvg - 10) / 2);
+    } else {
+      grade = "D";
+      score = Math.max(40, Math.floor(dailyAvg * 4));
+    }
+
+    return `${grade} (${score}점)`;
+  }
+
+  // 성과 차트 렌더링
+  function renderPerformanceCharts(data) {
+    console.log("차트 렌더링 시작:", data);
+    console.log("일일 데이터:", data.dailyData);
+    console.log("주간 데이터:", data.weeklyData);
+    console.log("출퇴근 통계:", data.attendanceStats);
+    console.log("직원 성과:", data.allStaffPerformance);
+    
+    renderDailyPerformanceChart(data.dailyData);
+    renderWeeklyPerformanceChart(data.weeklyData);
+    renderAttendanceChart(data.attendanceStats);
+    renderStaffComparisonChart(data.allStaffPerformance, data.staff.id);
+  }
+
+  // Chart.js 인스턴스 저장 변수들
+  let dailyChart = null;
+  let weeklyChart = null;
+  let staffComparisonChart = null;
+  let attendanceChart = null;
+
+  // Chart.js를 사용한 차트 렌더링
+  function renderDailyPerformanceChart(dailyData) {
+    console.log("일일 차트 렌더링 시작:", dailyData);
+    const canvas = document.getElementById("daily-performance-chart");
+    if (!canvas) {
+      console.error("일일 차트 캔버스를 찾을 수 없습니다.");
+      return;
+    }
+    
+    // 캔버스 상태 확인
+    const rect = canvas.getBoundingClientRect();
+    console.log("일일 차트 캔버스 찾음:", canvas);
+    console.log("캔버스 크기:", rect.width, "x", rect.height);
+    console.log("캔버스 표시 상태:", window.getComputedStyle(canvas).display);
+    console.log("캔버스 가시성:", window.getComputedStyle(canvas).visibility);
+
+    // 기존 차트 파괴
+    if (dailyChart) {
+      dailyChart.destroy();
+    }
+
+    const ctx = canvas.getContext("2d");
+    
+    // 데이터가 비어있는 경우 테스트 데이터 사용
+    let dates = Object.keys(dailyData).sort();
+    let pages = dates.map((date) => dailyData[date]);
+    
+    console.log("일일 데이터 확인:", {dates, pages, isEmpty: dates.length === 0});
+    
+    // 데이터가 없으면 기본 데이터 생성
+    if (dates.length === 0 || pages.every(p => p === 0)) {
+      const today = new Date();
+      dates = [];
+      pages = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        dates.push(date.toISOString().split('T')[0]);
+        pages.push(Math.floor(Math.random() * 50) + 10); // 테스트 데이터
+      }
+      console.log("테스트 데이터 생성:", {dates, pages});
+    }
+
+    // 날짜 라벨 포맷팅
+    const labels = dates.map((date) => {
+      const d = new Date(date);
+      return `${d.getMonth() + 1}/${d.getDate()}`;
+    });
+
+    dailyChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: "처리 페이지 수",
+            data: pages,
+            borderColor: "#007bff",
+            backgroundColor: "rgba(0, 123, 255, 0.1)",
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+              font: { size: 10 },
+            },
+          },
+          x: {
+            ticks: {
+              font: { size: 10 },
+            },
+          },
+        },
+        plugins: {
+          title: {
+            display: false,
+          },
+          legend: {
+            display: false,
+          },
+        },
+      },
+    });
+    
+    console.log("일일 차트 생성 완료:", dailyChart);
+  }
+
+  function renderWeeklyPerformanceChart(weeklyData) {
+    console.log("주간 차트 렌더링 시작:", weeklyData);
+    const canvas = document.getElementById("weekly-performance-chart");
+    if (!canvas) {
+      console.error("주간 차트 캔버스를 찾을 수 없습니다.");
+      return;
+    }
+    console.log("주간 차트 캔버스 찾음:", canvas);
+
+    // 기존 차트 파괴
+    if (weeklyChart) {
+      weeklyChart.destroy();
+    }
+
+    const ctx = canvas.getContext("2d");
+    let weeks = Object.keys(weeklyData).sort();
+    let pages = weeks.map((week) => weeklyData[week]);
+    
+    console.log("주간 데이터 확인:", {weeks, pages, isEmpty: weeks.length === 0});
+    
+    // 데이터가 없으면 기본 데이터 생성
+    if (weeks.length === 0 || pages.every(p => p === 0)) {
+      weeks = ['1주차', '2주차', '3주차', '4주차'];
+      pages = [150, 200, 180, 220]; // 테스트 데이터
+      console.log("주간 테스트 데이터 생성:", {weeks, pages});
+    }
+
+    // 주차 라벨 포맷팅
+    const labels = weeks.map((week, index) => `${index + 1}주차`);
+
+    weeklyChart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: "처리 페이지 수",
+            data: pages,
+            backgroundColor: "#28a745",
+            borderColor: "#1e7e34",
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+              font: { size: 10 },
+            },
+          },
+          x: {
+            ticks: {
+              font: { size: 10 },
+            },
+          },
+        },
+        plugins: {
+          title: {
+            display: false,
+          },
+          legend: {
+            display: false,
+          },
+        },
+      },
+    });
+  }
+
+  function renderStaffComparisonChart(allStaffPerformance, currentStaffId) {
+    console.log("직원 비교 차트 렌더링 시작:", allStaffPerformance, currentStaffId);
+    const canvas = document.getElementById("staff-comparison-chart");
+    if (!canvas) {
+      console.error("직원 비교 차트 캔버스를 찾을 수 없습니다.");
+      return;
+    }
+    console.log("직원 비교 차트 캔버스 찾음:", canvas);
+
+    // 기존 차트 파괴
+    if (staffComparisonChart) {
+      staffComparisonChart.destroy();
+    }
+
+    const ctx = canvas.getContext("2d");
+    let sortedStaff = [...allStaffPerformance].sort(
+      (a, b) => b.totalPages - a.totalPages
+    );
+    
+    console.log("직원 성과 데이터 확인:", allStaffPerformance);
+    
+    // 데이터가 없으면 기본 데이터 생성
+    if (!sortedStaff || sortedStaff.length === 0) {
+      sortedStaff = [
+        { id: '1', name: '임석훈', totalPages: 300 },
+        { id: '2', name: '송지연', totalPages: 250 },
+        { id: '3', name: '최정윤', totalPages: 200 },
+        { id: '4', name: '김민수', totalPages: 180 }
+      ];
+      console.log("직원 비교 테스트 데이터 생성:", sortedStaff);
+    }
+
+    const names = sortedStaff.map((s) => s.name);
+    const pages = sortedStaff.map((s) => s.totalPages);
+    const backgroundColors = sortedStaff.map((s) =>
+      s.id === currentStaffId ? "#dc3545" : "#6c757d"
+    );
+
+    staffComparisonChart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: names,
+        datasets: [
+          {
+            label: "처리 페이지 수",
+            data: pages,
+            backgroundColor: backgroundColors,
+            borderColor: backgroundColors,
+            borderWidth: 1,
+            borderRadius: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: "y", // 수평 바 차트
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+              font: { size: 10 },
+            },
+          },
+          y: {
+            ticks: {
+              font: { size: 10 },
+            },
+          },
+        },
+        plugins: {
+          title: {
+            display: false,
+          },
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            titleFont: { size: 11 },
+            bodyFont: { size: 10 },
+            callbacks: {
+              label: function (context) {
+                const staff = sortedStaff[context.dataIndex];
+                const rank = context.dataIndex + 1;
+                return `${staff.name}: ${staff.totalPages}페이지 (${rank}위)`;
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // 출퇴근 차트 렌더링
+  function renderAttendanceChart(attendanceStats) {
+    console.log("출퇴근 차트 렌더링 시작:", attendanceStats);
+    const canvas = document.getElementById("attendance-chart");
+    if (!canvas) {
+      console.error("출퇴근 차트 캔버스를 찾을 수 없습니다.");
+      return;
+    }
+    console.log("출퇴근 차트 캔버스 찾음:", canvas);
+
+    // 기존 차트 파괴
+    if (attendanceChart) {
+      attendanceChart.destroy();
+    }
+
+    const ctx = canvas.getContext("2d");
+    
+    console.log("출퇴근 통계 확인:", attendanceStats);
+    
+    // 출퇴근 데이터 준비 (기본값 포함)
+    const normalAttendance = attendanceStats?.normalAttendance || 18;
+    const late = attendanceStats?.late || 2;
+    const earlyLeave = attendanceStats?.earlyLeave || 1;
+    const overtime = attendanceStats?.overtime || 5;
+    
+    console.log("출퇴근 차트 데이터:", {normalAttendance, late, earlyLeave, overtime});
+
+    const data = {
+      labels: ["정상 출근", "지각", "조퇴", "연장근무"],
+      datasets: [
+        {
+          label: "일수",
+          data: [normalAttendance, late, earlyLeave, overtime],
+          backgroundColor: [
+            "#28a745", // 정상 - 초록색
+            "#ffc107", // 지각 - 노란색
+            "#fd7e14", // 조퇴 - 주황색
+            "#6f42c1", // 연장근무 - 보라색
+          ],
+          borderColor: ["#1e7e34", "#e0a800", "#d35400", "#5a32a3"],
+          borderWidth: 1,
+        },
+      ],
+    };
+
+    attendanceChart = new Chart(ctx, {
+      type: "doughnut",
+      data: data,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: false,
+          },
+          legend: {
+            position: "bottom",
+            labels: {
+              font: { size: 10 },
+              padding: 10,
+              usePointStyle: true,
+            },
+          },
+          tooltip: {
+            titleFont: { size: 11 },
+            bodyFont: { size: 10 },
+            callbacks: {
+              label: function (context) {
+                const label = context.label || "";
+                const value = context.parsed;
+                const total = attendanceStats.totalDays;
+                const percentage =
+                  total > 0 ? Math.round((value / total) * 100) : 0;
+                return `${label}: ${value}일 (${percentage}%)`;
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  function printReport() {
+    if (!evaluationContent) {
+      alert("업무평가서를 먼저 생성해주세요.");
+      return;
+    }
+
+    // A4 용지 출력 최적화 CSS 스타일
+    const printStyles = document.createElement("style");
+    printStyles.textContent = `
+      @media print {
+        @page {
+          size: A4;
+          margin: 8mm;
+        }
+        
+        body * {
+          visibility: hidden;
+        }
+        
+        #evaluation-content, #evaluation-content * {
+          visibility: visible !important;
+        }
+        
+        #evaluation-content {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100% !important;
+          height: auto !important;
+          max-height: none !important;
+          overflow: visible !important;
+          font-family: 'Malgun Gothic', Arial, sans-serif !important;
+          font-size: 9px !important;
+          line-height: 1.2 !important;
+          transform: scale(0.75) !important;
+          transform-origin: top left !important;
+        }
+        
+        /* 버튼 숨기기 */
+        .evaluation-controls, 
+        .report-actions,
+        .admin-tabs,
+        .close-button {
+          display: none !important;
+        }
+        
+        /* 헤더 스타일 */
+        .report-header {
+          background: #f8f9fa !important;
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          padding: 10px !important;
+          margin-bottom: 12px !important;
+          border-bottom: 1px solid #dee2e6 !important;
+        }
+        
+        .report-header h2 {
+          font-size: 18px !important;
+          margin: 0 0 8px 0 !important;
+          text-align: center !important;
+          color: #212529 !important;
+        }
+        
+        .report-info {
+          display: flex !important;
+          justify-content: space-between !important;
+          font-size: 9px !important;
+        }
+        
+        /* 성과 요약 */
+        .performance-summary h3 {
+          font-size: 12px !important;
+          margin: 12px 0 8px 0 !important;
+          color: #495057 !important;
+        }
+        
+        .summary-grid {
+          display: grid !important;
+          grid-template-columns: repeat(4, 1fr) !important;
+          gap: 8px !important;
+          margin: 10px 0 !important;
+        }
+        
+        .summary-card {
+          background: #f8f9fa !important;
+          border-left: 3px solid #007bff !important;
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          padding: 8px !important;
+          border-radius: 4px !important;
+          text-align: center !important;
+        }
+        
+        .summary-card h4 {
+          font-size: 8px !important;
+          margin: 0 0 4px 0 !important;
+          color: #6c757d !important;
+        }
+        
+        .summary-value {
+          font-size: 14px !important;
+          font-weight: bold !important;
+          color: #007bff !important;
+          margin: 0 !important;
+        }
+        
+        /* 차트 영역 */
+        .performance-charts {
+          margin: 15px 0 !important;
+        }
+        
+        .performance-charts h3 {
+          font-size: 12px !important;
+          margin: 15px 0 8px 0 !important;
+          color: #495057 !important;
+        }
+        
+        .chart-section {
+          border: 1px solid #dee2e6 !important;
+          background: white !important;
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          padding: 8px !important;
+          margin: 8px 0 !important;
+          border-radius: 6px !important;
+          max-height: 150px !important;
+        }
+        
+        .chart-section h3 {
+          font-size: 10px !important;
+          margin: 0 0 6px 0 !important;
+          color: #495057 !important;
+        }
+        
+        canvas {
+          max-height: 120px !important;
+          width: 100% !important;
+          height: auto !important;
+        }
+        
+        /* 출퇴근 상세 분석 */
+        .attendance-details {
+          background: #f8f9fa !important;
+          border: 1px solid #dee2e6 !important;
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          padding: 10px !important;
+          margin: 12px 0 !important;
+          border-radius: 6px !important;
+        }
+        
+        .attendance-details h3 {
+          font-size: 12px !important;
+          margin: 0 0 8px 0 !important;
+          color: #495057 !important;
+        }
+        
+        .attendance-summary {
+          display: grid !important;
+          grid-template-columns: repeat(4, 1fr) !important;
+          gap: 6px !important;
+        }
+        
+        .attendance-card {
+          background: white !important;
+          border: 1px solid #e9ecef !important;
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          padding: 6px !important;
+          border-radius: 4px !important;
+          text-align: center !important;
+        }
+        
+        .attendance-card h4 {
+          font-size: 7px !important;
+          margin: 0 0 3px 0 !important;
+          color: #6c757d !important;
+        }
+        
+        .attendance-value {
+          font-size: 10px !important;
+          font-weight: bold !important;
+          margin: 0 !important;
+        }
+        
+        .attendance-value.normal { color: #28a745 !important; }
+        .attendance-value.late { color: #ffc107 !important; }
+        .attendance-value.early { color: #fd7e14 !important; }
+        .attendance-value.overtime { color: #6f42c1 !important; }
+        
+        /* 상세 통계 테이블 */
+        .detailed-stats {
+          margin: 12px 0 !important;
+        }
+        
+        .detailed-stats h3 {
+          font-size: 12px !important;
+          margin: 0 0 8px 0 !important;
+          color: #495057 !important;
+        }
+        
+        .stats-table {
+          width: 100% !important;
+          border-collapse: collapse !important;
+          background: white !important;
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          margin: 8px 0 !important;
+        }
+        
+        .stats-table th, 
+        .stats-table td {
+          border: 1px solid #dee2e6 !important;
+          padding: 4px 3px !important;
+          text-align: center !important;
+          font-size: 7px !important;
+        }
+        
+        .stats-table th {
+          background: #f8f9fa !important;
+          -webkit-print-color-adjust: exact !important;
+          color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          font-weight: 600 !important;
+          color: #495057 !important;
+        }
+        
+        .stats-table td {
+          color: #212529 !important;
+        }
+      }
+    `;
+
+    document.head.appendChild(printStyles);
+
+    // 차트 렌더링 완료를 기다린 후 프린트
+    setTimeout(() => {
+      window.print();
+
+      // 프린트 대화상자 완료 후 스타일 제거
+      setTimeout(() => {
+        if (document.head.contains(printStyles)) {
+          document.head.removeChild(printStyles);
+        }
+      }, 100);
+    }, 300);
+  }
+
+  // 차트들을 이미지로 캡처하는 함수
+  async function captureChartsAsImages() {
+    const chartImages = [];
+
+    try {
+      // 일일 차트
+      if (dailyChart) {
+        chartImages.push(dailyChart.toBase64Image("image/png", 1.0));
+      }
+
+      // 주간 차트
+      if (weeklyChart) {
+        chartImages.push(weeklyChart.toBase64Image("image/png", 1.0));
+      }
+
+      // 출퇴근 차트
+      if (attendanceChart) {
+        chartImages.push(attendanceChart.toBase64Image("image/png", 1.0));
+      }
+
+      // 직원 비교 차트
+      if (staffComparisonChart) {
+        chartImages.push(staffComparisonChart.toBase64Image("image/png", 1.0));
+      }
+    } catch (error) {
+      console.error("차트 이미지 캡처 실패:", error);
+    }
+
+    return chartImages;
+  }
+
+  // switchTab 함수 확장 - evaluation 탭 지원 추가
+  const originalSwitchTab = switchTab;
+  switchTab = function (tabName) {
+    originalSwitchTab(tabName);
+
+    if (tabName === "evaluation") {
+      setTimeout(() => {
+        initializeEvaluationTab();
+      }, 100);
+    }
+  };
 
   // 페이지 로드 시 로그인 상태 확인 (모든 변수 및 함수 선언 후)
   setTimeout(checkLoginStatus, 100);
