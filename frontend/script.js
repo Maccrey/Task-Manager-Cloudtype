@@ -5257,7 +5257,6 @@ document.addEventListener("DOMContentLoaded", () => {
       normalAttendance: 0, // 정상 출근
       late: 0, // 지각
       earlyLeave: 0, // 조퇴
-      lateAndEarlyLeave: 0, // 지각 + 조퇴
       absent: 0, // 결근
       overtime: 0, // 연장근무
       attendanceDetails: [], // 일별 상세 정보
@@ -5370,7 +5369,6 @@ document.addEventListener("DOMContentLoaded", () => {
       normalAttendance: 0,
       late: 0,
       earlyLeave: 0,
-      lateAndEarlyLeave: 0,
       absent: 0,
       overtime: 0,
       attendanceDetails: [],
@@ -5406,13 +5404,15 @@ document.addEventListener("DOMContentLoaded", () => {
       // 날짜별 작업 세션 그룹화
       const sessionsByDate = {};
       staffSessions.forEach((session) => {
-        const sessionDate = new Date(session.startTime);
-        if (sessionDate >= startDate && sessionDate <= endDate) {
-          const dateStr = sessionDate.toISOString().split("T")[0];
-          if (!sessionsByDate[dateStr]) {
-            sessionsByDate[dateStr] = [];
-          }
-          sessionsByDate[dateStr].push(session);
+        if (session.startTime) {
+            const sessionDate = new Date(session.startTime);
+            if (sessionDate >= startDate && sessionDate <= endDate) {
+              const dateStr = sessionDate.toISOString().split("T")[0];
+              if (!sessionsByDate[dateStr]) {
+                sessionsByDate[dateStr] = [];
+              }
+              sessionsByDate[dateStr].push(session);
+            }
         }
       });
 
@@ -5429,53 +5429,59 @@ document.addEventListener("DOMContentLoaded", () => {
           const daySessions = sessionsByDate[dateStr] || [];
 
           if (daySessions.length > 0) {
-            // 해당 날짜의 가장 이른 시작시간과 가장 늦은 종료시간 찾기
+            let totalDuration = 0;
+            daySessions.forEach(session => {
+                // duration이 밀리초 단위로 제공된다고 가정
+                if(session.duration) {
+                    totalDuration += session.duration;
+                } else if (session.startTime && session.endTime) {
+                    totalDuration += new Date(session.endTime) - new Date(session.startTime);
+                }
+            });
+
             const startTimes = daySessions.map((s) => new Date(s.startTime));
             const endTimes = daySessions
               .filter((s) => s.endTime)
               .map((s) => new Date(s.endTime));
 
             const checkIn = new Date(Math.min(...startTimes));
-            const checkOut =
-              endTimes.length > 0 ? new Date(Math.max(...endTimes)) : null;
+            const checkOut = endTimes.length > 0 ? new Date(Math.max(...endTimes)) : null;
 
-            // 출퇴근 상태 분석
-            const workStartTime = { hour: 9, minute: 5 }; // 09:05
-            const workEndTime = { hour: 17, minute: 45 }; // 17:45
+            // 점심시간 (12:00 ~ 13:00) 포함 여부 확인
+            const lunchStart = new Date(checkIn);
+            lunchStart.setHours(12, 0, 0, 0);
+            const lunchEnd = new Date(checkIn);
+            lunchEnd.setHours(13, 0, 0, 0);
 
-            const isLate =
-              checkIn.getHours() > workStartTime.hour ||
-              (checkIn.getHours() === workStartTime.hour &&
-                checkIn.getMinutes() > workStartTime.minute);
+            const lunchOverlap = checkIn < lunchEnd && checkOut > lunchStart;
+            
+            let effectiveWorkMinutes = totalDuration / (1000 * 60);
+            if (lunchOverlap) {
+              effectiveWorkMinutes -= 60;
+            }
+            
+            // 분 단위로 소수점 버림
+            effectiveWorkMinutes = Math.floor(effectiveWorkMinutes);
 
-            const isEarlyLeave =
-              checkOut &&
-              (checkOut.getHours() < workEndTime.hour ||
-                (checkOut.getHours() === workEndTime.hour &&
-                  checkOut.getMinutes() < workEndTime.minute));
+            const isLate = checkIn.getHours() > 9 || (checkIn.getHours() === 9 && checkIn.getMinutes() > 0);
+            
+            let status = "";
 
-            const isOvertime =
-              checkOut &&
-              (checkOut.getHours() > 18 ||
-                (checkOut.getHours() === 18 && checkOut.getMinutes() > 0));
-
-            let status = "정상";
-            if (isLate && isEarlyLeave) {
-              attendanceStats.lateAndEarlyLeave++;
-              status = "지각+조퇴";
-            } else if (isLate) {
-              attendanceStats.late++;
-              status = "지각";
-            } else if (isEarlyLeave) {
-              attendanceStats.earlyLeave++;
-              status = "조퇴";
-            } else {
+            if (effectiveWorkMinutes >= 480) {
               attendanceStats.normalAttendance++;
               status = "정상";
+            } else {
+              if (isLate) {
+                attendanceStats.late++;
+                status = "지각";
+              } else {
+                attendanceStats.earlyLeave++;
+                status = "조퇴"; // 480분 미만 근무는 조퇴로 간주
+              }
             }
-
-            if (isOvertime) {
-              attendanceStats.overtime++;
+            
+            if (effectiveWorkMinutes > 480) {
+                attendanceStats.overtime++;
             }
 
             attendanceStats.attendanceDetails.push({
@@ -5484,12 +5490,9 @@ document.addEventListener("DOMContentLoaded", () => {
               checkOut: checkOut ? checkOut.toISOString() : null,
               status: status,
             });
-          } else {
-            // 해당 날짜에 작업 세션이 없는 경우 - 결근 처리하지 않음
-            // (주말이 아닌 날에 작업이 없어도 결근으로 표시하지 않음)
+
           }
         }
-
         currentDate.setDate(currentDate.getDate() + 1);
       }
     } catch (error) {
@@ -6048,10 +6051,10 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("출퇴근 통계 확인:", attendanceStats);
     
     // 출퇴근 데이터 준비 (기본값 포함)
-    const normalAttendance = attendanceStats?.normalAttendance || 18;
-    const late = attendanceStats?.late || 2;
-    const earlyLeave = attendanceStats?.earlyLeave || 1;
-    const overtime = attendanceStats?.overtime || 5;
+    const normalAttendance = attendanceStats?.normalAttendance ?? 0;
+    const late = attendanceStats?.late ?? 0;
+    const earlyLeave = attendanceStats?.earlyLeave ?? 0;
+    const overtime = attendanceStats?.overtime ?? 0;
     
     console.log("출퇴근 차트 데이터:", {normalAttendance, late, earlyLeave, overtime});
 
@@ -6144,8 +6147,6 @@ document.addEventListener("DOMContentLoaded", () => {
           font-family: 'Malgun Gothic', Arial, sans-serif !important;
           font-size: 9px !important;
           line-height: 1.2 !important;
-          transform: scale(0.75) !important;
-          transform-origin: top left !important;
         }
         
         /* 버튼 숨기기 */
