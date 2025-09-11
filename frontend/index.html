@@ -33,7 +33,7 @@
     <div id="main-dashboard" class="main-dashboard" style="display: none">
       <header>
         <div class="header-content">
-          <h1>점자 도서 작업 관리 대시보드 Ver 1.5</h1>
+          <h1>점자 도서 작업 관리 대시보드 Ver 2.0</h1>
           <div class="user-info">
             <span id="current-user-name"></span>
             <button id="logout-btn" class="logout-btn">로그아웃</button>
@@ -243,7 +243,10 @@
                 <button id="backup-work-sessions-btn" class="admin-btn backup">
                   📥 백업
                 </button>
-                <button id="restore-work-sessions-btn" class="admin-btn restore">
+                <button
+                  id="restore-work-sessions-btn"
+                  class="admin-btn restore"
+                >
                   📤 복원
                 </button>
                 <button id="clear-work-sessions-btn" class="admin-btn danger">
@@ -262,7 +265,9 @@
             <div class="admin-data-section global-actions">
               <div class="data-section-header">
                 <h3>🔧 전체 관리</h3>
-                <p class="section-description">모든 데이터를 한번에 관리합니다</p>
+                <p class="section-description">
+                  모든 데이터를 한번에 관리합니다
+                </p>
               </div>
               <div class="admin-buttons">
                 <button id="backup-all-btn" class="admin-btn backup-all">
@@ -280,7 +285,9 @@
         <div id="delete-confirm-modal" class="modal" style="display: none">
           <div class="modal-content delete-confirm-content">
             <h3>⚠️ 데이터 삭제 확인</h3>
-            <p id="delete-confirm-message">정말로 이 데이터를 삭제하시겠습니까?</p>
+            <p id="delete-confirm-message">
+              정말로 이 데이터를 삭제하시겠습니까?
+            </p>
             <div class="password-input-group">
               <label for="delete-password">삭제 확인 암호:</label>
               <input
