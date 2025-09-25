@@ -5478,9 +5478,15 @@ document.addEventListener("DOMContentLoaded", () => {
             // 분 단위로 소수점 버림
             effectiveWorkMinutes = Math.floor(effectiveWorkMinutes);
 
-            const isLate = checkIn.getHours() > 9 || (checkIn.getHours() === 9 && checkIn.getMinutes() > 0);
+            const isLate = checkIn.getHours() > 9 || (checkIn.getHours() === 9 && checkIn.getMinutes() > 5);
             
             let status = "";
+
+            // 17시 45분 이후 퇴근인지 확인
+            const isAfterEndTime = checkOut && (
+              checkOut.getHours() > 17 ||
+              (checkOut.getHours() === 17 && checkOut.getMinutes() >= 45)
+            );
 
             if (effectiveWorkMinutes >= 480) {
               attendanceStats.normalAttendance++;
@@ -5489,9 +5495,13 @@ document.addEventListener("DOMContentLoaded", () => {
               if (isLate) {
                 attendanceStats.late++;
                 status = "지각";
+              } else if (isAfterEndTime) {
+                // 17시 45분 이후 퇴근했지만 480분 미만인 경우는 정상으로 간주
+                attendanceStats.normalAttendance++;
+                status = "정상";
               } else {
                 attendanceStats.earlyLeave++;
-                status = "조퇴"; // 480분 미만 근무는 조퇴로 간주
+                status = "조퇴"; // 17시 45분 이전 퇴근은 조퇴로 간주
               }
             }
             
