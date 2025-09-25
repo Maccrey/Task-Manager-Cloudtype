@@ -952,14 +952,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     incompleteTasks.sort((a, b) => {
-      const aHasAssignee =
+      const aAssignedTo =
         a.currentStage !== "completed" &&
         a.stages[a.currentStage] &&
         a.stages[a.currentStage].assignedTo;
-      const bHasAssignee =
+      const bAssignedTo =
         b.currentStage !== "completed" &&
         b.stages[b.currentStage] &&
         b.stages[b.currentStage].assignedTo;
+
+      // 로그인한 사용자에게 할당된 작업을 최우선으로
+      const aIsCurrentUser = aAssignedTo === currentUser;
+      const bIsCurrentUser = bAssignedTo === currentUser;
+
+      if (aIsCurrentUser && !bIsCurrentUser) {
+        return -1;
+      }
+      if (!aIsCurrentUser && bIsCurrentUser) {
+        return 1;
+      }
+
+      // 둘 다 현재 사용자가 아닌 경우, 담당자 유무로 정렬
+      const aHasAssignee = !!aAssignedTo;
+      const bHasAssignee = !!bAssignedTo;
 
       if (aHasAssignee && !bHasAssignee) {
         return -1;
@@ -6125,28 +6140,37 @@ document.addEventListener("DOMContentLoaded", () => {
       @media print {
         @page {
           size: A4;
-          margin: 8mm;
+          margin: 15mm;
         }
         
         body * {
           visibility: hidden;
         }
         
-        #evaluation-content, #evaluation-content * {
+        #admin-panel-modal, .modal-content, #evaluation-content, #evaluation-content * {
           visibility: visible !important;
         }
         
+        #admin-panel-modal, .modal-content {
+            position: static !important;
+            width: auto !important;
+            height: auto !important;
+            max-width: none !important;
+            max-height: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+            background: transparent !important;
+        }
+        
         #evaluation-content {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100% !important;
-          height: auto !important;
-          max-height: none !important;
-          overflow: visible !important;
-          font-family: 'Malgun Gothic', Arial, sans-serif !important;
-          font-size: 9px !important;
-          line-height: 1.2 !important;
+          box-shadow: none !important;
+          border: none !important;
+          margin: 0;
+          padding: 0;
+          width: 100%;
         }
         
         /* 버튼 숨기기 */
@@ -6155,197 +6179,6 @@ document.addEventListener("DOMContentLoaded", () => {
         .admin-tabs,
         .close-button {
           display: none !important;
-        }
-        
-        /* 헤더 스타일 */
-        .report-header {
-          background: #f8f9fa !important;
-          -webkit-print-color-adjust: exact !important;
-          color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          padding: 10px !important;
-          margin-bottom: 12px !important;
-          border-bottom: 1px solid #dee2e6 !important;
-        }
-        
-        .report-header h2 {
-          font-size: 18px !important;
-          margin: 0 0 8px 0 !important;
-          text-align: center !important;
-          color: #212529 !important;
-        }
-        
-        .report-info {
-          display: flex !important;
-          justify-content: space-between !important;
-          font-size: 9px !important;
-        }
-        
-        /* 성과 요약 */
-        .performance-summary h3 {
-          font-size: 12px !important;
-          margin: 12px 0 8px 0 !important;
-          color: #495057 !important;
-        }
-        
-        .summary-grid {
-          display: grid !important;
-          grid-template-columns: repeat(4, 1fr) !important;
-          gap: 8px !important;
-          margin: 10px 0 !important;
-        }
-        
-        .summary-card {
-          background: #f8f9fa !important;
-          border-left: 3px solid #007bff !important;
-          -webkit-print-color-adjust: exact !important;
-          color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          padding: 8px !important;
-          border-radius: 4px !important;
-          text-align: center !important;
-        }
-        
-        .summary-card h4 {
-          font-size: 8px !important;
-          margin: 0 0 4px 0 !important;
-          color: #6c757d !important;
-        }
-        
-        .summary-value {
-          font-size: 14px !important;
-          font-weight: bold !important;
-          color: #007bff !important;
-          margin: 0 !important;
-        }
-        
-        /* 차트 영역 */
-        .performance-charts {
-          margin: 15px 0 !important;
-        }
-        
-        .performance-charts h3 {
-          font-size: 12px !important;
-          margin: 15px 0 8px 0 !important;
-          color: #495057 !important;
-        }
-        
-        .chart-section {
-          border: 1px solid #dee2e6 !important;
-          background: white !important;
-          -webkit-print-color-adjust: exact !important;
-          color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          padding: 8px !important;
-          margin: 8px 0 !important;
-          border-radius: 6px !important;
-          max-height: 150px !important;
-        }
-        
-        .chart-section h3 {
-          font-size: 10px !important;
-          margin: 0 0 6px 0 !important;
-          color: #495057 !important;
-        }
-        
-        canvas {
-          max-height: 120px !important;
-          width: 100% !important;
-          height: auto !important;
-        }
-        
-        /* 출퇴근 상세 분석 */
-        .attendance-details {
-          background: #f8f9fa !important;
-          border: 1px solid #dee2e6 !important;
-          -webkit-print-color-adjust: exact !important;
-          color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          padding: 10px !important;
-          margin: 12px 0 !important;
-          border-radius: 6px !important;
-        }
-        
-        .attendance-details h3 {
-          font-size: 12px !important;
-          margin: 0 0 8px 0 !important;
-          color: #495057 !important;
-        }
-        
-        .attendance-summary {
-          display: grid !important;
-          grid-template-columns: repeat(4, 1fr) !important;
-          gap: 6px !important;
-        }
-        
-        .attendance-card {
-          background: white !important;
-          border: 1px solid #e9ecef !important;
-          -webkit-print-color-adjust: exact !important;
-          color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          padding: 6px !important;
-          border-radius: 4px !important;
-          text-align: center !important;
-        }
-        
-        .attendance-card h4 {
-          font-size: 7px !important;
-          margin: 0 0 3px 0 !important;
-          color: #6c757d !important;
-        }
-        
-        .attendance-value {
-          font-size: 10px !important;
-          font-weight: bold !important;
-          margin: 0 !important;
-        }
-        
-        .attendance-value.normal { color: #28a745 !important; }
-        .attendance-value.late { color: #ffc107 !important; }
-        .attendance-value.early { color: #fd7e14 !important; }
-        .attendance-value.overtime { color: #6f42c1 !important; }
-        
-        /* 상세 통계 테이블 */
-        .detailed-stats {
-          margin: 12px 0 !important;
-        }
-        
-        .detailed-stats h3 {
-          font-size: 12px !important;
-          margin: 0 0 8px 0 !important;
-          color: #495057 !important;
-        }
-        
-        .stats-table {
-          width: 100% !important;
-          border-collapse: collapse !important;
-          background: white !important;
-          -webkit-print-color-adjust: exact !important;
-          color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          margin: 8px 0 !important;
-        }
-        
-        .stats-table th, 
-        .stats-table td {
-          border: 1px solid #dee2e6 !important;
-          padding: 4px 3px !important;
-          text-align: center !important;
-          font-size: 7px !important;
-        }
-        
-        .stats-table th {
-          background: #f8f9fa !important;
-          -webkit-print-color-adjust: exact !important;
-          color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          font-weight: 600 !important;
-          color: #495057 !important;
-        }
-        
-        .stats-table td {
-          color: #212529 !important;
         }
       }
     `;
