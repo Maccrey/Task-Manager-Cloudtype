@@ -6255,6 +6255,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  // 업무평가서 달력 버튼 이벤트 리스너
+  const evaluationCalendarBtn = document.getElementById('evaluation-calendar-btn');
+  if (evaluationCalendarBtn) {
+    evaluationCalendarBtn.addEventListener('click', function() {
+      // 현재 업무평가서에서 선택된 직원 정보 가져오기
+      const staffSelect = document.getElementById('evaluation-staff');
+      const selectedStaffName = staffSelect && staffSelect.selectedIndex > 0
+        ? staffSelect.options[staffSelect.selectedIndex].textContent
+        : null;
+
+      if (!selectedStaffName) {
+        alert('직원을 먼저 선택해주세요.');
+        return;
+      }
+
+      // 새 창에서 달력 페이지 열기 (선택된 직원으로)
+      const calendarUrl = `attendance-calendar.html?user=${encodeURIComponent(selectedStaffName)}`;
+      window.open(calendarUrl, 'evaluation-attendance-calendar', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+    });
+  }
+
   // 페이지 로드 시 로그인 상태 확인 (모든 변수 및 함수 선언 후)
   setTimeout(checkLoginStatus, 100);
 });

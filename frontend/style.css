@@ -2304,6 +2304,29 @@ main {
   gap: 25px;
 }
 
+/* 업무평가서 출퇴근 상세 분석 헤더 */
+.attendance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.calendar-view-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.calendar-view-btn:hover {
+  background: #0056b3;
+}
+
 /* 업무평가서 내의 attendance-summary (출퇴근 상세 분석용) */
 .attendance-details .attendance-summary {
   display: grid;
