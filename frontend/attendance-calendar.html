@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>출퇴근 기록 달력</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .date-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .date-selector label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .date-selector select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+            min-width: 80px;
+        }
+
+        .nav-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .nav-button:hover {
+            background: #0056b3;
+        }
+
+        .today-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .today-button:hover {
+            background: #218838;
+        }
+
+        .calendar {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .calendar th {
+            background-color: #f8f9fa;
+            padding: 15px 8px;
+            text-align: center;
+            font-weight: bold;
+            border: 1px solid #dee2e6;
+            font-size: 14px;
+        }
+
+        .calendar th.sunday {
+            color: #dc3545;
+        }
+
+        .calendar th.saturday {
+            color: #007bff;
+        }
+
+        .calendar td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            vertical-align: top;
+            height: 140px;
+            width: 14.28%;
+            position: relative;
+            background: white;
+        }
+
+        .calendar td.other-month {
+            background-color: #f8f9fa;
+            color: #6c757d;
+        }
+
+        .calendar td.today {
+            background-color: #fff3cd;
+        }
+
+        .calendar td.has-attendance {
+            background-color: #d4edda;
+        }
+
+        .calendar td.has-late {
+            background-color: #fff3cd;
+        }
+
+        .calendar td.has-early-leave {
+            background-color: #f8d7da;
+        }
+
+        .calendar td.has-overtime {
+            background-color: #cce5ff;
+        }
+
+        .calendar td.holiday {
+            background-color: #ffe6e6;
+            color: #d63384;
+        }
+
+        .calendar td.holiday .date-number {
+            color: #d63384;
+            font-weight: bold;
+        }
+
+        .holiday-name {
+            font-size: 9px;
+            color: #d63384;
+            font-weight: bold;
+            margin-top: 1px;
+            padding: 1px 3px;
+            background-color: rgba(214, 51, 132, 0.1);
+            border-radius: 2px;
+            text-align: center;
+        }
+
+        .date-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .attendance-info {
+            font-size: 10px;
+            line-height: 1.3;
+        }
+
+        .time-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            margin-bottom: 3px;
+        }
+
+        .start-time, .end-time {
+            color: #495057;
+            font-size: 10px;
+        }
+
+        .work-hours {
+            color: #007bff;
+            font-weight: bold;
+            font-size: 10px;
+            margin-bottom: 2px;
+        }
+
+        .status-info {
+            font-size: 9px;
+            margin-top: 2px;
+        }
+
+        .status-late {
+            color: #856404;
+            background-color: rgba(255, 193, 7, 0.2);
+            padding: 1px 3px;
+            border-radius: 2px;
+        }
+
+        .status-early-leave {
+            color: #721c24;
+            background-color: rgba(248, 215, 218, 0.8);
+            padding: 1px 3px;
+            border-radius: 2px;
+        }
+
+        .status-overtime {
+            color: #0c5460;
+            background-color: rgba(13, 202, 240, 0.2);
+            padding: 1px 3px;
+            border-radius: 2px;
+        }
+
+        .status-normal {
+            color: #155724;
+            background-color: rgba(212, 237, 218, 0.8);
+            padding: 1px 3px;
+            border-radius: 2px;
+        }
+
+        .tasks-info {
+            color: #6c757d;
+            font-size: 9px;
+            margin-top: 2px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #dc3545;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .summary-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .summary-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 12px;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 3px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .user-info {
+            font-size: 18px;
+            color: #007bff;
+            margin-left: 15px;
+            font-weight: normal;
+            background-color: #f8f9fa;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid #dee2e6;
+        }
+
+        .memo-icon {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .memo-icon:hover {
+            opacity: 1;
+        }
+
+        .memo-icon svg {
+            width: 100%;
+            height: 100%;
+            fill: #6c757d;
+        }
+
+        .memo-icon:hover svg {
+            fill: #495057;
+        }
+
+        .memo-text {
+            font-size: 9px;
+            color: #495057;
+            margin-top: 2px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 2px 4px;
+            border-radius: 3px;
+            border: 1px solid #e9ecef;
+            max-width: 100%;
+            word-break: break-all;
+            line-height: 1.2;
+        }
+
+        /* 메모 모달 스타일 */
+        .memo-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .memo-modal-content {
+            background-color: #fefefe;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            width: 400px;
+            max-width: 90%;
+        }
+
+        .memo-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .memo-modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .memo-close {
+            color: #aaa;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+
+        .memo-close:hover {
+            color: #000;
+        }
+
+        .memo-input-group {
+            margin-bottom: 15px;
+        }
+
+        .memo-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            resize: none;
+            box-sizing: border-box;
+        }
+
+        .memo-char-count {
+            font-size: 12px;
+            color: #6c757d;
+            text-align: right;
+            margin-top: 5px;
+        }
+
+        .memo-suggestions {
+            margin-bottom: 15px;
+        }
+
+        .memo-suggestions-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .suggestion-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .suggestion-btn {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .suggestion-btn:hover {
+            background: #e9ecef;
+        }
+
+        .memo-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .memo-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .memo-btn-save {
+            background: #007bff;
+            color: white;
+        }
+
+        .memo-btn-save:hover {
+            background: #0056b3;
+        }
+
+        .memo-btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .memo-btn-cancel:hover {
+            background: #545b62;
+        }
+
+        .memo-btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .memo-btn-delete:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">
+                출퇴근 기록 달력
+                <span id="current-user-display" class="user-info"></span>
+            </div>
+            <div class="controls">
+                <div class="date-selector">
+                    <label for="year-select">년도:</label>
+                    <select id="year-select"></select>
+
+                    <label for="month-select">월:</label>
+                    <select id="month-select"></select>
+
+                    <button class="nav-button" id="prev-month">&lt;</button>
+                    <button class="nav-button" id="next-month">&gt;</button>
+                    <button class="today-button" id="today-btn">오늘</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="summary-section" id="summary-section" style="display: none;">
+            <div class="summary-title">이번 달 요약</div>
+            <div class="summary-stats" id="summary-stats"></div>
+        </div>
+
+        <div id="loading" class="loading">출퇴근 기록을 불러오는 중...</div>
+        <div id="error" class="error" style="display: none;">데이터를 불러오는 중 오류가 발생했습니다.</div>
+
+        <table class="calendar" id="calendar" style="display: none;">
+            <thead>
+                <tr>
+                    <th class="sunday">일</th>
+                    <th>월</th>
+                    <th>화</th>
+                    <th>수</th>
+                    <th>목</th>
+                    <th>금</th>
+                    <th class="saturday">토</th>
+                </tr>
+            </thead>
+            <tbody id="calendar-body"></tbody>
+        </table>
+    </div>
+
+    <!-- 메모 입력 모달 -->
+    <div id="memo-modal" class="memo-modal">
+        <div class="memo-modal-content">
+            <div class="memo-modal-header">
+                <h3 class="memo-modal-title">메모 작성</h3>
+                <button class="memo-close" id="memo-close">&times;</button>
+            </div>
+
+            <div class="memo-input-group">
+                <textarea id="memo-input" class="memo-input" placeholder="메모를 입력하세요..." maxlength="20" rows="3"></textarea>
+                <div class="memo-char-count">
+                    <span id="memo-char-current">0</span> / 20자
+                </div>
+            </div>
+
+            <div class="memo-suggestions">
+                <div class="memo-suggestions-title">추천 메모</div>
+                <div class="suggestion-buttons">
+                    <button class="suggestion-btn" data-text="회의 참석">회의 참석</button>
+                    <button class="suggestion-btn" data-text="외근">외근</button>
+                    <button class="suggestion-btn" data-text="휴가">휴가</button>
+                    <button class="suggestion-btn" data-text="반차">반차</button>
+                    <button class="suggestion-btn" data-text="조기퇴근">조기퇴근</button>
+                    <button class="suggestion-btn" data-text="야근">야근</button>
+                    <button class="suggestion-btn" data-text="출장">출장</button>
+                    <button class="suggestion-btn" data-text="교육 참석">교육 참석</button>
+                    <button class="suggestion-btn" data-text="병원">병원</button>
+                    <button class="suggestion-btn" data-text="개인사정">개인사정</button>
+                </div>
+            </div>
+
+            <div class="memo-buttons">
+                <button class="memo-btn memo-btn-delete" id="memo-delete" style="display: none;">삭제</button>
+                <button class="memo-btn memo-btn-cancel" id="memo-cancel">취소</button>
+                <button class="memo-btn memo-btn-save" id="memo-save">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let attendanceData = [];
+        let currentUser = null;
+        let currentDate = new Date();
+        let memos = {}; // 날짜별 메모 저장 객체 (dateKey: memo)
+        let currentMemoDate = null; // 현재 편집 중인 메모의 날짜
+        let holidays = {}; // 공휴일 데이터 저장 객체 (dateKey: holidayName)
+
+        // 공휴일 API 설정 (실제 사용 시 API 키 필요)
+        const HOLIDAY_API_CONFIG = {
+            serviceKey: 'YOUR_API_KEY_HERE', // 실제 API 키로 변경 필요
+            baseUrl: 'https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo',
+            // CORS 문제 해결을 위한 프록시 URL (필요 시)
+            proxyUrl: '' // 예: 'https://cors-anywhere.herokuapp.com/'
+        };
+
+        // URL에서 사용자 정보 가져오기
+        function getCurrentUser() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('user');
+        }
+
+        // 공휴일 API에서 공휴일 정보 가져오기
+        async function fetchHolidays(year, month) {
+            try {
+                // 로컬 스토리지에서 캐시된 공휴일 데이터 확인
+                const cacheKey = `holidays-${year}-${String(month + 1).padStart(2, '0')}`;
+                const cachedData = localStorage.getItem(cacheKey);
+
+                if (cachedData) {
+                    const cached = JSON.parse(cachedData);
+                    // 캐시가 24시간 이내인 경우 사용
+                    if (new Date().getTime() - cached.timestamp < 24 * 60 * 60 * 1000) {
+                        console.log('캐시된 공휴일 데이터 사용:', cached.holidays);
+                        return cached.holidays;
+                    }
+                }
+
+                console.log(`${year}년 ${month + 1}월 공휴일 정보를 API에서 가져오는 중...`);
+
+                // API 키가 설정되지 않은 경우 기본 공휴일 데이터 사용
+                if (HOLIDAY_API_CONFIG.serviceKey === 'YOUR_API_KEY_HERE') {
+                    console.warn('공휴일 API 키가 설정되지 않음. 기본 공휴일 데이터를 사용합니다.');
+                    return getDefaultHolidays(year, month);
+                }
+
+                // API 호출 URL 생성
+                const solYear = year;
+                const solMonth = String(month + 1).padStart(2, '0');
+                const url = `${HOLIDAY_API_CONFIG.proxyUrl}${HOLIDAY_API_CONFIG.baseUrl}?serviceKey=${HOLIDAY_API_CONFIG.serviceKey}&pageNo=1&numOfRows=31&solYear=${solYear}&solMonth=${solMonth}&_type=json`;
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`공휴일 API 호출 실패: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('공휴일 API 응답:', data);
+
+                const holidayData = {};
+
+                if (data.response && data.response.body && data.response.body.items) {
+                    const items = Array.isArray(data.response.body.items.item)
+                        ? data.response.body.items.item
+                        : [data.response.body.items.item];
+
+                    items.forEach(item => {
+                        if (item && item.locdate && item.dateName) {
+                            const dateStr = item.locdate.toString();
+                            const formattedDate = `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
+                            holidayData[formattedDate] = item.dateName;
+                        }
+                    });
+                }
+
+                // 캐시에 저장
+                const cacheData = {
+                    holidays: holidayData,
+                    timestamp: new Date().getTime()
+                };
+                localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+
+                console.log('가져온 공휴일:', holidayData);
+                return holidayData;
+
+            } catch (error) {
+                console.error('공휴일 데이터 가져오기 실패:', error);
+                // API 실패 시 기본 공휴일 데이터 사용
+                return getDefaultHolidays(year, month);
+            }
+        }
+
+        // 기본 공휴일 데이터 (API 사용 불가 시 대체)
+        function getDefaultHolidays(year, month) {
+            const defaultHolidays = {
+                // 2025년 공휴일 (정확한 날짜)
+                '2025-01-01': '신정',
+                '2025-01-28': '설날연휴',
+                '2025-01-29': '설날',
+                '2025-01-30': '설날연휴',
+                '2025-03-01': '삼일절',
+                '2025-05-05': '어린이날',
+                '2025-05-06': '어린이날 대체휴일',
+                '2025-06-06': '현충일',
+                '2025-08-15': '광복절',
+                '2025-10-03': '개천절',
+                '2025-10-05': '추석연휴',
+                '2025-10-06': '추석',
+                '2025-10-07': '추석연휴',
+                '2025-10-08': '추석 대체공휴일',
+                '2025-10-09': '한글날',
+                '2025-12-25': '성탄절',
+
+                // 2024년 공휴일 (정확한 날짜)
+                '2024-01-01': '신정',
+                '2024-02-09': '설날연휴',
+                '2024-02-10': '설날',
+                '2024-02-11': '설날연휴',
+                '2024-02-12': '설날 대체휴일',
+                '2024-03-01': '삼일절',
+                '2024-04-10': '국회의원선거',
+                '2024-05-05': '어린이날',
+                '2024-05-06': '어린이날 대체휴일',
+                '2024-05-15': '부처님오신날',
+                '2024-06-06': '현충일',
+                '2024-08-15': '광복절',
+                '2024-09-16': '추석연휴',
+                '2024-09-17': '추석',
+                '2024-09-18': '추석연휴',
+                '2024-10-03': '개천절',
+                '2024-10-09': '한글날',
+                '2024-12-25': '성탄절',
+
+                // 2023년 공휴일 (참고용)
+                '2023-01-01': '신정',
+                '2023-01-21': '설날연휴',
+                '2023-01-22': '설날',
+                '2023-01-23': '설날연휴',
+                '2023-01-24': '설날 대체휴일',
+                '2023-03-01': '삼일절',
+                '2023-05-05': '어린이날',
+                '2023-05-27': '부처님오신날',
+                '2023-05-29': '부처님오신날 대체휴일',
+                '2023-06-06': '현충일',
+                '2023-08-15': '광복절',
+                '2023-09-28': '추석연휴',
+                '2023-09-29': '추석',
+                '2023-09-30': '추석연휴',
+                '2023-10-03': '개천절',
+                '2023-10-09': '한글날',
+                '2023-12-25': '성탄절'
+            };
+
+            // 해당 년월의 공휴일만 필터링
+            // month는 JavaScript 월 인덱스 (0-11)이므로 +1 해서 실제 월 번호로 변환
+            const monthHolidays = {};
+            const actualMonth = month + 1; // JavaScript 월 인덱스를 실제 월로 변환
+            const yearMonth = `${year}-${String(actualMonth).padStart(2, '0')}`;
+
+            Object.keys(defaultHolidays).forEach(date => {
+                if (date.startsWith(yearMonth)) {
+                    monthHolidays[date] = defaultHolidays[date];
+                }
+            });
+            return monthHolidays;
+        }
+
+        // 서버에서 출퇴근 데이터 가져오기
+        async function fetchAttendanceData() {
+            try {
+                console.log('출퇴근 히스토리 데이터를 서버에서 가져오는 중...');
+
+                // 먼저 히스토리 데이터 시도 (완료된 출퇴근 기록)
+                const historyResponse = await fetch('http://localhost:3005/api/work-sessions-history');
+                console.log('히스토리 API 응답 상태:', historyResponse.status);
+
+                if (historyResponse.ok) {
+                    const historyData = await historyResponse.json();
+                    console.log('가져온 히스토리 데이터:', historyData);
+                    console.log('히스토리 데이터 개수:', historyData.length);
+
+                    if (Array.isArray(historyData) && historyData.length > 0) {
+                        return historyData;
+                    }
+                }
+
+                // 히스토리가 없으면 현재 진행 중인 세션 시도
+                console.log('현재 진행 중인 세션 확인...');
+                const currentResponse = await fetch('http://localhost:3005/work-sessions');
+                console.log('현재 세션 API 응답 상태:', currentResponse.status);
+
+                if (currentResponse.ok) {
+                    const currentData = await currentResponse.json();
+                    console.log('현재 세션 데이터:', currentData);
+
+                    // 객체 형태의 세션을 배열로 변환
+                    const sessionArray = Object.values(currentData || {});
+                    console.log('변환된 세션 배열:', sessionArray);
+                    return sessionArray;
+                }
+
+                throw new Error('모든 API 호출 실패');
+
+            } catch (error) {
+                console.error('출퇴근 데이터 가져오기 실패:', error);
+                return [];
+            }
+        }
+
+        // 사용자별 출퇴근 데이터 필터링
+        function filterUserAttendanceData(data, user) {
+            console.log('데이터 필터링:', { totalData: data.length, user });
+            if (!user) {
+                console.log('사용자가 지정되지 않음, 모든 데이터 반환');
+                return data;
+            }
+            const filtered = data.filter(session => session.worker === user);
+            console.log(`${user} 사용자의 데이터:`, filtered.length, '개');
+            return filtered;
+        }
+
+        // 년도 선택기 초기화
+        function initializeYearSelect() {
+            const yearSelect = document.getElementById('year-select');
+            const currentYear = new Date().getFullYear();
+
+            // 현재 년도 기준으로 ±5년
+            for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year + '년';
+                if (year === currentYear) option.selected = true;
+                yearSelect.appendChild(option);
+            }
+        }
+
+        // 월 선택기 초기화
+        function initializeMonthSelect() {
+            const monthSelect = document.getElementById('month-select');
+            const months = ['1월', '2월', '3월', '4월', '5월', '6월',
+                           '7월', '8월', '9월', '10월', '11월', '12월'];
+
+            months.forEach((month, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = month;
+                if (index === new Date().getMonth()) option.selected = true;
+                monthSelect.appendChild(option);
+            });
+        }
+
+        // 근무 시간 기준 (기본값: 오전 9시 출근, 오후 6시 퇴근, 8시간 근무)
+        const WORK_SCHEDULE = {
+            START_HOUR: 9,      // 정상 출근 시간
+            END_HOUR: 18,       // 정상 퇴근 시간
+            WORK_HOURS: 8 * 60  // 표준 근무 시간 (분)
+        };
+
+        // 출퇴근 상태 판단
+        function getAttendanceStatus(startTime, endTime, totalMinutes) {
+            const start = new Date(startTime);
+            const end = endTime ? new Date(endTime) : null;
+
+            const isLate = start.getHours() > WORK_SCHEDULE.START_HOUR ||
+                          (start.getHours() === WORK_SCHEDULE.START_HOUR && start.getMinutes() > 0);
+
+            const isEarlyLeave = end && (end.getHours() < WORK_SCHEDULE.END_HOUR ||
+                                (end.getHours() === WORK_SCHEDULE.END_HOUR && end.getMinutes() < 0));
+
+            const isOvertime = totalMinutes > WORK_SCHEDULE.WORK_HOURS;
+
+            if (isLate && isEarlyLeave) {
+                return { status: 'late-early', text: '지각·조퇴' };
+            } else if (isLate) {
+                return { status: 'late', text: '지각' };
+            } else if (isEarlyLeave) {
+                return { status: 'early-leave', text: '조퇴' };
+            } else if (isOvertime) {
+                return { status: 'overtime', text: '연장근무' };
+            } else {
+                return { status: 'normal', text: '정상근무' };
+            }
+        }
+
+        // 날짜별 출퇴근 데이터 그룹화
+        function groupAttendanceByDate(data) {
+            console.log('그룹화할 데이터:', data.length, '개');
+            const grouped = {};
+
+            data.forEach(session => {
+                console.log('세션 데이터:', session);
+
+                if (!session.startTime) {
+                    console.log('시작 시간이 없는 세션 건너뜀');
+                    return;
+                }
+
+                const date = new Date(session.startTime);
+                // 한국 시간대로 조정
+                const koreanDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
+                const dateKey = `${koreanDate.getFullYear()}-${String(koreanDate.getMonth() + 1).padStart(2, '0')}-${String(koreanDate.getDate()).padStart(2, '0')}`;
+                console.log('날짜 키:', dateKey);
+
+                if (!grouped[dateKey]) {
+                    grouped[dateKey] = {
+                        sessions: [],
+                        totalMinutes: 0,
+                        tasks: new Set(),
+                        startTime: null,
+                        endTime: null
+                    };
+                }
+
+                grouped[dateKey].sessions.push(session);
+
+                // duration이 밀리초 단위이므로 분으로 변환
+                if (session.duration) {
+                    const durationMinutes = Math.round(session.duration / 60000);
+                    grouped[dateKey].totalMinutes += durationMinutes;
+                    console.log('세션 지속시간:', durationMinutes, '분');
+                }
+
+                // 작업 제목이나 작업 ID 추가
+                if (session.taskTitle) {
+                    grouped[dateKey].tasks.add(session.taskTitle);
+                } else if (session.taskId) {
+                    grouped[dateKey].tasks.add(`작업 ${session.taskId}`);
+                }
+
+                // 가장 이른 출근 시간과 가장 늦은 퇴근 시간 추적
+                const sessionStart = new Date(session.startTime);
+                const sessionEnd = session.endTime ? new Date(session.endTime) : null;
+
+                if (!grouped[dateKey].startTime || sessionStart < new Date(grouped[dateKey].startTime)) {
+                    grouped[dateKey].startTime = session.startTime;
+                }
+
+                if (sessionEnd && (!grouped[dateKey].endTime || sessionEnd > new Date(grouped[dateKey].endTime))) {
+                    grouped[dateKey].endTime = session.endTime;
+                }
+            });
+
+            console.log('그룹화된 데이터:', Object.keys(grouped).length, '일');
+            console.log('그룹화 결과:', grouped);
+            return grouped;
+        }
+
+        // 시간을 시:분 형식으로 변환
+        function formatTime(date) {
+            return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+        }
+
+        // 분을 시간:분 형식으로 변환
+        function formatDuration(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours}h ${mins}m`;
+        }
+
+        // 달력 생성
+        function generateCalendar(year, month, attendanceData) {
+            const calendarBody = document.getElementById('calendar-body');
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+            calendarBody.innerHTML = '';
+
+            // 해당 월의 마지막 날이 포함된 주를 찾기
+            const lastDayOfMonth = lastDay.getDate();
+            const lastWeekStart = new Date(year, month, lastDayOfMonth);
+            lastWeekStart.setDate(lastWeekStart.getDate() - lastWeekStart.getDay());
+
+            // 현재 달력의 시작일부터 마지막 주의 마지막 날까지의 총 일수
+            const totalDays = Math.ceil((lastWeekStart.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 7;
+            const weeksToShow = Math.ceil(totalDays / 7);
+
+            for (let week = 0; week < weeksToShow; week++) {
+                const row = document.createElement('tr');
+
+                for (let day = 0; day < 7; day++) {
+                    const cellDate = new Date(startDate);
+                    cellDate.setDate(startDate.getDate() + (week * 7) + day);
+
+                    const cell = document.createElement('td');
+                    const dateStr = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, '0')}-${String(cellDate.getDate()).padStart(2, '0')}`;
+
+                    // 다른 달의 날짜
+                    if (cellDate.getMonth() !== month) {
+                        cell.classList.add('other-month');
+                    }
+
+                    // 오늘 날짜
+                    if (dateStr === todayStr) {
+                        cell.classList.add('today');
+                    }
+
+                    // 공휴일 확인
+                    const holidayName = holidays[dateStr];
+                    if (holidayName) {
+                        cell.classList.add('holiday');
+                    }
+
+                    // 출퇴근 데이터가 있는 날짜
+                    const dayData = attendanceData[dateStr];
+                    if (dayData && dayData.sessions.length > 0) {
+                        // 출퇴근 상태에 따른 스타일 적용
+                        const status = getAttendanceStatus(dayData.startTime, dayData.endTime, dayData.totalMinutes);
+
+                        cell.classList.add('has-attendance');
+
+                        // 상태별 추가 클래스 적용 (공휴일이 아닌 경우에만)
+                        if (!holidayName) {
+                            if (status.status === 'late' || status.status === 'late-early') {
+                                cell.classList.add('has-late');
+                            } else if (status.status === 'early-leave') {
+                                cell.classList.add('has-early-leave');
+                            } else if (status.status === 'overtime') {
+                                cell.classList.add('has-overtime');
+                            }
+                        }
+                    }
+
+                    let cellContent = `<div class="date-number">${cellDate.getDate()}</div>`;
+
+                    // 공휴일 표시
+                    if (holidayName) {
+                        cellContent += `<div class="holiday-name">${holidayName}</div>`;
+                    }
+
+                    if (dayData && dayData.sessions.length > 0) {
+                        const startTime = formatTime(new Date(dayData.startTime));
+                        const endTime = dayData.endTime ? formatTime(new Date(dayData.endTime)) : '진행중';
+                        const status = getAttendanceStatus(dayData.startTime, dayData.endTime, dayData.totalMinutes);
+
+                        cellContent += `
+                            <div class="attendance-info">
+                                <div class="time-info">
+                                    <div class="start-time">출근: ${startTime}</div>
+                                    <div class="end-time">퇴근: ${endTime}</div>
+                                </div>
+                                <div class="work-hours">${formatDuration(dayData.totalMinutes)}</div>
+                                ${!holidayName ? `
+                                <div class="status-info">
+                                    <span class="status-${status.status}">${status.text}</span>
+                                </div>
+                                ` : ''}
+                                <div class="tasks-info">${dayData.tasks.size}개 작업</div>
+                            </div>
+                        `;
+                    }
+
+                    // 메모가 있는 경우 표시
+                    const memo = memos[dateStr];
+                    if (memo) {
+                        cellContent += `<div class="memo-text">${memo}</div>`;
+                    }
+
+                    // 연필 아이콘 추가 (현재 달의 날짜에만)
+                    if (cellDate.getMonth() === month) {
+                        cellContent += `
+                            <div class="memo-icon" onclick="openMemoModal('${dateStr}')">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                </svg>
+                            </div>
+                        `;
+                    }
+
+                    cell.innerHTML = cellContent;
+                    row.appendChild(cell);
+                }
+
+                calendarBody.appendChild(row);
+            }
+        }
+
+        // 월별 요약 통계 생성
+        function generateMonthlySummary(year, month, attendanceData) {
+            const summarySection = document.getElementById('summary-section');
+            const summaryStats = document.getElementById('summary-stats');
+
+            let totalWorkDays = 0;
+            let totalWorkMinutes = 0;
+            let totalTasks = new Set();
+
+            Object.values(attendanceData).forEach(dayData => {
+                const dateKey = Object.keys(attendanceData).find(key => attendanceData[key] === dayData);
+                const [dataYear, dataMonth] = dateKey.split('-').map(Number);
+
+                if (dataYear === year && dataMonth === month + 1) {
+                    totalWorkDays++;
+                    totalWorkMinutes += dayData.totalMinutes;
+                    dayData.tasks.forEach(task => totalTasks.add(task));
+                }
+            });
+
+            const avgWorkMinutes = totalWorkDays > 0 ? Math.round(totalWorkMinutes / totalWorkDays) : 0;
+
+            summaryStats.innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-label">근무 일수</div>
+                    <div class="stat-value">${totalWorkDays}일</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">총 근무 시간</div>
+                    <div class="stat-value">${formatDuration(totalWorkMinutes)}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">평균 근무 시간</div>
+                    <div class="stat-value">${formatDuration(avgWorkMinutes)}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">참여한 작업</div>
+                    <div class="stat-value">${totalTasks.size}개</div>
+                </div>
+            `;
+
+            summarySection.style.display = totalWorkDays > 0 ? 'block' : 'none';
+        }
+
+        // 달력 업데이트
+        async function updateCalendar() {
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const calendarEl = document.getElementById('calendar');
+
+            try {
+                loadingEl.style.display = 'block';
+                errorEl.style.display = 'none';
+                calendarEl.style.display = 'none';
+
+                const year = parseInt(document.getElementById('year-select').value);
+                const month = parseInt(document.getElementById('month-select').value);
+
+                // 출퇴근 데이터와 공휴일 데이터 동시 로드
+                const [rawData, holidayData] = await Promise.all([
+                    fetchAttendanceData(),
+                    fetchHolidays(year, month)
+                ]);
+
+                const userData = filterUserAttendanceData(rawData, currentUser);
+                const groupedData = groupAttendanceByDate(userData);
+
+                // 공휴일 데이터 업데이트
+                holidays = { ...holidays, ...holidayData };
+
+                loadingEl.style.display = 'none';
+                calendarEl.style.display = 'table';
+
+                generateCalendar(year, month, groupedData);
+                generateMonthlySummary(year, month, groupedData);
+
+            } catch (error) {
+                console.error('달력 업데이트 실패:', error);
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'block';
+            }
+        }
+
+        // 이전/다음 월로 이동
+        function navigateMonth(direction) {
+            const yearSelect = document.getElementById('year-select');
+            const monthSelect = document.getElementById('month-select');
+
+            let year = parseInt(yearSelect.value);
+            let month = parseInt(monthSelect.value);
+
+            month += direction;
+
+            if (month < 0) {
+                month = 11;
+                year--;
+            } else if (month > 11) {
+                month = 0;
+                year++;
+            }
+
+            yearSelect.value = year;
+            monthSelect.value = month;
+
+            updateCalendar();
+        }
+
+        // 오늘로 이동
+        function goToToday() {
+            const today = new Date();
+            document.getElementById('year-select').value = today.getFullYear();
+            document.getElementById('month-select').value = today.getMonth();
+            updateCalendar();
+        }
+
+        // 메모 데이터 로컬스토리지에서 불러오기
+        function loadMemos() {
+            const savedMemos = localStorage.getItem(`attendance-memos-${currentUser || 'all'}`);
+            if (savedMemos) {
+                memos = JSON.parse(savedMemos);
+                console.log('메모 데이터 불러옴:', memos);
+            }
+        }
+
+        // 메모 데이터 로컬스토리지에 저장
+        function saveMemos() {
+            localStorage.setItem(`attendance-memos-${currentUser || 'all'}`, JSON.stringify(memos));
+            console.log('메모 데이터 저장됨:', memos);
+        }
+
+        // 메모 모달 열기
+        function openMemoModal(dateStr) {
+            const modal = document.getElementById('memo-modal');
+            const input = document.getElementById('memo-input');
+            const deleteBtn = document.getElementById('memo-delete');
+            const title = document.querySelector('.memo-modal-title');
+
+            currentMemoDate = dateStr;
+
+            // 날짜 포맷팅 (YYYY-MM-DD -> YYYY년 M월 D일)
+            const [year, month, day] = dateStr.split('-');
+            const formattedDate = `${year}년 ${parseInt(month)}월 ${parseInt(day)}일`;
+            title.textContent = `${formattedDate} 메모`;
+
+            // 기존 메모가 있으면 입력창에 표시
+            const existingMemo = memos[dateStr] || '';
+            input.value = existingMemo;
+            updateCharCount();
+
+            // 삭제 버튼 표시/숨김
+            if (existingMemo) {
+                deleteBtn.style.display = 'inline-block';
+            } else {
+                deleteBtn.style.display = 'none';
+            }
+
+            modal.style.display = 'flex';
+            input.focus();
+        }
+
+        // 메모 모달 닫기
+        function closeMemoModal() {
+            const modal = document.getElementById('memo-modal');
+            modal.style.display = 'none';
+            currentMemoDate = null;
+            document.getElementById('memo-input').value = '';
+            updateCharCount();
+        }
+
+        // 글자 수 카운트 업데이트
+        function updateCharCount() {
+            const input = document.getElementById('memo-input');
+            const charCount = document.getElementById('memo-char-current');
+            charCount.textContent = input.value.length;
+        }
+
+        // 메모 저장
+        function saveMemo() {
+            if (!currentMemoDate) return;
+
+            const input = document.getElementById('memo-input');
+            const memo = input.value.trim();
+
+            if (memo) {
+                memos[currentMemoDate] = memo;
+            } else {
+                delete memos[currentMemoDate];
+            }
+
+            saveMemos();
+            updateCalendar(); // 달력 새로고침
+            closeMemoModal();
+        }
+
+        // 메모 삭제
+        function deleteMemo() {
+            if (!currentMemoDate) return;
+
+            if (confirm('메모를 삭제하시겠습니까?')) {
+                delete memos[currentMemoDate];
+                saveMemos();
+                updateCalendar(); // 달력 새로고침
+                closeMemoModal();
+            }
+        }
+
+        // 추천 메모 클릭 시 입력창에 추가
+        function insertSuggestion(text) {
+            const input = document.getElementById('memo-input');
+            const currentText = input.value;
+
+            // 20자 제한 확인
+            if (text.length <= 20) {
+                input.value = text;
+                updateCharCount();
+                input.focus();
+            }
+        }
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            currentUser = getCurrentUser();
+            console.log('현재 사용자:', currentUser);
+
+            // 사용자 이름 표시
+            const userDisplay = document.getElementById('current-user-display');
+            if (currentUser) {
+                userDisplay.textContent = `[${currentUser}]`;
+            } else {
+                userDisplay.textContent = '[모든 사용자]';
+            }
+
+            // 메모 데이터 불러오기
+            loadMemos();
+
+            initializeYearSelect();
+            initializeMonthSelect();
+
+            // 달력 이벤트 리스너 등록
+            document.getElementById('year-select').addEventListener('change', updateCalendar);
+            document.getElementById('month-select').addEventListener('change', updateCalendar);
+            document.getElementById('prev-month').addEventListener('click', () => navigateMonth(-1));
+            document.getElementById('next-month').addEventListener('click', () => navigateMonth(1));
+            document.getElementById('today-btn').addEventListener('click', goToToday);
+
+            // 메모 모달 이벤트 리스너 등록
+            document.getElementById('memo-close').addEventListener('click', closeMemoModal);
+            document.getElementById('memo-cancel').addEventListener('click', closeMemoModal);
+            document.getElementById('memo-save').addEventListener('click', saveMemo);
+            document.getElementById('memo-delete').addEventListener('click', deleteMemo);
+
+            // 메모 입력 글자수 카운트
+            document.getElementById('memo-input').addEventListener('input', updateCharCount);
+
+            // 추천 메모 버튼 이벤트 리스너
+            document.querySelectorAll('.suggestion-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const text = this.getAttribute('data-text');
+                    insertSuggestion(text);
+                });
+            });
+
+            // 모달 배경 클릭 시 닫기
+            document.getElementById('memo-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeMemoModal();
+                }
+            });
+
+            // ESC 키로 모달 닫기
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('memo-modal');
+                    if (modal.style.display === 'flex') {
+                        closeMemoModal();
+                    }
+                }
+            });
+
+            // 초기 달력 로드
+            updateCalendar();
+        });
+    </script>
+</body>
+</html>

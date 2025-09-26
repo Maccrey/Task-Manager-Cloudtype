@@ -567,6 +567,17 @@ app.delete("/api/work-sessions-history/clear", (req, res) => {
   }
 });
 
+// GET work sessions history data
+app.get("/api/work-sessions-history", (req, res) => {
+  try {
+    const history = readWorkSessionsHistory();
+    res.json(history);
+  } catch (error) {
+    console.error("Error reading work sessions history:", error);
+    res.status(500).json({ error: "Failed to read work sessions history" });
+  }
+});
+
 app.get("/api/work-sessions-history/info", (req, res) => {
   try {
     const history = readWorkSessionsHistory();

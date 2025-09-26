@@ -4321,8 +4321,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (attendanceCheckButton) {
     attendanceCheckButton.addEventListener("click", function () {
-      attendanceOnlyModal.style.display = "flex";
-      loadAttendanceOnlyData();
+      // 현재 로그인된 사용자 정보 가져오기
+      const currentUser = localStorage.getItem('currentUser');
+
+      // 새 창에서 달력 페이지 열기
+      const calendarUrl = `attendance-calendar.html${currentUser ? '?user=' + encodeURIComponent(currentUser) : ''}`;
+      window.open(calendarUrl, 'attendance-calendar', 'width=1200,height=800,scrollbars=yes,resizable=yes');
     });
   }
 
