@@ -6148,7 +6148,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // 업무평가서 창만 정확히 프린트하는 스타일
+    // 화면 내용을 그대로 유지하면서 프린트용 스타일
     const printStyles = document.createElement("style");
     printStyles.textContent = `
       @media print {
@@ -6158,61 +6158,87 @@ document.addEventListener("DOMContentLoaded", () => {
           -webkit-print-color-adjust: exact;
         }
 
-        /* 모든 요소 숨기기 */
-        body * {
-          visibility: hidden !important;
+        /* 프린트시 불필요한 요소만 숨기기 */
+        .evaluation-controls,
+        .report-actions,
+        .admin-tabs,
+        .close-button,
+        .calendar-view-btn,
+        header,
+        .main-content > *:not(#admin-panel-modal) {
+          display: none !important;
         }
 
-        /* 업무평가서 관련 요소만 표시 */
-        #evaluation-content,
-        #evaluation-content *,
-        .evaluation-report,
-        .evaluation-report * {
-          visibility: visible !important;
-        }
-
-        /* body 기본 스타일 */
+        /* body 스타일 - 화면과 동일하게 */
         body {
-          background: white !important;
+          background: #f4f6f8 !important;
           color: #333 !important;
           margin: 0 !important;
           padding: 0 !important;
           font-family: Arial, sans-serif !important;
         }
 
-        /* 평가서 컨테이너 */
-        #evaluation-content {
-          position: absolute !important;
-          left: 0 !important;
-          top: 0 !important;
+        /* 모달 배경 제거 */
+        #admin-panel-modal {
+          position: static !important;
           width: 100% !important;
           height: auto !important;
+          max-width: none !important;
+          max-height: none !important;
           margin: 0 !important;
-          padding: 0 !important;
-          background: white !important;
+          padding: 20px !important;
+          border: none !important;
+          box-shadow: none !important;
+          background: #f4f6f8 !important;
           overflow: visible !important;
         }
 
-        /* 평가서 내용 */
+        .modal-content {
+          position: static !important;
+          width: 100% !important;
+          height: auto !important;
+          max-width: none !important;
+          max-height: none !important;
+          margin: 0 auto !important;
+          padding: 0 !important;
+          border: none !important;
+          box-shadow: none !important;
+          background: transparent !important;
+          overflow: visible !important;
+          border-radius: 0 !important;
+        }
+
+        /* 업무평가서 컨테이너 - 화면과 동일한 스타일 유지 */
+        #evaluation-content {
+          width: 100% !important;
+          max-width: none !important;
+          margin: 0 auto !important;
+          padding: 0 !important;
+          background: transparent !important;
+          overflow: visible !important;
+        }
+
+        /* 평가서 내용 - 화면 스타일 완전히 유지 */
         .evaluation-report {
+          background: white !important;
+          border-radius: 6px !important;
+          overflow: visible !important;
+          height: auto !important;
           width: 100% !important;
           max-width: none !important;
           margin: 0 !important;
-          padding: 15px !important;
-          box-shadow: none !important;
-          border: 1px solid #dee2e6 !important;
-          border-radius: 6px !important;
-          background: white !important;
-          overflow: visible !important;
+          padding: 20px !important;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+          border: 1px solid #e9ecef !important;
         }
 
-        /* 헤더 스타일 유지 */
+        /* 헤더 스타일 - 화면과 동일하게 */
         .report-header {
           background: #f8f9fa !important;
           padding: 12px 15px !important;
           border-bottom: 1px solid #dee2e6 !important;
-          border-radius: 6px 6px 0 0 !important;
-          margin: -15px -15px 15px -15px !important;
+          border-radius: 0 !important;
+          margin: -20px -20px 20px -20px !important;
         }
 
         .report-header h2 {
@@ -6230,7 +6256,7 @@ document.addEventListener("DOMContentLoaded", () => {
           margin: 0 !important;
         }
 
-        /* 차트 섹션 스타일 */
+        /* 차트 섹션 - 화면 스타일 유지 */
         .performance-charts {
           margin: 20px 0 !important;
           padding: 15px !important;
@@ -6256,7 +6282,7 @@ document.addEventListener("DOMContentLoaded", () => {
           font-weight: 600 !important;
         }
 
-        /* 차트 크기 최적화 */
+        /* 차트 크기 - 화면과 동일하게 */
         .performance-charts canvas {
           max-width: 100% !important;
           width: 100% !important;
@@ -6266,7 +6292,7 @@ document.addEventListener("DOMContentLoaded", () => {
           margin: 0 auto !important;
         }
 
-        /* 출퇴근 상세 및 통계 스타일 */
+        /* 출퇴근 상세 및 통계 - 화면 스타일 유지 */
         .attendance-details,
         .detailed-stats {
           margin: 20px 0 !important;
@@ -6285,12 +6311,13 @@ document.addEventListener("DOMContentLoaded", () => {
           font-weight: 600 !important;
         }
 
-        /* 테이블 스타일 */
+        /* 테이블 스타일 - 화면과 동일하게 */
         .stats-table {
           width: 100% !important;
           border-collapse: collapse !important;
           margin: 10px 0 !important;
           font-size: 13px !important;
+          background: white !important;
         }
 
         .stats-table th,
@@ -6311,10 +6338,18 @@ document.addEventListener("DOMContentLoaded", () => {
           color: #212529 !important;
         }
 
-        /* 기타 제목 스타일 */
+        /* 제목 스타일 */
         h1, h2, h3, h4 {
           page-break-after: avoid;
           color: #212529 !important;
+        }
+
+        /* 페이지 브레이크 최적화 */
+        .chart-section,
+        .attendance-details,
+        .detailed-stats,
+        .stats-table {
+          page-break-inside: avoid;
         }
 
         /* 전체 높이 최적화 */
@@ -6331,12 +6366,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.head.appendChild(printStyles);
 
-    // 차트 렌더링 완료를 기다린 후 프린트 대화상자만 열기
+    // 차트 렌더링 완료를 기다린 후 프린트
     setTimeout(() => {
-      // 프린트 대화상자 열기 (실제 프린트는 사용자가 결정)
-      if (window.print) {
-        window.print();
-      }
+      window.print();
 
       // 프린트 대화상자가 닫힌 후 스타일 제거
       setTimeout(() => {
