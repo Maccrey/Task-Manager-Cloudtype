@@ -456,8 +456,8 @@ main {
   border: 1px solid #888;
   width: 80%; /* Could be more or less, depending on screen size */
   max-width: 600px;
-  max-height: 70vh; /* 뷰포트 높이의 70%로 제한 */
-  overflow-y: auto; /* 내용이 넘칠 경우 스크롤 */
+  height: auto; /* 높이 제한 해제 */
+  overflow: visible; /* 스크롤 제한 해제 */
   border-radius: 8px;
   position: relative;
 }
@@ -467,7 +467,8 @@ main {
   width: 95%;
   max-width: 1200px;
   margin: 5% auto;
-  max-height: 85vh;
+  height: auto;
+  overflow: visible;
 }
 
 .close-button {
@@ -1200,9 +1201,8 @@ main {
 .evaluation-report {
   background: white;
   border-radius: 6px;
-  overflow: hidden;
-  max-height: 85vh;
-  overflow-y: auto;
+  overflow: visible;
+  height: auto;
 }
 
 .report-header {
@@ -1491,32 +1491,78 @@ main {
   }
   
   .evaluation-report {
-    max-height: 90vh;
+    height: auto;
+    overflow: visible;
   }
 }
 
 @media print {
+  /* 기본 프린트 스타일 - JavaScript 동적 스타일과 조화 */
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  /* 불필요한 요소 숨기기 */
   .evaluation-controls,
-  .report-actions {
+  .report-actions,
+  .admin-tabs,
+  .close-button,
+  .calendar-view-btn {
     display: none !important;
   }
-  
+
+  /* 기본 레이아웃 정리 */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* 평가서 컨테이너 */
   .evaluation-report {
     box-shadow: none !important;
     border: none !important;
+    page-break-inside: avoid;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
-  
+
+  /* 차트 및 콘텐츠 섹션 */
+  .performance-charts,
+  .attendance-details,
+  .detailed-stats {
+    page-break-inside: avoid;
+    margin-bottom: 10px !important;
+  }
+
   .performance-charts canvas {
     max-width: 100% !important;
     height: auto !important;
-  }
-  
-  .chart-section {
     page-break-inside: avoid;
   }
-  
-  .summary-grid {
-    grid-template-columns: repeat(4, 1fr);
+
+  .chart-section {
+    page-break-inside: avoid;
+    margin: 5px 0 !important;
+  }
+
+  /* 제목 스타일 */
+  h1, h2, h3, h4 {
+    page-break-after: avoid;
+    margin: 8px 0 5px 0 !important;
+  }
+
+  /* 테이블 최적화 */
+  table, .stats-table {
+    page-break-inside: avoid;
+    border-collapse: collapse !important;
+  }
+
+  /* 빈 페이지 방지를 위한 전체 높이 제한 */
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
   }
 }
 

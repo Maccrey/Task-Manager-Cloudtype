@@ -6148,68 +6148,203 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // A4 용지 출력 최적화 CSS 스타일
+    // 업무평가서 창만 정확히 프린트하는 스타일
     const printStyles = document.createElement("style");
     printStyles.textContent = `
       @media print {
         @page {
           size: A4;
           margin: 15mm;
+          -webkit-print-color-adjust: exact;
         }
-        
+
+        /* 모든 요소 숨기기 */
         body * {
-          visibility: hidden;
+          visibility: hidden !important;
         }
-        
-        #admin-panel-modal, .modal-content, #evaluation-content, #evaluation-content * {
+
+        /* 업무평가서 관련 요소만 표시 */
+        #evaluation-content,
+        #evaluation-content *,
+        .evaluation-report,
+        .evaluation-report * {
           visibility: visible !important;
         }
-        
-        #admin-panel-modal, .modal-content {
-            position: static !important;
-            width: auto !important;
-            height: auto !important;
-            max-width: none !important;
-            max-height: none !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-            overflow: visible !important;
-            background: transparent !important;
+
+        /* body 기본 스타일 */
+        body {
+          background: white !important;
+          color: #333 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          font-family: Arial, sans-serif !important;
         }
-        
+
+        /* 평가서 컨테이너 */
         #evaluation-content {
-          box-shadow: none !important;
-          border: none !important;
-          margin: 0;
-          padding: 0;
-          width: 100%;
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          height: auto !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: white !important;
+          overflow: visible !important;
         }
-        
-        /* 버튼 숨기기 */
-        .evaluation-controls, 
-        .report-actions,
-        .admin-tabs,
-        .close-button {
-          display: none !important;
+
+        /* 평가서 내용 */
+        .evaluation-report {
+          width: 100% !important;
+          max-width: none !important;
+          margin: 0 !important;
+          padding: 15px !important;
+          box-shadow: none !important;
+          border: 1px solid #dee2e6 !important;
+          border-radius: 6px !important;
+          background: white !important;
+          overflow: visible !important;
+        }
+
+        /* 헤더 스타일 유지 */
+        .report-header {
+          background: #f8f9fa !important;
+          padding: 12px 15px !important;
+          border-bottom: 1px solid #dee2e6 !important;
+          border-radius: 6px 6px 0 0 !important;
+          margin: -15px -15px 15px -15px !important;
+        }
+
+        .report-header h2 {
+          margin: 0 0 8px 0 !important;
+          color: #212529 !important;
+          text-align: center !important;
+          font-size: 20px !important;
+          font-weight: 600 !important;
+        }
+
+        .report-header .meta-info {
+          font-size: 14px !important;
+          color: #6c757d !important;
+          text-align: center !important;
+          margin: 0 !important;
+        }
+
+        /* 차트 섹션 스타일 */
+        .performance-charts {
+          margin: 20px 0 !important;
+          padding: 15px !important;
+          border: 1px solid #e9ecef !important;
+          border-radius: 4px !important;
+          background: #f8f9fa !important;
+        }
+
+        .chart-section {
+          margin: 15px 0 !important;
+          padding: 10px !important;
+          background: white !important;
+          border-radius: 4px !important;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+          page-break-inside: avoid;
+        }
+
+        .chart-section h3 {
+          color: #495057 !important;
+          font-size: 16px !important;
+          margin: 0 0 10px 0 !important;
+          text-align: center !important;
+          font-weight: 600 !important;
+        }
+
+        /* 차트 크기 최적화 */
+        .performance-charts canvas {
+          max-width: 100% !important;
+          width: 100% !important;
+          height: auto !important;
+          max-height: 180px !important;
+          display: block !important;
+          margin: 0 auto !important;
+        }
+
+        /* 출퇴근 상세 및 통계 스타일 */
+        .attendance-details,
+        .detailed-stats {
+          margin: 20px 0 !important;
+          padding: 15px !important;
+          border: 1px solid #e9ecef !important;
+          border-radius: 4px !important;
+          background: white !important;
+          page-break-inside: avoid;
+        }
+
+        .attendance-details h3,
+        .detailed-stats h3 {
+          color: #495057 !important;
+          font-size: 16px !important;
+          margin: 0 0 15px 0 !important;
+          font-weight: 600 !important;
+        }
+
+        /* 테이블 스타일 */
+        .stats-table {
+          width: 100% !important;
+          border-collapse: collapse !important;
+          margin: 10px 0 !important;
+          font-size: 13px !important;
+        }
+
+        .stats-table th,
+        .stats-table td {
+          border: 1px solid #dee2e6 !important;
+          padding: 8px 12px !important;
+          text-align: left !important;
+        }
+
+        .stats-table th {
+          background-color: #f8f9fa !important;
+          font-weight: 600 !important;
+          color: #495057 !important;
+        }
+
+        .stats-table td {
+          background-color: white !important;
+          color: #212529 !important;
+        }
+
+        /* 기타 제목 스타일 */
+        h1, h2, h3, h4 {
+          page-break-after: avoid;
+          color: #212529 !important;
+        }
+
+        /* 전체 높이 최적화 */
+        html, body {
+          height: auto !important;
+          overflow: visible !important;
+        }
+
+        * {
+          box-sizing: border-box !important;
         }
       }
     `;
 
     document.head.appendChild(printStyles);
 
-    // 차트 렌더링 완료를 기다린 후 프린트
+    // 차트 렌더링 완료를 기다린 후 프린트 대화상자만 열기
     setTimeout(() => {
-      window.print();
+      // 프린트 대화상자 열기 (실제 프린트는 사용자가 결정)
+      if (window.print) {
+        window.print();
+      }
 
-      // 프린트 대화상자 완료 후 스타일 제거
+      // 프린트 대화상자가 닫힌 후 스타일 제거
       setTimeout(() => {
         if (document.head.contains(printStyles)) {
           document.head.removeChild(printStyles);
         }
-      }, 100);
-    }, 300);
+      }, 1000);
+    }, 500);
   }
 
   // 차트들을 이미지로 캡처하는 함수
