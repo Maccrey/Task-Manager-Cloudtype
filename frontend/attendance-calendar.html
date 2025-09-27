@@ -90,6 +90,21 @@
             background: #218838;
         }
 
+        .print-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .print-button:hover {
+            background: #545b62;
+        }
+
         .calendar {
             width: 100%;
             border-collapse: collapse;
@@ -487,6 +502,316 @@
         .memo-btn-delete:hover {
             background: #c82333;
         }
+
+        /* 프린트 전용 스타일 - A4 가로모드 */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 0.5in;
+            }
+
+            body {
+                font-family: Arial, sans-serif;
+                font-size: 11px;
+                margin: 0;
+                padding: 0;
+                background: white !important;
+                color: black !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .container {
+                max-width: none;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+                border-radius: 0;
+                background: white !important;
+            }
+
+            .header {
+                margin-bottom: 15px;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #000;
+                page-break-inside: avoid;
+            }
+
+            .title {
+                font-size: 18px;
+                font-weight: bold;
+                color: #000 !important;
+            }
+
+            .user-info {
+                font-size: 14px;
+                color: #000 !important;
+                background: none !important;
+                border: 1px solid #000 !important;
+                padding: 3px 8px;
+            }
+
+            /* 컨트롤 버튼들 숨기기 */
+            .controls, .nav-button, .today-button, .print-button,
+            .memo-icon, .memo-modal {
+                display: none !important;
+            }
+
+            .summary-section {
+                background: #f8f8f8 !important;
+                border: 1px solid #ddd !important;
+                margin-bottom: 15px;
+                padding: 10px;
+                page-break-inside: avoid;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .summary-title {
+                font-size: 14px;
+                font-weight: bold;
+                margin-bottom: 8px;
+                color: #000 !important;
+            }
+
+            .summary-stats {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+            }
+
+            .stat-item {
+                background: white !important;
+                border: 1px solid #ddd !important;
+                padding: 8px;
+                border-left: 3px solid #000 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .stat-label {
+                font-size: 10px;
+                color: #555 !important;
+                margin-bottom: 2px;
+            }
+
+            .stat-value {
+                font-size: 12px;
+                font-weight: bold;
+                color: #000 !important;
+            }
+
+            .calendar {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 9px;
+                margin-top: 10px;
+            }
+
+            .calendar th {
+                background: #f0f0f0 !important;
+                border: 1px solid #000 !important;
+                padding: 8px 4px;
+                text-align: center;
+                font-weight: bold;
+                font-size: 11px;
+                color: #000 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .calendar th.sunday {
+                color: #dc3545 !important;
+                font-weight: bold;
+            }
+
+            .calendar th.saturday {
+                color: #007bff !important;
+                font-weight: bold;
+            }
+
+            .calendar td {
+                border: 1px solid #000 !important;
+                padding: 4px;
+                vertical-align: top;
+                height: 110px;
+                width: 14.28%;
+                background: white !important;
+                color: #000 !important;
+                page-break-inside: avoid;
+            }
+
+            .calendar td.other-month {
+                background: #f8f8f8 !important;
+                color: #999 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .calendar td.today {
+                background: #fff3cd !important;
+                border: 2px solid #ffc107 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .calendar td.has-attendance {
+                background: #d4edda !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .calendar td.has-late {
+                background: #fff3cd !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .calendar td.has-early-leave {
+                background: #f8d7da !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .calendar td.has-overtime {
+                background: #cce5ff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .calendar td.holiday {
+                background: #ffe6e6 !important;
+                color: #d63384 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .calendar td.holiday .date-number {
+                color: #d63384 !important;
+                font-weight: bold;
+            }
+
+            .holiday-name {
+                font-size: 8px;
+                color: #d63384 !important;
+                font-weight: bold;
+                margin-top: 1px;
+                padding: 1px 2px;
+                background: rgba(214, 51, 132, 0.1) !important;
+                border-radius: 2px;
+                text-align: center;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .date-number {
+                font-weight: bold;
+                margin-bottom: 3px;
+                font-size: 11px;
+                color: #000 !important;
+            }
+
+            .attendance-info {
+                font-size: 8px;
+                line-height: 1.2;
+                color: #000 !important;
+            }
+
+            .time-info {
+                display: flex;
+                flex-direction: column;
+                gap: 1px;
+                margin-bottom: 2px;
+            }
+
+            .start-time, .end-time {
+                color: #000 !important;
+                font-size: 8px;
+            }
+
+            .work-hours {
+                color: #007bff !important;
+                font-weight: bold;
+                font-size: 8px;
+                margin-bottom: 1px;
+            }
+
+            .status-info {
+                font-size: 7px;
+                margin-top: 1px;
+            }
+
+            .status-late {
+                color: #856404 !important;
+                background: rgba(255, 193, 7, 0.3) !important;
+                padding: 1px 2px;
+                border-radius: 2px;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .status-early-leave {
+                color: #721c24 !important;
+                background: rgba(248, 215, 218, 0.8) !important;
+                padding: 1px 2px;
+                border-radius: 2px;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .status-overtime {
+                color: #0c5460 !important;
+                background: rgba(13, 202, 240, 0.3) !important;
+                padding: 1px 2px;
+                border-radius: 2px;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .status-normal {
+                color: #155724 !important;
+                background: rgba(212, 237, 218, 0.8) !important;
+                padding: 1px 2px;
+                border-radius: 2px;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .tasks-info {
+                color: #666 !important;
+                font-size: 7px;
+                margin-top: 1px;
+            }
+
+            .memo-text {
+                font-size: 7px;
+                color: #000 !important;
+                margin-top: 2px;
+                background: rgba(255, 255, 255, 0.9) !important;
+                padding: 1px 2px;
+                border: 1px solid #ccc !important;
+                border-radius: 2px;
+                word-break: break-all;
+                line-height: 1.1;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* 로딩, 에러 메시지 숨기기 */
+            .loading, .error, .no-data {
+                display: none !important;
+            }
+
+            /* 페이지 브레이크 방지 */
+            .calendar thead {
+                display: table-header-group;
+            }
+
+            .calendar tbody tr {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+        }
     </style>
 </head>
 <body>
@@ -507,6 +832,7 @@
                     <button class="nav-button" id="prev-month">&lt;</button>
                     <button class="nav-button" id="next-month">&gt;</button>
                     <button class="today-button" id="today-btn">오늘</button>
+                    <button class="print-button" id="print-btn">🖨️ 프린트</button>
                 </div>
             </div>
         </div>
@@ -1275,6 +1601,29 @@
             }
         }
 
+        // 프린트 함수
+        function printCalendar() {
+            // 프린트 전에 모든 모달 닫기
+            closeMemoModal();
+
+            // 현재 년월 정보 가져오기
+            const year = document.getElementById('year-select').value;
+            const month = document.getElementById('month-select').options[document.getElementById('month-select').selectedIndex].text;
+            const userName = currentUser || '전체 직원';
+
+            // 브라우저 제목 변경 (프린트 시 문서 제목으로 사용)
+            const originalTitle = document.title;
+            document.title = `출퇴근기록달력_${userName}_${year}년${month}`;
+
+            // 프린트 실행
+            window.print();
+
+            // 제목 복원
+            setTimeout(() => {
+                document.title = originalTitle;
+            }, 1000);
+        }
+
         // 초기화
         document.addEventListener('DOMContentLoaded', function() {
             currentUser = getCurrentUser();
@@ -1300,6 +1649,7 @@
             document.getElementById('prev-month').addEventListener('click', () => navigateMonth(-1));
             document.getElementById('next-month').addEventListener('click', () => navigateMonth(1));
             document.getElementById('today-btn').addEventListener('click', goToToday);
+            document.getElementById('print-btn').addEventListener('click', printCalendar);
 
             // 메모 모달 이벤트 리스너 등록
             document.getElementById('memo-close').addEventListener('click', closeMemoModal);
