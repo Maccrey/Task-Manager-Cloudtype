@@ -1229,13 +1229,13 @@
         <table class="calendar" id="calendar" style="display: none;">
             <thead>
                 <tr>
-                    <th class="sunday">일</th>
                     <th>월</th>
                     <th>화</th>
                     <th>수</th>
                     <th>목</th>
                     <th>금</th>
                     <th class="saturday">토</th>
+                    <th class="sunday">일</th>
                 </tr>
             </thead>
             <tbody id="calendar-body"></tbody>
@@ -1659,7 +1659,9 @@
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
             const startDate = new Date(firstDay);
-            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            // 월요일부터 시작하도록 계산 (0=일요일, 1=월요일)
+            const dayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+            startDate.setDate(startDate.getDate() - dayOfWeek);
 
             const today = new Date();
             const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -1669,7 +1671,9 @@
             // 해당 월의 마지막 날이 포함된 주를 찾기
             const lastDayOfMonth = lastDay.getDate();
             const lastWeekStart = new Date(year, month, lastDayOfMonth);
-            lastWeekStart.setDate(lastWeekStart.getDate() - lastWeekStart.getDay());
+            // 월요일부터 시작하도록 계산
+            const lastDayOfWeek = lastWeekStart.getDay() === 0 ? 6 : lastWeekStart.getDay() - 1;
+            lastWeekStart.setDate(lastWeekStart.getDate() - lastDayOfWeek);
 
             // 현재 달력의 시작일부터 마지막 주의 마지막 날까지의 총 일수
             const totalDays = Math.ceil((lastWeekStart.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 7;
