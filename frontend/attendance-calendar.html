@@ -1152,10 +1152,12 @@
             });
         }
 
-        // 근무 시간 기준 (기본값: 오전 9시 출근, 오후 6시 퇴근, 8시간 근무)
+        // 근무 시간 기준 (오전 9시 5분 이전 출근, 오후 5시 45분 이후 퇴근, 8시간 근무)
         const WORK_SCHEDULE = {
             START_HOUR: 9,      // 정상 출근 시간
-            END_HOUR: 18,       // 정상 퇴근 시간
+            START_MINUTE: 5,    // 정상 출근 분
+            END_HOUR: 17,       // 정상 퇴근 시간
+            END_MINUTE: 45,     // 정상 퇴근 분
             WORK_HOURS: 8 * 60  // 표준 근무 시간 (분)
         };
 
@@ -1165,12 +1167,16 @@
             const end = endTime ? new Date(endTime) : null;
 
             const isLate = start.getHours() > WORK_SCHEDULE.START_HOUR ||
-                          (start.getHours() === WORK_SCHEDULE.START_HOUR && start.getMinutes() > 0);
+                          (start.getHours() === WORK_SCHEDULE.START_HOUR && start.getMinutes() > WORK_SCHEDULE.START_MINUTE);
 
             const isEarlyLeave = end && (end.getHours() < WORK_SCHEDULE.END_HOUR ||
-                                (end.getHours() === WORK_SCHEDULE.END_HOUR && end.getMinutes() < 0));
+                                (end.getHours() === WORK_SCHEDULE.END_HOUR && end.getMinutes() < WORK_SCHEDULE.END_MINUTE));
 
-            const isOvertime = totalMinutes > WORK_SCHEDULE.WORK_HOURS;
+            // 연장근무 판단: 18시 이후 또는 다음날 오전 9시 이전 퇴근
+            const isOvertime = end && (
+                end.getHours() >= 18 || // 18시 이후 퇴근
+                end.getHours() < 9      // 다음날 오전 9시 이전 퇴근
+            );
 
             if (isLate && isEarlyLeave) {
                 return { status: 'late-early', text: '지각·조퇴' };
@@ -1210,7 +1216,8 @@
                         totalMinutes: 0,
                         tasks: new Set(),
                         startTime: null,
-                        endTime: null
+                        endTime: null,
+                        totalPages: 0
                     };
                 }
 
@@ -1228,6 +1235,11 @@
                     grouped[dateKey].tasks.add(session.taskTitle);
                 } else if (session.taskId) {
                     grouped[dateKey].tasks.add(`작업 ${session.taskId}`);
+                }
+
+                // 작업한 페이지 수 추가
+                if (session.pagesWorked) {
+                    grouped[dateKey].totalPages += session.pagesWorked;
                 }
 
                 // 가장 이른 출근 시간과 가장 늦은 퇴근 시간 추적
@@ -1352,7 +1364,7 @@
                                     <span class="status-${status.status}">${status.text}</span>
                                 </div>
                                 ` : ''}
-                                <div class="tasks-info">${dayData.tasks.size}개 작업</div>
+                                <div class="tasks-info">${dayData.tasks.size}개 작업 | ${dayData.totalPages}페이지</div>
                             </div>
                         `;
                     }
@@ -1390,6 +1402,7 @@
             let totalWorkDays = 0;
             let totalWorkMinutes = 0;
             let totalTasks = new Set();
+            let totalPages = 0;
 
             Object.values(attendanceData).forEach(dayData => {
                 const dateKey = Object.keys(attendanceData).find(key => attendanceData[key] === dayData);
@@ -1399,6 +1412,7 @@
                     totalWorkDays++;
                     totalWorkMinutes += dayData.totalMinutes;
                     dayData.tasks.forEach(task => totalTasks.add(task));
+                    totalPages += dayData.totalPages || 0;
                 }
             });
 
@@ -1420,6 +1434,10 @@
                 <div class="stat-item">
                     <div class="stat-label">참여한 작업</div>
                     <div class="stat-value">${totalTasks.size}개</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">총 작업 페이지</div>
+                    <div class="stat-value">${totalPages}페이지</div>
                 </div>
             `;
 
