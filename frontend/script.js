@@ -112,11 +112,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // const WORK_SESSIONS_API_URL = "http://172.30.1.40:3005/work-sessions";
   // const ATTENDANCE_DATA_API_URL = "http://172.30.1.40:3005/attendance-data";
   // const WS_URL = "ws://172.30.1.40:3005/";
-  const API_URL = "http://localhost:3005/books";
-  const STAFF_API_URL = "http://localhost:3005/staff";
-  const WORK_SESSIONS_API_URL = "http://localhost:3005/work-sessions";
-  const ATTENDANCE_DATA_API_URL = "http://localhost:3005/attendance-data";
-  const WS_URL = "ws://localhost:3005/";
+  const API_URL = "https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/books";
+  const STAFF_API_URL = "https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/staff";
+  const WORK_SESSIONS_API_URL = "https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/work-sessions";
+  const ATTENDANCE_DATA_API_URL = "https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/attendance-data";
+  const WS_URL = "wss://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/";
 
   // WebSocket 연결
   let socket = null;
@@ -4393,7 +4393,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       // 직원 목록을 서버에서 가져와서 확인
       // const response = await fetch('http://172.30.1.40:3005/staff');
-      const response = await fetch("http://localhost:3005/staff");
+      const response = await fetch("https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/staff");
       let staffList = [];
 
       if (response.ok) {
