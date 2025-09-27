@@ -1503,6 +1503,18 @@ main {
     margin: 10mm;
   }
 
+  /* 진행중인 페이지(메인 대시보드) 완전히 숨기기 */
+  .main-dashboard,
+  header,
+  .current-work-section,
+  main,
+  .search-section,
+  .dashboard-section,
+  .task-list,
+  .task-item {
+    display: none !important;
+  }
+
   /* 불필요한 요소 숨기기 */
   .evaluation-controls,
   .report-actions,
