@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginError = document.getElementById("login-error");
   const currentUserName = document.getElementById("current-user-name");
   const logoutBtn = document.getElementById("logout-btn");
+  const symbolCheckerBtn = document.getElementById("symbol-checker-btn");
+  const brailleTypingBtn = document.getElementById("braille-typing-btn");
 
   const isbnTitleInput = document.getElementById("isbn-title-input");
   const searchButton = document.getElementById("search-button");
@@ -4478,6 +4480,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (logoutBtn) {
     logoutBtn.addEventListener("click", handleLogout);
+  }
+
+  if (symbolCheckerBtn) {
+    symbolCheckerBtn.addEventListener("click", () => {
+      window.open("https://maccrey.github.io/symbol-checker/", "_blank");
+    });
+  }
+
+  if (brailleTypingBtn) {
+    brailleTypingBtn.addEventListener("click", () => {
+      window.open("https://typing.maccrey.com", "_blank");
+    });
   }
 
   // 전역 함수들

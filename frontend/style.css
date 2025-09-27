@@ -154,6 +154,41 @@ header {
 .user-info span {
   font-weight: bold;
   font-size: 1rem;
+  margin-right: 15px;
+}
+
+.symbol-checker-btn {
+  background-color: #388e3c;
+  color: white;
+  border: 1px solid #388e3c;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+  margin-right: 4px;
+}
+
+.symbol-checker-btn:hover {
+  background-color: #2e7d32;
+  border-color: #2e7d32;
+}
+
+.braille-typing-btn {
+  background-color: #388e3c;
+  color: white;
+  border: 1px solid #388e3c;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+  margin-right: 15px;
+}
+
+.braille-typing-btn:hover {
+  background-color: #2e7d32;
+  border-color: #2e7d32;
 }
 
 .logout-btn {
