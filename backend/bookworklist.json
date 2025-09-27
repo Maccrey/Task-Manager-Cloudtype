@@ -1,0 +1,793 @@
+[
+  {
+    "id": "1757376904160",
+    "book": {
+      "title": "(<span class=\"searching_txt\">김대식</span> <span class=\"searching_txt\">교수의</span>) <span class=\"searching_txt\">어린이를</span> <span class=\"searching_txt\">위한</span> 인공지능 : 메타버스부터 챗GPT까지",
+      "author": "글: <span class=\"searching_txt\">김대식</span>,이현서 ;그림: 이강훈",
+      "publisher": "동아시아science(동아시아사이언스)",
+      "isbn": "9791191644081",
+      "totalPages": null
+    },
+    "totalPages": 211,
+    "stages": {
+      "correction1": {
+        "assignedTo": "임석훈",
+        "history": [
+          {
+            "date": "2025. 9. 4. 오후 5:45:00",
+            "startPage": 1,
+            "endPage": 80
+          },
+          {
+            "date": "2025. 9. 5. 오후 5:45:00",
+            "startPage": 81,
+            "endPage": 160
+          },
+          {
+            "date": "2025. 9. 9. 오전 10:49:00",
+            "startPage": 161,
+            "endPage": 200
+          },
+          {
+            "date": "2025. 9. 9. 오후 12:58:00",
+            "startPage": 201,
+            "endPage": 201
+          },
+          {
+            "date": "2025. 9. 9. 오후 1:04:00",
+            "startPage": 202,
+            "endPage": 202
+          },
+          {
+            "date": "2025. 9. 9. 오후 1:06:00",
+            "startPage": 203,
+            "endPage": 203
+          },
+          {
+            "date": "2025. 9. 9. 오후 1:14:00",
+            "startPage": 204,
+            "endPage": 211
+          }
+        ],
+        "status": "completed"
+      },
+      "correction2": {
+        "assignedTo": "신영신",
+        "history": [
+          {
+            "date": "2025. 9. 16. 오후 1:33:00",
+            "startPage": 1,
+            "endPage": 211
+          }
+        ],
+        "status": "completed"
+      },
+      "correction3": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "transcription": {
+        "assignedTo": "",
+        "history": [],
+        "status": "not_applicable"
+      }
+    },
+    "currentStage": "correction3",
+    "notes": [
+      {
+        "noteId": "1757381149489",
+        "author": "임석훈",
+        "content": "2025년 1월 재교정교열 중",
+        "createdAt": "2025-09-09T01:25:49.490Z"
+      }
+    ]
+  },
+  {
+    "id": "1757391893621",
+    "book": {
+      "title": "<span class=\"searching_txt\">가나안에</span> <span class=\"searching_txt\">거하다</span> : 광야 인생에게 건네는 <span class=\"searching_txt\">가나안</span> 일상",
+      "author": "이진희 지음",
+      "publisher": "두란노(두란노서원)",
+      "isbn": "9788953140974",
+      "totalPages": null
+    },
+    "totalPages": 296,
+    "stages": {
+      "correction1": {
+        "assignedTo": "임석훈",
+        "history": [
+          {
+            "date": "2025. 9. 9. 오후 1:29:00",
+            "startPage": 1,
+            "endPage": 1
+          },
+          {
+            "date": "2025. 9. 9. 오후 5:00:00",
+            "startPage": 2,
+            "endPage": 20
+          },
+          {
+            "date": "2025. 9. 9. 오후 5:42:00",
+            "startPage": 21,
+            "endPage": 29
+          },
+          {
+            "date": "2025. 9. 10. 오전 11:48:00",
+            "startPage": 30,
+            "endPage": 54
+          },
+          {
+            "date": "2025. 9. 10. 오후 5:46:00",
+            "startPage": 55,
+            "endPage": 95
+          },
+          {
+            "date": "2025. 9. 11. 오후 1:11:00",
+            "startPage": 96,
+            "endPage": 105
+          },
+          {
+            "date": "2025. 9. 12. 오후 5:48:00",
+            "startPage": 106,
+            "endPage": 167
+          },
+          {
+            "date": "2025. 9. 15. 오후 12:32:00",
+            "startPage": 168,
+            "endPage": 192
+          },
+          {
+            "date": "2025. 9. 15. 오후 1:16:00",
+            "startPage": 193,
+            "endPage": 194
+          },
+          {
+            "date": "2025. 9. 16. 오후 5:45:00",
+            "startPage": 195,
+            "endPage": 247
+          },
+          {
+            "date": "2025. 9. 17. 오후 5:47:00",
+            "startPage": 248,
+            "endPage": 296
+          }
+        ],
+        "status": "completed"
+      },
+      "correction2": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "correction3": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "transcription": {
+        "assignedTo": "",
+        "history": [],
+        "status": "not_applicable"
+      }
+    },
+    "currentStage": "correction2"
+  },
+  {
+    "id": "1757392013474",
+    "book": {
+      "title": "<span class=\"searching_txt\">셰익스피어</span> <span class=\"searching_txt\">카운슬링</span> : 인생의 불안을 해소하는 10번의 사적인 대화",
+      "author": "체사레 카타 지음 ;김지우 옮김",
+      "publisher": "다산초당 : 다산북스",
+      "isbn": "9791130642543",
+      "totalPages": null
+    },
+    "totalPages": 468,
+    "stages": {
+      "correction1": {
+        "assignedTo": "송지연",
+        "history": [
+          {
+            "date": "2025. 9. 9. 오후 1:26:00",
+            "startPage": 1,
+            "endPage": 147
+          },
+          {
+            "date": "2025. 9. 9. 오후 5:44:00",
+            "startPage": 148,
+            "endPage": 178
+          },
+          {
+            "date": "2025. 9. 10. 오후 5:46:00",
+            "startPage": 179,
+            "endPage": 250
+          },
+          {
+            "date": "2025. 9. 10. 오후 5:46:00",
+            "startPage": 251,
+            "endPage": 251
+          },
+          {
+            "date": "2025. 9. 11. 오후 5:45:00",
+            "startPage": 252,
+            "endPage": 308
+          },
+          {
+            "date": "2025. 9. 12. 오후 5:45:00",
+            "startPage": 309,
+            "endPage": 340
+          },
+          {
+            "date": "2025. 9. 15. 오후 5:47:00",
+            "startPage": 341,
+            "endPage": 387
+          },
+          {
+            "date": "2025. 9. 16. 오후 5:44:00",
+            "startPage": 388,
+            "endPage": 440
+          },
+          {
+            "date": "2025. 9. 17. 오후 5:46:00",
+            "startPage": 441,
+            "endPage": 455
+          },
+          {
+            "date": "2025. 9. 18. 오전 10:03:00",
+            "startPage": 456,
+            "endPage": 468
+          }
+        ],
+        "status": "completed"
+      },
+      "correction2": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "correction3": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "transcription": {
+        "assignedTo": "",
+        "history": [],
+        "status": "not_applicable"
+      }
+    },
+    "currentStage": "correction2"
+  },
+  {
+    "id": "1757404727112",
+    "book": {
+      "title": "<span class=\"searching_txt\">다정한</span> <span class=\"searching_txt\">클래식</span>",
+      "author": "지은이: 김기홍",
+      "publisher": "초록비책공방",
+      "isbn": "9791191266061",
+      "totalPages": null
+    },
+    "totalPages": 442,
+    "stages": {
+      "correction1": {
+        "assignedTo": "백기욱",
+        "history": [
+          {
+            "date": "2025. 9. 9. 오후 4:59:00",
+            "startPage": 1,
+            "endPage": 102
+          },
+          {
+            "date": "2025. 9. 10. 오후 5:47:00",
+            "startPage": 103,
+            "endPage": 104
+          },
+          {
+            "date": "2025. 9. 15. 오후 5:27:00",
+            "startPage": 105,
+            "endPage": 388
+          },
+          {
+            "date": "2025. 9. 15. 오후 5:29:00",
+            "startPage": 389,
+            "endPage": 389
+          },
+          {
+            "date": "2025. 9. 16. 오후 5:17:00",
+            "startPage": 390,
+            "endPage": 442
+          }
+        ],
+        "status": "completed"
+      },
+      "correction2": {
+        "assignedTo": "백기욱",
+        "history": [
+          {
+            "date": "2025. 9. 16. 오후 5:20:00",
+            "startPage": 1,
+            "endPage": 442
+          }
+        ],
+        "status": "completed"
+      },
+      "correction3": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "transcription": {
+        "assignedTo": "",
+        "history": [],
+        "status": "not_applicable"
+      }
+    },
+    "currentStage": "correction3"
+  },
+  {
+    "id": "1757998028163",
+    "book": {
+      "title": "(<span class=\"searching_txt\">마음을</span> <span class=\"searching_txt\">읽는</span> <span class=\"searching_txt\">아이</span>) <span class=\"searching_txt\">오로르</span>",
+      "author": "더글라스 케네디 글 ;조안 스파르 그림 ;조동섭 옮김",
+      "publisher": "밝은세상",
+      "isbn": "9788984373952",
+      "totalPages": null
+    },
+    "totalPages": 240,
+    "stages": {
+      "correction1": {
+        "assignedTo": "백기욱",
+        "history": [
+          {
+            "date": "2025. 9. 16. 오후 1:47:00",
+            "startPage": 1,
+            "endPage": 240
+          }
+        ],
+        "status": "completed"
+      },
+      "correction2": {
+        "assignedTo": "신영신",
+        "history": [
+          {
+            "date": "2025. 9. 24. 오전 11:19:00",
+            "startPage": 1,
+            "endPage": 240
+          }
+        ],
+        "status": "completed"
+      },
+      "correction3": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "transcription": {
+        "assignedTo": "",
+        "history": [],
+        "status": "not_applicable"
+      }
+    },
+    "currentStage": "correction3"
+  },
+  {
+    "id": "1758010954474",
+    "book": {
+      "title": "선거로 읽는 한국 정치사",
+      "author": "김현성",
+      "publisher": "웅진 지식하우스",
+      "isbn": "978-89-01-25152-3"
+    },
+    "totalPages": 460,
+    "stages": {
+      "correction1": {
+        "assignedTo": "백기욱",
+        "history": [
+          {
+            "date": "2025. 9. 19. 오전 9:05:00",
+            "startPage": 1,
+            "endPage": 2
+          },
+          {
+            "date": "2025. 9. 19. 오후 5:46:00",
+            "startPage": 3,
+            "endPage": 231
+          },
+          {
+            "date": "2025. 9. 22. 오후 5:41:00",
+            "startPage": 232,
+            "endPage": 316
+          },
+          {
+            "date": "2025. 9. 23. 오후 5:44:00",
+            "startPage": 317,
+            "endPage": 402
+          },
+          {
+            "date": "2025. 9. 24. 오후 4:42:00",
+            "startPage": 403,
+            "endPage": 460
+          }
+        ],
+        "status": "completed"
+      },
+      "correction2": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "correction3": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "transcription": {
+        "assignedTo": "",
+        "history": [],
+        "status": "not_applicable"
+      }
+    },
+    "currentStage": "correction2",
+    "notes": []
+  },
+  {
+    "id": "1758153797276",
+    "book": {
+      "title": "<span class=\"searching_txt\">언어의</span> <span class=\"searching_txt\">높이뛰기</span> : 신지영 교수의 <span class=\"searching_txt\">언어</span> 감수성 향상 프로젝트",
+      "author": "신지영 지음",
+      "publisher": "인플루엔셜",
+      "isbn": "9791191056938",
+      "totalPages": null
+    },
+    "totalPages": 248,
+    "stages": {
+      "correction1": {
+        "assignedTo": "임석훈",
+        "history": [
+          {
+            "date": "2025. 9. 18. 오후 5:45:00",
+            "startPage": 1,
+            "endPage": 68
+          },
+          {
+            "date": "2025. 9. 19. 오후 5:45:00",
+            "startPage": 69,
+            "endPage": 137
+          },
+          {
+            "date": "2025. 9. 22. 오후 5:45:00",
+            "startPage": 138,
+            "endPage": 213
+          },
+          {
+            "date": "2025. 9. 23. 오후 4:28:00",
+            "startPage": 214,
+            "endPage": 248
+          }
+        ],
+        "status": "completed"
+      },
+      "correction2": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "correction3": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "transcription": {
+        "assignedTo": "",
+        "history": [],
+        "status": "not_applicable"
+      }
+    },
+    "currentStage": "correction2",
+    "notes": [
+      {
+        "noteId": "1758161584195",
+        "author": "임석훈",
+        "content": "• 다소 엉뚱한 출발\n-> 2022 삭제, 소제목처리",
+        "createdAt": "2025-09-18T02:13:04.195Z"
+      },
+      {
+        "noteId": "1758267382906",
+        "author": "임석훈",
+        "content": "질문 : 원본에 소제목이 \"●호칭어의 메뉴판\"되어 있는데 전 교정자가 ●기호를 넣지 않았는데 어떻게 처리해야 하나\n\n답: 교보문고에 소제목에 ●이 없으므로 디자인으로 간주하여 생략 (최정윤, 신영신)",
+        "createdAt": "2025-09-19T07:36:22.906Z",
+        "updatedAt": "2025-09-19T07:36:58.521Z"
+      },
+      {
+        "noteId": "1758611845576",
+        "author": "임석훈",
+        "content": "재작업 1차\n오류구분 : 띄어쓰기 [10]",
+        "createdAt": "2025-09-23T07:17:25.576Z"
+      }
+    ]
+  },
+  {
+    "id": "1758157391038",
+    "book": {
+      "title": "2022 제13회 젊은작가상 수상작품집",
+      "author": "서이제, 서수진, 김혜진, 김지연, 김병운, 김멜라, 임솔아",
+      "publisher": "문학동네",
+      "isbn": "978-89-546-8588-7 03810"
+    },
+    "totalPages": 364,
+    "stages": {
+      "correction1": {
+        "assignedTo": "송지연",
+        "history": [
+          {
+            "date": "2025. 9. 18. 오후 5:45:00",
+            "startPage": 1,
+            "endPage": 27
+          },
+          {
+            "date": "2025. 9. 19. 오후 5:45:00",
+            "startPage": 28,
+            "endPage": 74
+          },
+          {
+            "date": "2025. 9. 22. 오후 5:45:00",
+            "startPage": 75,
+            "endPage": 131
+          },
+          {
+            "date": "2025. 9. 23. 오후 5:45:00",
+            "startPage": 132,
+            "endPage": 191
+          },
+          {
+            "date": "2025. 9. 24. 오후 5:45:00",
+            "startPage": 192,
+            "endPage": 255
+          },
+          {
+            "date": "2025. 9. 25. 오후 5:45:00",
+            "startPage": 256,
+            "endPage": 324
+          },
+          {
+            "date": "2025. 9. 26. 오후 5:44:00",
+            "startPage": 325,
+            "endPage": 364
+          }
+        ],
+        "status": "completed"
+      },
+      "correction2": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "correction3": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "transcription": {
+        "assignedTo": "",
+        "history": [],
+        "status": "not_applicable"
+      }
+    },
+    "currentStage": "correction2",
+    "notes": [
+      {
+        "noteId": "1758870542680",
+        "author": "송지연",
+        "content": "1. 작가노트, 해설 질문지 보냄\n2. 닫는 괄호 11개 본문과 판권 정보에 씀",
+        "createdAt": "2025-09-26T07:09:02.680Z",
+        "updatedAt": "2025-09-26T07:09:27.653Z"
+      }
+    ]
+  },
+  {
+    "id": "1758612616999",
+    "book": {
+      "title": "<span class=\"searching_txt\">이제는</span> <span class=\"searching_txt\">알아야</span> <span class=\"searching_txt\">할</span> <span class=\"searching_txt\">저작권법</span> : 우리는 모두 저작권자다!",
+      "author": "지은이: 정지우,정유경",
+      "publisher": "마름모",
+      "isbn": "9791197826948",
+      "totalPages": null
+    },
+    "totalPages": 286,
+    "stages": {
+      "correction1": {
+        "assignedTo": "임석훈",
+        "history": [
+          {
+            "date": "2025. 9. 23. 오후 5:45:00",
+            "startPage": 1,
+            "endPage": 9
+          },
+          {
+            "date": "2025. 9. 24. 오후 5:46:00",
+            "startPage": 10,
+            "endPage": 97
+          },
+          {
+            "date": "2025. 9. 26. 오후 5:46:00",
+            "startPage": 98,
+            "endPage": 200
+          }
+        ],
+        "status": "pending"
+      },
+      "correction2": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "correction3": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "transcription": {
+        "assignedTo": "",
+        "history": [],
+        "status": "not_applicable"
+      }
+    },
+    "currentStage": "correction1",
+    "notes": [
+      {
+        "noteId": "1758615886464",
+        "author": "임석훈",
+        "content": "오탈자 : - 조채영  -> _ 조채영 (8페이지부터 9페이지에 원본우선에 따라 변경)",
+        "createdAt": "2025-09-23T08:24:46.464Z"
+      }
+    ]
+  },
+  {
+    "id": "1758680497723",
+    "book": {
+      "title": "<span class=\"searching_txt\">믹스</span> : 세상에서 가장 쉬운 차별화",
+      "author": "안성은 지음",
+      "publisher": "더퀘스트 : 길벗",
+      "isbn": "9791140700998",
+      "totalPages": null
+    },
+    "totalPages": 384,
+    "stages": {
+      "correction1": {
+        "assignedTo": "유진선",
+        "history": [
+          {
+            "date": "2025. 9. 24. 오전 11:21:00",
+            "startPage": 1,
+            "endPage": 384
+          }
+        ],
+        "status": "completed"
+      },
+      "correction2": {
+        "assignedTo": "신영신",
+        "history": [
+          {
+            "date": "2025. 9. 24. 오전 11:22:00",
+            "startPage": 1,
+            "endPage": 42
+          },
+          {
+            "date": "2025. 9. 25. 오후 1:00:00",
+            "startPage": 43,
+            "endPage": 151
+          },
+          {
+            "date": "2025. 9. 26. 오후 5:46:00",
+            "startPage": 152,
+            "endPage": 152
+          }
+        ],
+        "status": "pending"
+      },
+      "correction3": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "transcription": {
+        "assignedTo": "",
+        "history": [],
+        "status": "not_applicable"
+      }
+    },
+    "currentStage": "correction2",
+    "notes": [
+      {
+        "noteId": "1758680576869",
+        "author": "신영신",
+        "content": "재교정",
+        "createdAt": "2025-09-24T02:22:56.869Z"
+      }
+    ]
+  },
+  {
+    "id": "1758700163690",
+    "book": {
+      "title": "세종의 허리 가우디의 뼈",
+      "author": "이지환",
+      "publisher": "부키",
+      "isbn": "978-89-6051-878-0 03510"
+    },
+    "totalPages": 308,
+    "stages": {
+      "correction1": {
+        "assignedTo": "백기욱",
+        "history": [
+          {
+            "date": "2025. 9. 24. 오후 5:45:00",
+            "startPage": 1,
+            "endPage": 8
+          },
+          {
+            "date": "2025. 9. 26. 오전 9:07:00",
+            "startPage": 9,
+            "endPage": 91
+          },
+          {
+            "date": "2025. 9. 26. 오후 5:45:00",
+            "startPage": 92,
+            "endPage": 185
+          }
+        ],
+        "status": "pending"
+      },
+      "correction2": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "correction3": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "transcription": {
+        "assignedTo": "",
+        "history": [],
+        "status": "not_applicable"
+      }
+    },
+    "currentStage": "correction1",
+    "notes": []
+  },
+  {
+    "id": "1758870454234",
+    "book": {
+      "title": "<span class=\"searching_txt\">나의</span> <span class=\"searching_txt\">인생만사</span> <span class=\"searching_txt\">답사기</span> : 유홍준 잡문집",
+      "author": "지은이: 유홍준",
+      "publisher": "창비",
+      "isbn": "9788936480608",
+      "totalPages": null
+    },
+    "totalPages": 368,
+    "stages": {
+      "correction1": {
+        "assignedTo": "송지연",
+        "history": [],
+        "status": "pending"
+      },
+      "correction2": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "correction3": {
+        "assignedTo": "",
+        "history": [],
+        "status": "pending"
+      },
+      "transcription": {
+        "assignedTo": "",
+        "history": [],
+        "status": "not_applicable"
+      }
+    },
+    "currentStage": "correction1"
+  }
+]
