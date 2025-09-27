@@ -12,7 +12,8 @@
       "WebSearch",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(open /Users/maccrey/Development/Task-Manager/frontend/attendance-calendar.html)"
     ],
     "deny": [],
     "ask": []

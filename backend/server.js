@@ -15,6 +15,7 @@ const WORK_SESSIONS_HISTORY_FILE = path.join(
   __dirname,
   "work-sessions-history.json"
 );
+const ATTENDANCE_MEMOS_FILE = path.join(__dirname, "attendance-memos.json");
 
 app.use(cors());
 app.use(express.json());
@@ -114,6 +115,33 @@ const writeWorkSessionsHistory = (history) => {
     );
   } catch (error) {
     console.error("Error writing to work-sessions-history.json:", error);
+  }
+};
+
+// Helper function to read attendance memos
+const readAttendanceMemos = () => {
+  try {
+    if (!fs.existsSync(ATTENDANCE_MEMOS_FILE)) {
+      return {};
+    }
+    const data = fs.readFileSync(ATTENDANCE_MEMOS_FILE, "utf8");
+    return JSON.parse(data);
+  } catch (error) {
+    console.error("Error reading attendance-memos.json:", error);
+    return {};
+  }
+};
+
+// Helper function to write attendance memos
+const writeAttendanceMemos = (memos) => {
+  try {
+    fs.writeFileSync(
+      ATTENDANCE_MEMOS_FILE,
+      JSON.stringify(memos, null, 2),
+      "utf8"
+    );
+  } catch (error) {
+    console.error("Error writing to attendance-memos.json:", error);
   }
 };
 
@@ -467,6 +495,71 @@ app.post("/attendance-data", (req, res) => {
   const historyData = req.body;
   writeWorkSessionsHistory(historyData);
   res.status(200).json({ message: "Attendance data saved successfully" });
+});
+
+// Attendance Memos related endpoints
+
+// GET all attendance memos for a user
+app.get("/attendance-memos/:user", (req, res) => {
+  try {
+    const memos = readAttendanceMemos();
+    const { user } = req.params;
+    const userMemos = memos[user] || {};
+    res.json(userMemos);
+  } catch (error) {
+    console.error("Error getting attendance memos:", error);
+    res.status(500).json({ error: "Failed to get attendance memos" });
+  }
+});
+
+// POST/PUT a memo for a specific date and user
+app.put("/attendance-memos/:user/:date", (req, res) => {
+  try {
+    const memos = readAttendanceMemos();
+    const { user, date } = req.params;
+    const { memo } = req.body;
+
+    if (!memos[user]) {
+      memos[user] = {};
+    }
+
+    if (memo && memo.trim()) {
+      memos[user][date] = memo.trim();
+    } else {
+      delete memos[user][date];
+    }
+
+    writeAttendanceMemos(memos);
+    res.json({ message: "Memo saved successfully", memo: memos[user][date] || null });
+  } catch (error) {
+    console.error("Error saving attendance memo:", error);
+    res.status(500).json({ error: "Failed to save attendance memo" });
+  }
+});
+
+// DELETE a memo for a specific date and user
+app.delete("/attendance-memos/:user/:date", (req, res) => {
+  try {
+    const memos = readAttendanceMemos();
+    const { user, date } = req.params;
+
+    if (memos[user] && memos[user][date]) {
+      delete memos[user][date];
+
+      // 사용자의 메모가 모두 삭제되었으면 사용자 키도 삭제
+      if (Object.keys(memos[user]).length === 0) {
+        delete memos[user];
+      }
+
+      writeAttendanceMemos(memos);
+      res.json({ message: "Memo deleted successfully" });
+    } else {
+      res.status(404).json({ error: "Memo not found" });
+    }
+  } catch (error) {
+    console.error("Error deleting attendance memo:", error);
+    res.status(500).json({ error: "Failed to delete attendance memo" });
+  }
 });
 
 // Data Management API endpoints
