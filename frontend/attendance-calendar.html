@@ -1074,7 +1074,7 @@
                 console.log('출퇴근 히스토리 데이터를 서버에서 가져오는 중...');
 
                 // 먼저 히스토리 데이터 시도 (완료된 출퇴근 기록)
-                const historyResponse = await fetch('http://localhost:3005/api/work-sessions-history');
+                const historyResponse = await fetch('https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/api/work-sessions-history');
                 console.log('히스토리 API 응답 상태:', historyResponse.status);
 
                 if (historyResponse.ok) {
@@ -1089,7 +1089,7 @@
 
                 // 히스토리가 없으면 현재 진행 중인 세션 시도
                 console.log('현재 진행 중인 세션 확인...');
-                const currentResponse = await fetch('http://localhost:3005/work-sessions');
+                const currentResponse = await fetch('https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/work-sessions');
                 console.log('현재 세션 API 응답 상태:', currentResponse.status);
 
                 if (currentResponse.ok) {
