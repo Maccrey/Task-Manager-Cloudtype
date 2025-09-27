@@ -2572,14 +2572,245 @@ main {
   }
 }
 
+/* ========== 반응형 디자인 ========== */
+
+/* 태블릿 (768px 이하) */
+@media (max-width: 768px) {
+  /* 헤더 반응형 */
+  .header-content {
+    flex-direction: column;
+    gap: 15px;
+    padding: 0 15px;
+  }
+
+  .header-content h1 {
+    font-size: 1.3rem;
+    text-align: center;
+  }
+
+  .user-info {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  /* 메인 콘텐츠 */
+  main {
+    margin: 15px;
+    padding: 15px;
+  }
+
+  /* 검색 섹션 */
+  .search-section {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .search-section input {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .search-section button {
+    width: 100%;
+    padding: 12px;
+  }
+
+  /* 작업 카드 그리드 */
+  .task-list {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  /* 모달 */
+  .modal-content {
+    width: 95%;
+    max-width: none;
+    margin: 10px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* 폼 요소들 */
+  .form-row {
+    flex-direction: column;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  /* 테이블 */
+  .table-container {
+    overflow-x: auto;
+  }
+
+  table {
+    min-width: 600px;
+  }
+}
+
+/* 모바일 (576px 이하) */
 @media (max-width: 576px) {
+  /* 헤더 */
+  .header-content {
+    padding: 0 10px;
+  }
+
+  .header-content h1 {
+    font-size: 1.1rem;
+  }
+
+  .user-info {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .user-info span {
+    margin-right: 0;
+    text-align: center;
+    order: -1;
+  }
+
+  .symbol-checker-btn,
+  .braille-typing-btn,
+  .logout-btn {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 5px;
+  }
+
+  /* 메인 콘텐츠 */
+  main {
+    margin: 10px;
+    padding: 10px;
+  }
+
+  /* 검색 섹션 */
+  .search-section input {
+    font-size: 16px; /* iOS 줌 방지 */
+  }
+
+  /* 작업 카드 */
+  .task-card {
+    padding: 15px;
+  }
+
+  .task-card h3 {
+    font-size: 1rem;
+  }
+
+  .task-card p {
+    font-size: 0.9rem;
+  }
+
+  /* 진행률 바 */
+  .progress-bar {
+    height: 20px;
+  }
+
+  .progress-text {
+    font-size: 0.8rem;
+  }
+
+  /* 버튼들 */
+  .btn {
+    padding: 10px 15px;
+    font-size: 0.9rem;
+  }
+
+  .btn-small {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+
+  /* 모달 */
+  .modal-content {
+    padding: 15px;
+  }
+
+  .modal-header h2 {
+    font-size: 1.2rem;
+  }
+
+  /* 로그인 페이지 */
+  .login-container {
+    min-width: auto;
+    width: 90%;
+    padding: 20px;
+  }
+
+  .login-container h1 {
+    font-size: 1.3rem;
+  }
+
+  /* 테이블 */
+  table {
+    font-size: 0.8rem;
+  }
+
+  th, td {
+    padding: 8px 4px;
+  }
+
+  /* 현재 작업 섹션 */
+  .current-work-section {
+    margin: 10px;
+    padding: 0 10px;
+  }
+
+  .current-work-box {
+    padding: 15px;
+  }
+
+  /* 출석 요약 */
   .attendance-summary {
     grid-template-columns: 1fr;
   }
-  
+
   .attendance-details .attendance-summary {
     grid-template-columns: 1fr;
     gap: 15px;
     margin: 15px 0;
+  }
+
+  /* 관리자 패널 */
+  .admin-panel {
+    padding: 10px;
+  }
+
+  .tab-buttons {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .tab-button {
+    width: 100%;
+  }
+}
+
+/* 매우 작은 모바일 (360px 이하) */
+@media (max-width: 360px) {
+  .header-content h1 {
+    font-size: 1rem;
+  }
+
+  .user-info button {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+  }
+
+  main {
+    margin: 5px;
+    padding: 8px;
+  }
+
+  .task-card {
+    padding: 10px;
+  }
+
+  .modal-content {
+    padding: 10px;
   }
 }

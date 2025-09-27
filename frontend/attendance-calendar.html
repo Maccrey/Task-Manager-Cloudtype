@@ -813,6 +813,382 @@
                 break-inside: avoid;
             }
         }
+
+        /* ========== 반응형 디자인 ========== */
+
+        /* 태블릿 (768px 이하) */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+                margin: 0;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+
+            .title {
+                text-align: center;
+                font-size: 20px;
+            }
+
+            .user-info {
+                font-size: 16px;
+                margin-left: 0;
+                margin-top: 10px;
+            }
+
+            .controls {
+                justify-content: center;
+            }
+
+            .date-selector {
+                flex-wrap: wrap;
+                gap: 8px;
+                justify-content: center;
+            }
+
+            .date-selector select {
+                min-width: 70px;
+            }
+
+            .summary-stats {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 10px;
+            }
+
+            .calendar td {
+                height: 100px;
+                font-size: 12px;
+                padding: 4px;
+            }
+
+            .attendance-info {
+                font-size: 9px;
+            }
+
+            .date-number {
+                font-size: 12px;
+            }
+
+            .memo-modal-content {
+                width: 90%;
+                margin: 5% auto;
+            }
+        }
+
+        /* 모바일 (576px 이하) */
+        @media (max-width: 576px) {
+            .container {
+                padding: 5px;
+            }
+
+            .header {
+                padding-bottom: 10px;
+            }
+
+            .title {
+                font-size: 18px;
+            }
+
+            .user-info {
+                font-size: 14px;
+                padding: 4px 8px;
+            }
+
+            .date-selector {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto;
+                gap: 8px 10px;
+                align-items: center;
+                justify-items: center;
+                width: 100%;
+                max-width: 300px;
+                margin: 0 auto;
+            }
+
+            .date-selector-row {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                justify-self: stretch;
+            }
+
+            .date-buttons-row {
+                grid-column: 1 / -1;
+                display: flex;
+                justify-content: center;
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+
+            .date-selector label {
+                font-size: 12px;
+                min-width: 35px;
+                flex-shrink: 0;
+            }
+
+            .date-selector select {
+                padding: 4px 6px;
+                font-size: 13px;
+                min-width: 75px;
+                flex: 1;
+            }
+
+            .nav-button, .today-button, .print-button {
+                padding: 4px 8px;
+                font-size: 11px;
+                margin: 1px;
+                min-height: 28px;
+            }
+
+            .summary-section {
+                padding: 10px;
+                margin-bottom: 15px;
+            }
+
+            .summary-title {
+                font-size: 14px;
+                margin-bottom: 8px;
+            }
+
+            .summary-stats {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .stat-item {
+                padding: 8px;
+            }
+
+            .stat-label {
+                font-size: 11px;
+            }
+
+            .stat-value {
+                font-size: 14px;
+            }
+
+            /* 캘린더 테이블 최적화 */
+            .calendar {
+                font-size: 10px;
+            }
+
+            .calendar th {
+                padding: 8px 2px;
+                font-size: 12px;
+            }
+
+            .calendar td {
+                height: 80px;
+                padding: 2px;
+                vertical-align: top;
+            }
+
+            .date-number {
+                font-size: 11px;
+                margin-bottom: 2px;
+            }
+
+            .attendance-info {
+                font-size: 8px;
+                line-height: 1.1;
+            }
+
+            .time-info {
+                margin-bottom: 1px;
+            }
+
+            .start-time, .end-time {
+                font-size: 7px;
+            }
+
+            .work-hours {
+                font-size: 7px;
+                margin-bottom: 1px;
+            }
+
+            .status-info {
+                font-size: 6px;
+                margin-top: 1px;
+            }
+
+            .tasks-info {
+                font-size: 6px;
+                margin-top: 1px;
+            }
+
+            .holiday-name {
+                font-size: 7px;
+                padding: 1px 2px;
+            }
+
+            .memo-text {
+                font-size: 7px;
+                padding: 1px 2px;
+                margin-top: 1px;
+                line-height: 1.1;
+            }
+
+            .memo-icon {
+                width: 12px;
+                height: 12px;
+                bottom: 2px;
+                right: 2px;
+            }
+
+            /* 메모 모달 모바일 최적화 */
+            .memo-modal-content {
+                width: 95%;
+                margin: 2% auto;
+                padding: 15px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+
+            .memo-modal-title {
+                font-size: 16px;
+            }
+
+            .memo-input {
+                padding: 8px;
+                font-size: 14px;
+            }
+
+            .memo-char-count {
+                font-size: 11px;
+            }
+
+            .memo-suggestions-title {
+                font-size: 12px;
+                margin-bottom: 6px;
+            }
+
+            .suggestion-btn {
+                font-size: 11px;
+                padding: 3px 6px;
+            }
+
+            .memo-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+        }
+
+        /* 매우 작은 모바일 (360px 이하) */
+        @media (max-width: 360px) {
+            .title {
+                font-size: 16px;
+            }
+
+            .user-info {
+                font-size: 12px;
+                padding: 3px 6px;
+            }
+
+            .date-selector {
+                max-width: 280px;
+                gap: 6px 8px;
+            }
+
+            .date-selector label {
+                font-size: 11px;
+                min-width: 30px;
+            }
+
+            .date-selector select {
+                min-width: 65px;
+                font-size: 11px;
+                padding: 3px 5px;
+            }
+
+            .nav-button, .today-button, .print-button {
+                padding: 3px 6px;
+                font-size: 10px;
+                min-height: 24px;
+            }
+
+            .calendar td {
+                height: 70px;
+                padding: 1px;
+            }
+
+            .date-number {
+                font-size: 10px;
+            }
+
+            .attendance-info {
+                font-size: 7px;
+            }
+
+            .start-time, .end-time, .work-hours {
+                font-size: 6px;
+            }
+
+            .status-info, .tasks-info {
+                font-size: 5px;
+            }
+
+            .memo-text {
+                font-size: 6px;
+            }
+
+            .memo-icon {
+                width: 10px;
+                height: 10px;
+            }
+
+            .memo-modal-content {
+                padding: 10px;
+            }
+
+            .summary-stats {
+                gap: 6px;
+            }
+
+            .stat-item {
+                padding: 6px;
+            }
+
+            .stat-label {
+                font-size: 10px;
+            }
+
+            .stat-value {
+                font-size: 12px;
+            }
+        }
+
+        /* 가로모드 모바일 최적화 */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .title {
+                font-size: 16px;
+            }
+
+            .date-selector {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+
+            .calendar td {
+                height: 60px;
+                font-size: 9px;
+            }
+
+            .summary-stats {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+        }
     </style>
 </head>
 <body>
@@ -824,16 +1200,20 @@
             </div>
             <div class="controls">
                 <div class="date-selector">
-                    <label for="year-select">년도:</label>
-                    <select id="year-select"></select>
-
-                    <label for="month-select">월:</label>
-                    <select id="month-select"></select>
-
-                    <button class="nav-button" id="prev-month">&lt;</button>
-                    <button class="nav-button" id="next-month">&gt;</button>
-                    <button class="today-button" id="today-btn">오늘</button>
-                    <button class="print-button" id="print-btn">🖨️ 프린트</button>
+                    <div class="date-selector-row">
+                        <label for="year-select">년도:</label>
+                        <select id="year-select"></select>
+                    </div>
+                    <div class="date-selector-row">
+                        <label for="month-select">월:</label>
+                        <select id="month-select"></select>
+                    </div>
+                    <div class="date-buttons-row">
+                        <button class="nav-button" id="prev-month">&lt;</button>
+                        <button class="nav-button" id="next-month">&gt;</button>
+                        <button class="today-button" id="today-btn">오늘</button>
+                        <button class="print-button" id="print-btn">🖨️ 프린트</button>
+                    </div>
                 </div>
             </div>
         </div>
