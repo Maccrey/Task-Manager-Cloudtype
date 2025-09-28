@@ -1664,13 +1664,15 @@
             const startDate = new Date(firstDay);
             startDate.setDate(firstDay.getDate() - firstDayOfWeek);
 
+            // 마지막 날이 포함된 주가 언제인지 계산
+            const lastDayOfWeek = (lastDay.getDay() + 6) % 7; // 0=월요일, 6=일요일
+            const daysFromStart = (lastDay.getDate() + firstDayOfWeek - 1);
+            const weeksToShow = Math.ceil(daysFromStart / 7);
+
             const today = new Date();
             const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
             calendarBody.innerHTML = '';
-
-            // 6주간 표시 (충분한 주 수)
-            const weeksToShow = 6;
 
             for (let week = 0; week < weeksToShow; week++) {
                 const row = document.createElement('tr');
