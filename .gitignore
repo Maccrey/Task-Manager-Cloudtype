@@ -27,3 +27,8 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 .env.development.local
 .env.test.local
 .env.production.local
+
+!backend/staff.json
+!backend/work-sessions-history.json
+!backend/work-sessions-history.json
+!backend/bookworklist.json
