@@ -1281,6 +1281,16 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <!-- Firebase 설정 및 헬퍼 함수 -->
+    <script src="firebase-config.js"></script>
+
+    <!-- Firebase 어댑터 (fetch를 Firebase로 변환) -->
+    <script src="firebase-adapter.js"></script>
+
     <script>
         let attendanceData = [];
         let currentUser = null;
@@ -1288,6 +1298,9 @@
         let memos = {}; // 날짜별 메모 저장 객체 (dateKey: memo)
         let currentMemoDate = null; // 현재 편집 중인 메모의 날짜
         let holidays = {}; // 공휴일 데이터 저장 객체 (dateKey: holidayName)
+
+        // Legacy API Base URL - no longer used (migrated to Firebase)
+        // const BASE_URL = 'https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app';
 
         // 공휴일 API 설정 (실제 사용 시 API 키 필요)
         const HOLIDAY_API_CONFIG = {
@@ -1449,44 +1462,34 @@
             return monthHolidays;
         }
 
-        // 서버에서 출퇴근 데이터 가져오기
+        // Firebase에서 출퇴근 데이터 가져오기
         async function fetchAttendanceData() {
             try {
-                console.log('출퇴근 히스토리 데이터를 서버에서 가져오는 중...');
+                console.log('출퇴근 히스토리 데이터를 Firebase에서 가져오는 중...');
 
-                // 먼저 히스토리 데이터 시도 (완료된 출퇴근 기록)
-                const historyResponse = await fetch('https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/api/work-sessions-history');
-                console.log('히스토리 API 응답 상태:', historyResponse.status);
+                // Firebase에서 출퇴근 히스토리 가져오기
+                const historyData = await FirebaseWorkSessionsHistory.getAll();
+                console.log('가져온 히스토리 데이터:', historyData);
+                console.log('히스토리 데이터 개수:', historyData.length);
 
-                if (historyResponse.ok) {
-                    const historyData = await historyResponse.json();
-                    console.log('가져온 히스토리 데이터:', historyData);
-                    console.log('히스토리 데이터 개수:', historyData.length);
-
-                    if (Array.isArray(historyData) && historyData.length > 0) {
-                        return historyData;
-                    }
+                if (Array.isArray(historyData) && historyData.length > 0) {
+                    return historyData;
                 }
 
-                // 히스토리가 없으면 현재 진행 중인 세션 시도
+                // 히스토리가 없으면 현재 진행 중인 세션 가져오기
                 console.log('현재 진행 중인 세션 확인...');
-                const currentResponse = await fetch('https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/work-sessions');
-                console.log('현재 세션 API 응답 상태:', currentResponse.status);
+                const currentData = await FirebaseWorkSessions.getAll();
+                console.log('현재 세션 데이터:', currentData);
 
-                if (currentResponse.ok) {
-                    const currentData = await currentResponse.json();
-                    console.log('현재 세션 데이터:', currentData);
-
-                    // 객체 형태의 세션을 배열로 변환
-                    const sessionArray = Object.values(currentData || {});
-                    console.log('변환된 세션 배열:', sessionArray);
-                    return sessionArray;
+                if (Array.isArray(currentData) && currentData.length > 0) {
+                    return currentData;
                 }
 
-                throw new Error('모든 API 호출 실패');
+                console.warn('출퇴근 데이터가 없습니다.');
+                return [];
 
             } catch (error) {
-                console.error('출퇴근 데이터 가져오기 실패:', error);
+                console.error('Firebase에서 출퇴근 데이터 가져오기 실패:', error);
                 return [];
             }
         }
@@ -1895,47 +1898,33 @@
             updateCalendar();
         }
 
-        // 서버에서 메모 데이터 불러오기
+        // Firebase에서 메모 데이터 불러오기
         async function loadMemos() {
             try {
                 const user = currentUser || 'all';
-                console.log('서버에서 메모 데이터 불러오는 중...', user);
+                console.log('Firebase에서 메모 데이터 불러오는 중...', user);
 
-                const response = await fetch(`https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/attendance-memos/${user}`);
-
-                if (response.ok) {
-                    memos = await response.json();
-                    console.log('서버에서 메모 데이터 불러옴:', memos);
-                } else {
-                    console.warn('서버에서 메모 불러오기 실패, 빈 객체로 초기화');
-                    memos = {};
-                }
+                memos = await FirebaseAttendanceMemos.getAll(user);
+                console.log('Firebase에서 메모 데이터 불러옴:', memos);
             } catch (error) {
-                console.error('메모 불러오기 오류:', error);
+                console.error('Firebase 메모 불러오기 오류:', error);
                 memos = {};
             }
         }
 
-        // 서버에 개별 메모 저장
+        // Firebase에 개별 메모 저장
         async function saveMemo(dateStr, memo) {
             try {
                 const user = currentUser || 'all';
-                console.log('서버에 메모 저장 중...', { user, dateStr, memo });
+                console.log('Firebase에 메모 저장 중...', { user, dateStr, memo });
 
-                const response = await fetch(`https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/attendance-memos/${user}/${dateStr}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ memo })
-                });
+                const success = await FirebaseAttendanceMemos.set(user, dateStr, memo);
 
-                if (response.ok) {
-                    const result = await response.json();
-                    console.log('메모 저장 성공:', result);
+                if (success) {
+                    console.log('메모 저장 성공');
                     return true;
                 } else {
-                    console.error('메모 저장 실패:', response.status);
+                    console.error('메모 저장 실패');
                     return false;
                 }
             } catch (error) {
@@ -1944,22 +1933,19 @@
             }
         }
 
-        // 서버에서 개별 메모 삭제
+        // Firebase에서 개별 메모 삭제
         async function deleteMemoFromServer(dateStr) {
             try {
                 const user = currentUser || 'all';
-                console.log('서버에서 메모 삭제 중...', { user, dateStr });
+                console.log('Firebase에서 메모 삭제 중...', { user, dateStr });
 
-                const response = await fetch(`https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/attendance-memos/${user}/${dateStr}`, {
-                    method: 'DELETE'
-                });
+                const success = await FirebaseAttendanceMemos.delete(user, dateStr);
 
-                if (response.ok) {
-                    const result = await response.json();
-                    console.log('메모 삭제 성공:', result);
+                if (success) {
+                    console.log('메모 삭제 성공');
                     return true;
                 } else {
-                    console.error('메모 삭제 실패:', response.status);
+                    console.error('메모 삭제 실패');
                     return false;
                 }
             } catch (error) {
