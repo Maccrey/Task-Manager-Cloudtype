@@ -1406,7 +1406,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const lastCompletedPage =
-      stage.history.length > 0
+      stage.history && stage.history.length > 0
         ? stage.history[stage.history.length - 1].endPage
         : 0;
 
@@ -1473,6 +1473,9 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // 백업용으로 기존 히스토리 저장
+    if (!stage.history) {
+      stage.history = [];
+    }
     const originalHistory = [...stage.history];
     const originalStatus = stage.status;
 
@@ -6337,38 +6340,71 @@ document.addEventListener("DOMContentLoaded", () => {
           margin: 0 !important;
         }
 
-        /* 차트 섹션 - 화면 스타일 유지 */
+        /* 성과 요약 섹션 - 높이 대폭 축소 */
+        .performance-summary {
+          padding: 4px 8px 2px 8px !important;
+          margin: 3px 0 0 0 !important;
+        }
+
+        .performance-summary h3 {
+          margin: 0 0 2px 0 !important;
+          font-size: 11px !important;
+          font-weight: 600 !important;
+        }
+
+        .summary-grid {
+          gap: 4px !important;
+          margin: 2px 0 0 0 !important;
+        }
+
+        .summary-card {
+          padding: 4px 2px !important;
+          border-radius: 2px !important;
+        }
+
+        .summary-card h4 {
+          margin: 0 0 1px 0 !important;
+          font-size: 8px !important;
+          line-height: 1 !important;
+        }
+
+        .summary-value {
+          font-size: 13px !important;
+          line-height: 1 !important;
+        }
+
+        /* 차트 섹션 - 여백 대폭 축소 */
         .performance-charts {
-          margin: 20px 0 !important;
-          padding: 15px !important;
+          margin: 3px 0 !important;
+          padding: 6px !important;
           border: 1px solid #e9ecef !important;
-          border-radius: 4px !important;
+          border-radius: 3px !important;
           background: #f8f9fa !important;
         }
 
         .chart-section {
-          margin: 15px 0 !important;
-          padding: 10px !important;
+          margin: 6px 0 !important;
+          padding: 5px !important;
           background: white !important;
-          border-radius: 4px !important;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+          border-radius: 3px !important;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.08) !important;
           page-break-inside: avoid;
         }
 
         .chart-section h3 {
           color: #495057 !important;
-          font-size: 16px !important;
-          margin: 0 0 10px 0 !important;
+          font-size: 12px !important;
+          margin: 0 0 5px 0 !important;
           text-align: center !important;
           font-weight: 600 !important;
         }
 
-        /* 차트 크기 - 화면과 동일하게 */
+        /* 차트 크기 - 높이 대폭 축소 */
         .performance-charts canvas {
           max-width: 100% !important;
           width: 100% !important;
           height: auto !important;
-          max-height: 180px !important;
+          max-height: 120px !important;
           display: block !important;
           margin: 0 auto !important;
         }
