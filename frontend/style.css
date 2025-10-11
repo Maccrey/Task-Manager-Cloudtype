@@ -718,15 +718,29 @@ main {
 
 /* 관리자 패널 */
 .admin-panel {
-  max-width: 90vw !important;
-  width: 95% !important;
-  max-height: 85vh !important;
+  max-width: 95vw !important;
+  width: 98% !important;
+  max-height: 90vh !important;
+  overflow-y: auto;
+}
+
+/* 모바일 대응 */
+@media screen and (max-width: 768px) {
+  .admin-panel {
+    max-width: 100vw !important;
+    width: 100% !important;
+    max-height: 95vh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
 }
 
 .admin-tabs {
   display: flex;
   border-bottom: 1px solid #ddd;
   margin-bottom: 20px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
 }
 
 .tab-button {
@@ -737,6 +751,8 @@ main {
   border-bottom: 2px solid transparent;
   transition: all 0.3s;
   font-size: 1rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tab-button:hover {
@@ -747,6 +763,18 @@ main {
   border-bottom-color: #ff8c00;
   color: #ff8c00;
   font-weight: bold;
+}
+
+/* 모바일 탭 버튼 */
+@media screen and (max-width: 768px) {
+  .admin-tabs {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-button {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
 }
 
 .tab-content {
@@ -762,6 +790,7 @@ main {
   display: flex;
   gap: 10px;
   margin-bottom: 15px;
+  flex-wrap: wrap;
 }
 
 .small-btn {
@@ -777,6 +806,21 @@ main {
 
 .small-btn:hover {
   background-color: #5a6268;
+}
+
+/* 모바일 툴바 */
+@media screen and (max-width: 768px) {
+  .admin-toolbar {
+    gap: 8px;
+  }
+
+  .small-btn {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+    height: 36px;
+    flex: 1 1 auto;
+    min-width: 100px;
+  }
 }
 
 /* 직원 등록 폼 스타일 */
@@ -827,6 +871,25 @@ main {
   background-color: #5a6268 !important;
 }
 
+/* 모바일 staff form */
+@media screen and (max-width: 768px) {
+  .staff-form .form-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .staff-form input[type="text"],
+  .staff-form select,
+  .staff-form button {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .staff-form button {
+    height: 44px !important;
+  }
+}
+
 /* 수정 모드 스타일 개선 */
 #staff-form.editing {
   background-color: #fff3cd !important;
@@ -846,6 +909,24 @@ main {
   overflow-y: auto;
   border: 1px solid #ddd;
   border-radius: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 모바일 테이블 컨테이너 */
+@media screen and (max-width: 768px) {
+  .admin-table-container {
+    max-height: 60vh;
+  }
+
+  .admin-table {
+    font-size: 0.8rem;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 6px 8px;
+    font-size: 0.75rem;
+  }
 }
 
 .task-clickable {
@@ -1528,6 +1609,56 @@ main {
   .evaluation-report {
     height: auto;
     overflow: visible;
+  }
+
+  /* 업무평가서 모바일 최적화 */
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .performance-charts {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .chart-section:last-child {
+    grid-column: 1;
+  }
+
+  .report-info {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .stats-table {
+    font-size: 10px;
+  }
+
+  .stats-table th,
+  .stats-table td {
+    padding: 4px 6px;
+  }
+
+  .report-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .action-btn {
+    width: 100%;
+  }
+}
+
+/* 아주 작은 모바일 (360px 이하) */
+@media screen and (max-width: 360px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tab-button {
+    padding: 8px 12px;
+    font-size: 0.85rem;
   }
 }
 

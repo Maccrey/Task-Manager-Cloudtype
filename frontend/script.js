@@ -109,19 +109,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const apiKey =
     "e080d32c1a94808682a5c4fe268ba6f9e5aedf09c936f44ecb51272e59287233";
-  // const API_URL = "http://172.30.1.40:3005/books";
-  // const STAFF_API_URL = "http://172.30.1.40:3005/staff";
-  // const WORK_SESSIONS_API_URL = "http://172.30.1.40:3005/work-sessions";
-  // const ATTENDANCE_DATA_API_URL = "http://172.30.1.40:3005/attendance-data";
-  // const WS_URL = "ws://172.30.1.40:3005/";
-  const API_URL = "https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/books";
-  const STAFF_API_URL = "https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/staff";
-  const WORK_SESSIONS_API_URL = "https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/work-sessions";
-  const ATTENDANCE_DATA_API_URL = "https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/attendance-data";
-  const WS_URL = "wss://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/";
 
-  // WebSocket 연결
-  let socket = null;
+  // Firebase Adapter 라우팅 식별자
+  // 주의: 이 값들은 더미가 아닙니다. firebase-adapter.js가 fetch() 호출을 Firebase로
+  // 라우팅하기 위한 패턴 매칭 식별자입니다.
+  // 새로운 코드에서는 이 상수들을 사용하지 말고 FirebaseBooks, FirebaseStaff 등을
+  // 직접 사용하세요.
+  const API_URL = "/books";
+  const STAFF_API_URL = "/staff";
+  const WORK_SESSIONS_API_URL = "/work-sessions";
+  const ATTENDANCE_DATA_API_URL = "/attendance-data";
+  const BASE_URL = "";
+
+  // Firebase realtime listeners (replacing WebSocket)
+  let firebaseListeners = {
+    books: null,
+    staff: null,
+    workSessions: null
+  };
 
   let currentBook = null;
   let tasks = [];
@@ -138,6 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentAssignStage = null; // Current stage for corrector assignment
   let isStartingNewSession = false; // Flag to prevent progress modal during session start
   let isProgressModalProtected = false; // 진행상황 모달 보호 플래그
+  let workersDisplayInterval = null; // 현재 작업중인 사람들 표시 업데이트 타이머
 
   // Korean date parsing function
   function parseKoreanDate(dateStr) {
@@ -180,110 +186,140 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   }
 
-  // WebSocket 연결 초기화
-  function initializeWebSocket() {
+  // Firebase 실시간 리스너 초기화
+  function initializeFirebaseListeners() {
     try {
-      socket = new WebSocket(WS_URL);
+      console.log("Firebase 실시간 리스너 초기화 중...");
 
-      socket.onopen = function (event) {
-        console.log("WebSocket 연결이 열렸습니다.");
-        updateStatusDisplay();
-      };
-
-      socket.onmessage = function (event) {
-        try {
-          const message = JSON.parse(event.data);
-          handleWebSocketMessage(message);
-        } catch (error) {
-          console.error("WebSocket 메시지 처리 오류:", error);
+      // Books 리스너
+      firebaseListeners.books = FirebaseBooks.onValue((books) => {
+        console.log("Firebase Books 업데이트:", books.length);
+        console.log("First book data structure:", books[0]); // 데이터 구조 확인
+        tasks = books;
+        renderTasks(); // displayTasks 대신 renderTasks 사용
+        if (typeof updateAdminTasksTable === 'function') {
+          updateAdminTasksTable();
         }
-      };
-
-      socket.onclose = function (event) {
-        console.log("WebSocket 연결이 닫혔습니다.");
-        socket = null;
-        updateStatusDisplay();
-
-        // 5초 후 재연결 시도
-        setTimeout(() => {
-          if (!socket || socket.readyState === WebSocket.CLOSED) {
-            console.log("WebSocket 재연결 시도...");
-            initializeWebSocket();
-          }
-        }, 5000);
-      };
-
-      socket.onerror = function (error) {
-        console.error("WebSocket 오류:", error);
-      };
-    } catch (error) {
-      console.error("WebSocket 초기화 오류:", error);
-    }
-  }
-
-  // WebSocket 메시지 처리
-  function handleWebSocketMessage(message) {
-    console.log("WebSocket 메시지 수신:", message);
-
-    switch (message.type) {
-      case "book_added":
-        handleBookAdded(message.data);
-        break;
-      case "book_updated":
-        handleBookUpdated(message.data);
-        break;
-      case "book_deleted":
-        handleBookDeleted(message.data);
-        break;
-      case "note_added":
-        handleNoteAdded(message.data);
-        break;
-      case "note_updated":
-        handleNoteUpdated(message.data);
-        break;
-      case "note_deleted":
-        handleNoteDeleted(message.data);
-        break;
-      case "work_session_started":
-        handleWorkSessionStarted(message.data);
-        break;
-      case "work_session_ended":
-        handleWorkSessionEnded(message.data);
-        break;
-      default:
-        console.log("알 수 없는 메시지 타입:", message.type);
-    }
-  }
-
-  // 서버 연결 상태 확인
-  async function checkServerConnection() {
-    try {
-      console.log("Checking server connection...");
-      const response = await fetch(API_URL, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        if (typeof updateStatsTab === 'function') {
+          updateStatsTab();
+        }
       });
 
-      if (response.ok) {
-        serverStatus = "online";
-        console.log("Server is online");
-
-        // WebSocket 연결이 없거나 닫혀있다면 초기화
-        if (!socket || socket.readyState === WebSocket.CLOSED) {
-          initializeWebSocket();
+      // Staff 리스너
+      firebaseListeners.staff = FirebaseStaff.onValue((staffList) => {
+        console.log("Firebase Staff 업데이트:", staffList.length);
+        staff = staffList;
+        updateStaffDropdowns(); // updateStaffSelects 대신 updateStaffDropdowns 사용
+        if (typeof displayStaffList === 'function') {
+          displayStaffList();
         }
+      });
 
+      // Work Sessions 리스너
+      firebaseListeners.workSessions = FirebaseWorkSessions.onValue((sessions) => {
+        console.log("🔔 Firebase Work Sessions 리스너 트리거됨");
+        console.log("📊 Sessions 데이터:", sessions);
+
+        if (sessions) {
+          console.log("✅ Firebase Work Sessions 업데이트:", Object.keys(sessions).length, "개 세션");
+          // sessions는 객체 형태이므로 배열로 변환
+          workSessions = Object.values(sessions);
+
+          // currentWorkSessions Map 업데이트
+          const previousSize = currentWorkSessions.size;
+          currentWorkSessions.clear();
+          for (const [taskId, sessionData] of Object.entries(sessions || {})) {
+            if (sessionData && sessionData.isWorking) {
+              currentWorkSessions.set(taskId, {
+                startTime: new Date(sessionData.startTime),
+                worker: sessionData.worker,
+                isWorking: sessionData.isWorking,
+                taskTitle: getTaskTitle(taskId),
+                stage: getCurrentStage(taskId),
+              });
+            }
+          }
+          console.log(`📈 currentWorkSessions 업데이트: ${previousSize} → ${currentWorkSessions.size}`);
+
+          // UI 업데이트 - 작업 목록과 현재 작업자 표시 모두 업데이트
+          const progressModal = document.getElementById("progress-update-modal");
+          if (!isProgressModalProtected && (!progressModal || progressModal.style.display !== "flex")) {
+            if (typeof renderTasks === 'function') {
+              console.log("🔄 renderTasks 호출");
+              renderTasks();
+            }
+          }
+
+          if (typeof updateCurrentWorkersDisplay === 'function') {
+            console.log("🔄 updateCurrentWorkersDisplay 호출");
+            updateCurrentWorkersDisplay();
+            // 실시간 업데이트 타이머 시작 (작업중인 세션이 있을 때만)
+            startWorkersDisplayUpdate();
+          }
+        } else {
+          console.log("⚠️ Sessions 데이터가 null 또는 비어있음");
+          // sessions가 null이면 모든 세션이 제거된 것
+          const previousSize = currentWorkSessions.size;
+          currentWorkSessions.clear();
+          console.log(`📉 currentWorkSessions 클리어됨: ${previousSize} → 0`);
+
+          // UI 업데이트
+          const progressModal = document.getElementById("progress-update-modal");
+          if (!isProgressModalProtected && (!progressModal || progressModal.style.display !== "flex")) {
+            if (typeof renderTasks === 'function') {
+              console.log("🔄 renderTasks 호출");
+              renderTasks();
+            }
+          }
+
+          if (typeof updateCurrentWorkersDisplay === 'function') {
+            console.log("🔄 updateCurrentWorkersDisplay 호출");
+            updateCurrentWorkersDisplay();
+            stopWorkersDisplayUpdate();
+          }
+        }
+      });
+
+      console.log("Firebase 실시간 리스너 초기화 완료");
+      updateStatusDisplay();
+    } catch (error) {
+      console.error("Firebase 리스너 초기화 오류:", error);
+    }
+  }
+
+  // Firebase 리스너 정리 (페이지 종료 시)
+  function cleanupFirebaseListeners() {
+    if (firebaseListeners.books) {
+      FirebaseBooks.off(firebaseListeners.books);
+    }
+    if (firebaseListeners.staff) {
+      FirebaseStaff.off(firebaseListeners.staff);
+    }
+    if (firebaseListeners.workSessions) {
+      FirebaseWorkSessions.off(firebaseListeners.workSessions);
+    }
+    // 실시간 업데이트 타이머 정리
+    stopWorkersDisplayUpdate();
+  }
+
+  // Firebase 연결 상태 확인 (서버 연결 체크를 Firebase로 대체)
+  async function checkServerConnection() {
+    try {
+      console.log("Checking Firebase connection...");
+
+      // Firebase가 초기화되어 있는지 간단히 확인
+      if (typeof firebase !== 'undefined' && firebase.database) {
+        serverStatus = "online";
+        console.log("Firebase is available");
         return true;
       } else {
         serverStatus = "offline";
-        console.log("Server responded but not OK:", response.status);
+        console.log("Firebase is not available");
         return false;
       }
     } catch (error) {
       serverStatus = "offline";
-      console.warn("Server connection failed:", error.message);
+      console.error("Firebase connection check failed:", error.message);
       return false;
     }
   }
@@ -324,38 +360,53 @@ document.addEventListener("DOMContentLoaded", () => {
     statusSpan.style.color = statusColor;
   }
 
-  // 데이터 로드 함수
+  // 데이터 로드 함수 (Firebase 사용)
   async function loadTasks() {
     try {
-      console.log("Loading tasks from server...");
+      console.log("Loading tasks from Firebase...");
       updateStatusDisplay();
 
-      const isServerOnline = await checkServerConnection();
+      const isFirebaseOnline = await checkServerConnection();
 
-      if (isServerOnline) {
-        const response = await fetch(API_URL);
+      if (isFirebaseOnline) {
+        // Firebase에서 데이터 가져오기
+        tasks = await FirebaseBooks.getAll();
+        console.log(`Loaded ${tasks.length} tasks from Firebase`);
 
-        if (!response.ok) {
-          throw new Error(
-            `Server error: ${response.status} ${response.statusText}`
-          );
-        }
+        // 데이터 구조 검증 및 복구
+        tasks.forEach((task, index) => {
+          if (!task.stages) {
+            console.warn(`⚠️ Task ${index} (ID: ${task.id}) has no stages property! Initializing...`, task);
+            task.stages = {
+              correction1: { assignedTo: "", history: [], status: "pending" },
+              correction2: { assignedTo: "", history: [], status: "not_applicable" },
+              correction3: { assignedTo: "", history: [], status: "not_applicable" },
+              transcription: { assignedTo: "", history: [], status: "not_applicable" }
+            };
+          }
 
-        const data = await response.json();
-        tasks = Array.isArray(data) ? data : [];
-        console.log(`Loaded ${tasks.length} tasks from server`);
+          if (!task.currentStage) {
+            console.warn(`⚠️ Task ${index} (ID: ${task.id}) has no currentStage property! Setting to correction1...`, task);
+            task.currentStage = "correction1";
+          }
 
-        // 현재 작업 세션도 서버에서 로드
+          if (task.stages && task.currentStage && !task.stages[task.currentStage]) {
+            console.warn(`⚠️ Task ${index} (ID: ${task.id}) currentStage "${task.currentStage}" not found in stages! Initializing stage...`, {
+              currentStage: task.currentStage,
+              availableStages: Object.keys(task.stages)
+            });
+            task.stages[task.currentStage] = { assignedTo: "", history: [], status: "pending" };
+          }
+        });
+
+        // 현재 작업 세션도 Firebase에서 로드
         await loadCurrentWorkSessions();
       } else {
-        throw new Error("Server is not available");
+        throw new Error("Firebase is not available");
       }
 
       updateStatusDisplay();
       renderTasks();
-
-      // 작업 세션 로드
-      await loadCurrentWorkSessions();
     } catch (error) {
       console.error("Error in loadTasks:", error);
       serverStatus = "offline";
@@ -366,40 +417,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 작업 저장/업데이트 함수
+  // 작업 저장/업데이트 함수 (Firebase 사용)
   async function saveTask(task, isNewTask = false) {
     try {
-      const method = isNewTask ? "POST" : "PUT";
-      const url = isNewTask ? API_URL : `${API_URL}/${task.id}`;
-
-      console.log(`${method} request to:`, url);
+      console.log(`${isNewTask ? 'Creating' : 'Updating'} task in Firebase:`, task.id);
       console.log("Task data being sent:", JSON.stringify(task, null, 2));
 
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(task),
-        signal: AbortSignal.timeout(10000), // 10초 타임아웃
-      });
-
-      console.log("Response status:", response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Server error response:", errorText);
-        throw new Error(
-          `Server error: ${response.status} ${response.statusText}. ${errorText}`
-        );
+      let savedTask;
+      if (isNewTask) {
+        savedTask = await FirebaseBooks.create(task);
+      } else {
+        savedTask = await FirebaseBooks.update(task.id, task);
       }
 
-      const savedTask = await response.json();
-      console.log("Task saved to server:", savedTask);
-
+      console.log("Task saved to Firebase:", savedTask);
       return savedTask;
     } catch (error) {
-      console.error("Error saving task:", error);
+      console.error("Error saving task to Firebase:", error);
       console.error("Full error details:", {
         name: error.name,
         message: error.message,
@@ -408,36 +442,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       serverStatus = "offline";
       updateStatusDisplay();
-
-      // 네트워크 오류인지 확인
-      if (error instanceof TypeError && error.message.includes("fetch")) {
-        throw new Error(`네트워크 연결 실패: ${API_URL}에 접근할 수 없습니다.`);
-      }
-
-      // 타임아웃 오류인지 확인
-      if (error.name === "AbortError") {
-        throw new Error("요청 시간 초과: 서버 응답이 너무 오래 걸립니다.");
-      }
-
       throw error;
     }
   }
 
-  // 작업 삭제 함수
+  // 작업 삭제 함수 (Firebase 사용)
   async function deleteTask(taskId) {
     try {
-      const response = await fetch(`${API_URL}/${taskId}`, {
-        method: "DELETE",
-        signal: AbortSignal.timeout(10000),
-      });
-
-      if (!response.ok && response.status !== 404) {
-        throw new Error(
-          `Server error: ${response.status} ${response.statusText}`
-        );
-      }
-
-      console.log("Task deleted from server");
+      await FirebaseBooks.delete(taskId);
+      console.log("Task deleted from Firebase:", taskId);
 
       // 로컬 배열에서도 삭제
       const index = tasks.findIndex((t) => t.id === taskId);
@@ -448,7 +461,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       renderTasks();
     } catch (error) {
-      console.error("Error deleting task:", error);
+      console.error("Error deleting task from Firebase:", error);
       serverStatus = "offline";
       updateStatusDisplay();
       alert("작업 삭제에 실패했습니다: " + error.message);
@@ -463,75 +476,50 @@ document.addEventListener("DOMContentLoaded", () => {
     return div.textContent || div.innerText || "";
   }
 
-  // Staff management functions
+  // Staff management functions (Firebase 사용)
   async function loadStaff() {
     try {
-      const response = await fetch(STAFF_API_URL);
-      if (response.ok) {
-        staff = await response.json();
-        updateStaffDropdowns();
-        updateAssignCorrectorDropdownIfOpen(); // Update assign corrector dropdown if modal is open
-        console.log(`Loaded ${staff.length} staff members`);
-      } else {
-        console.warn("Failed to load staff data");
-        staff = [];
-      }
+      staff = await FirebaseStaff.getAll();
+      updateStaffDropdowns();
+      updateAssignCorrectorDropdownIfOpen(); // Update assign corrector dropdown if modal is open
+      console.log(`Loaded ${staff.length} staff members from Firebase`);
     } catch (error) {
-      console.error("Error loading staff:", error);
+      console.error("Error loading staff from Firebase:", error);
       staff = [];
     }
   }
 
   async function addStaff(name, role) {
     try {
-      const response = await fetch(STAFF_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, role }),
-      });
+      const newStaff = await FirebaseStaff.create({ name, role });
+      staff.push(newStaff);
+      updateStaffDropdowns();
+      updateAssignCorrectorDropdownIfOpen(); // Update assign corrector dropdown if modal is open
 
-      if (response.ok) {
-        const newStaff = await response.json();
-        staff.push(newStaff);
-        updateStaffDropdowns();
-        updateAssignCorrectorDropdownIfOpen(); // Update assign corrector dropdown if modal is open
-
-        // 항상 직원 리스트 렌더링
-        renderStaffList();
-        // 직원 탭 강제 유지
-        switchTab("staff");
-        return newStaff;
-      } else {
-        throw new Error("Failed to add staff member");
-      }
+      // 항상 직원 리스트 렌더링
+      renderStaffList();
+      // 직원 탭 강제 유지
+      switchTab("staff");
+      return newStaff;
     } catch (error) {
-      console.error("Error adding staff:", error);
+      console.error("Error adding staff to Firebase:", error);
       throw error;
     }
   }
 
   async function deleteStaff(staffId) {
     try {
-      const response = await fetch(`${STAFF_API_URL}/${staffId}`, {
-        method: "DELETE",
-      });
+      await FirebaseStaff.delete(staffId);
+      staff = staff.filter((s) => s.id !== staffId);
+      updateStaffDropdowns();
+      updateAssignCorrectorDropdownIfOpen(); // Update assign corrector dropdown if modal is open
 
-      if (response.ok || response.status === 404) {
-        staff = staff.filter((s) => s.id !== staffId);
-        updateStaffDropdowns();
-        updateAssignCorrectorDropdownIfOpen(); // Update assign corrector dropdown if modal is open
-
-        // 항상 직원 리스트 렌더링
-        renderStaffList();
-        // 직원 탭 강제 유지
-        switchTab("staff");
-      } else {
-        throw new Error("Failed to delete staff member");
-      }
+      // 항상 직원 리스트 렌더링
+      renderStaffList();
+      // 직원 탭 강제 유지
+      switchTab("staff");
     } catch (error) {
-      console.error("Error deleting staff:", error);
+      console.error("Error deleting staff from Firebase:", error);
       throw error;
     }
   }
@@ -919,18 +907,20 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderTasks() {
     taskList.innerHTML = "";
 
+    // tasks가 배열이 아니면 빈 배열로 초기화
+    if (!Array.isArray(tasks)) {
+      console.warn("tasks is not an array, initializing to empty array");
+      tasks = [];
+    }
+
     // 서버 연결 상태에 따른 메시지 표시
     if (serverStatus === "offline") {
       taskList.innerHTML =
         '<div style="display: flex; justify-content: center; align-items: center; min-height: 300px; padding: 40px;">' +
         '<div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 30px; max-width: 500px; text-align: center; color: #856404; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">' +
-        '<h3 style="margin-top: 0; color: #856404; font-size: 1.3em;">⚠️ 서버 연결 실패</h3>' +
-        '<p style="margin: 15px 0; line-height: 1.5;">데이터베이스 서버에 연결할 수 없습니다.</p>' +
-        '<p style="margin: 15px 0; line-height: 1.5;">백엔드 서버가 실행 중인지 확인해주세요.</p>' +
-        '<div style="background: #f8f9fa; border-radius: 4px; padding: 10px; margin: 15px 0;">' +
-        '<p style="font-size: 0.9em; color: #6c757d; margin: 0;">서버 실행 명령어:</p>' +
-        '<code style="color: #495057; font-weight: bold;">cd backend && npm start</code>' +
-        "</div>" +
+        '<h3 style="margin-top: 0; color: #856404; font-size: 1.3em;">⚠️ Firebase 연결 실패</h3>' +
+        '<p style="margin: 15px 0; line-height: 1.5;">Firebase 데이터베이스에 연결할 수 없습니다.</p>' +
+        '<p style="margin: 15px 0; line-height: 1.5;">네트워크 연결을 확인해주세요.</p>' +
         "</div>" +
         "</div>";
       return;
@@ -938,7 +928,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 완료된 작업 필터링 - 메인 화면에서는 완료된 작업 제외
     const incompleteTasks = tasks.filter(
-      (task) => task.currentStage !== "completed"
+      (task) => task && task.currentStage !== "completed"
     );
 
     if (incompleteTasks.length === 0) {
@@ -956,10 +946,12 @@ document.addEventListener("DOMContentLoaded", () => {
     incompleteTasks.sort((a, b) => {
       const aAssignedTo =
         a.currentStage !== "completed" &&
+        a.stages &&
         a.stages[a.currentStage] &&
         a.stages[a.currentStage].assignedTo;
       const bAssignedTo =
         b.currentStage !== "completed" &&
+        b.stages &&
         b.stages[b.currentStage] &&
         b.stages[b.currentStage].assignedTo;
 
@@ -995,9 +987,20 @@ document.addEventListener("DOMContentLoaded", () => {
       let currentStageName = "";
       let currentPageForDisplay = 0;
 
+      // task.stages가 없으면 초기화
+      if (!task.stages) {
+        console.warn("Task missing stages property:", task);
+        task.stages = {
+          correction1: { assignedTo: "", history: [] },
+          correction2: { assignedTo: "", history: [] },
+          correction3: { assignedTo: "", history: [] },
+          transcription: { assignedTo: "", history: [] }
+        };
+      }
+
       if (task.currentStage && task.currentStage !== "completed") {
         const stage = task.stages[task.currentStage];
-        if (stage && stage.history.length > 0) {
+        if (stage && stage.history && stage.history.length > 0) {
           currentPageForDisplay =
             stage.history[stage.history.length - 1].endPage;
           currentProgress = (currentPageForDisplay / task.totalPages) * 100;
@@ -1029,9 +1032,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const assignedTo =
         task.currentStage === "completed"
           ? "-"
-          : task.stages[task.currentStage]?.assignedTo || "미정";
+          : (task.stages && task.stages[task.currentStage]?.assignedTo) || "미정";
       const showAssignButton =
         task.currentStage !== "completed" &&
+        task.stages &&
         !task.stages[task.currentStage]?.assignedTo;
       const noteCount = task.notes ? task.notes.length : 0;
       const isCurrentUserAssigned = currentUser === assignedTo;
@@ -1097,6 +1101,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const target = event.target;
     const taskId = target.dataset.id;
     const task = tasks.find((t) => t.id === taskId);
+
+    // 작업 세션 버튼 클릭 시 상세 로그
+    if (target.classList.contains("work-session-button") && task) {
+      console.log(`🔍 작업 세션 버튼 클릭 - Task ID: ${taskId}`);
+      console.log(`📄 찾은 Task:`, task);
+    }
 
     if (target.classList.contains("update-progress-button")) {
       if (task) {
@@ -1300,8 +1310,15 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const stageName = stageNames[stageKey] || stageKey;
-    const stage = task.stages[stageKey];
-    const assignedTo = stage?.assignedTo;
+    const stage = task.stages && task.stages[stageKey];
+
+    if (!stage) {
+      console.error(`❌ openProgressUpdateModal: Stage not found - currentStage=${stageKey}`, task);
+      alert(`작업 단계 정보를 찾을 수 없습니다. (단계: ${stageKey})\n\n페이지를 새로고침해주세요.`);
+      return;
+    }
+
+    const assignedTo = stage.assignedTo;
 
     if (!assignedTo) {
       // Store the task to continue with progress update after assignment
@@ -1311,7 +1328,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const lastCompletedPage =
-      stage.history.length > 0
+      stage.history && stage.history.length > 0
         ? stage.history[stage.history.length - 1].endPage
         : 0;
 
@@ -1813,11 +1830,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function loadAndRenderNotes(taskId) {
     try {
-      const response = await fetch(`${API_URL}/${taskId}/notes`);
-      if (!response.ok) {
-        throw new Error("특이사항을 불러오는데 실패했습니다.");
-      }
-      const notes = await response.json();
+      const notes = await FirebaseNotes.getAll(taskId);
       const task = tasks.find((t) => t.id === taskId);
       if (task) {
         task.notes = notes;
@@ -1825,7 +1838,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderNotes(notes, taskId);
       renderTasks(); // Update note count on the button
     } catch (error) {
-      console.error("Error loading notes:", error);
+      console.error("Error loading notes from Firebase:", error);
       notesList.innerHTML = `<p>특이사항을 불러오는데 실패했습니다.</p>`;
     }
   }
@@ -1887,47 +1900,31 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const url = noteId
-      ? `${API_URL}/${taskId}/notes/${noteId}`
-      : `${API_URL}/${taskId}/notes`;
-    const method = noteId ? "PUT" : "POST";
-
     try {
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ author, content }),
-      });
-
-      if (!response.ok) {
-        throw new Error("특이사항 저장에 실패했습니다.");
+      if (noteId) {
+        // Update existing note
+        await FirebaseNotes.update(taskId, noteId, { author, content });
+      } else {
+        // Create new note
+        await FirebaseNotes.create(taskId, { author, content });
       }
 
       noteForm.reset();
       noteIdInput.value = "";
       loadAndRenderNotes(taskId);
     } catch (error) {
-      console.error("Error saving note:", error);
-      alert(error.message);
+      console.error("Error saving note to Firebase:", error);
+      alert("특이사항 저장에 실패했습니다: " + error.message);
     }
   });
 
   async function deleteNote(taskId, noteId) {
     try {
-      const response = await fetch(`${API_URL}/${taskId}/notes/${noteId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("특이사항 삭제에 실패했습니다.");
-      }
-
+      await FirebaseNotes.delete(taskId, noteId);
       loadAndRenderNotes(taskId);
     } catch (error) {
-      console.error("Error deleting note:", error);
-      alert(error.message);
+      console.error("Error deleting note from Firebase:", error);
+      alert("특이사항 삭제에 실패했습니다: " + error.message);
     }
   }
 
@@ -2043,14 +2040,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function loadAdminData() {
     try {
-      const response = await fetch(API_URL);
-      if (response.ok) {
-        tasks = await response.json();
-        loadAdminTasks();
-        loadDataInfo();
-        loadStatistics();
-        loadDataStatus(); // 새로운 데이터 상태 로드
-      }
+      // Firebase에서 데이터 가져오기
+      tasks = await FirebaseBooks.getAll();
+      loadAdminTasks();
+      loadDataInfo();
+      loadStatistics();
+      loadDataStatus(); // 새로운 데이터 상태 로드
     } catch (error) {
       console.error("Failed to load admin data:", error);
       alert("데이터 로드 실패: " + error.message);
@@ -2171,11 +2166,28 @@ document.addEventListener("DOMContentLoaded", () => {
   // 데이터 상태 정보 로드
   async function loadDataStatus() {
     try {
-      const [booksInfo, staffInfo, workSessionsInfo] = await Promise.all([
-        fetch('/api/books/info').then(r => r.json()),
-        fetch('/api/staff/info').then(r => r.json()),
-        fetch('/api/work-sessions-history/info').then(r => r.json())
+      // Firebase에서 직접 카운트
+      const [books, staffList, workSessionsHistory] = await Promise.all([
+        FirebaseBooks.getAll(),
+        FirebaseStaff.getAll(),
+        FirebaseWorkSessionsHistory.getAll()
       ]);
+
+      const booksInfo = {
+        count: books.length,
+        lastModified: new Date().toISOString(),
+        source: 'firebase'
+      };
+      const staffInfo = {
+        count: staffList.length,
+        lastModified: new Date().toISOString(),
+        source: 'firebase'
+      };
+      const workSessionsInfo = {
+        count: workSessionsHistory.length,
+        lastModified: new Date().toISOString(),
+        source: 'firebase'
+      };
 
       updateDataStatus('books', booksInfo);
       updateDataStatus('staff', staffInfo);
@@ -2204,11 +2216,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 백업 함수들
+  // 백업 함수들 (Firebase 사용)
   async function backupBooks() {
     try {
-      const response = await fetch('/api/books/backup');
-      const blob = await response.blob();
+      const booksData = await FirebaseBooks.getAll();
+      const dataStr = JSON.stringify(booksData, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
       downloadFile(blob, `books_backup_${getDateString()}.json`);
       showSuccessMessage('책 정보 데이터가 백업되었습니다.');
     } catch (error) {
@@ -2219,8 +2232,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function backupStaff() {
     try {
-      const response = await fetch('/api/staff/backup');
-      const blob = await response.blob();
+      const staffData = await FirebaseStaff.getAll();
+      const dataStr = JSON.stringify(staffData, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
       downloadFile(blob, `staff_backup_${getDateString()}.json`);
       showSuccessMessage('직원 정보 데이터가 백업되었습니다.');
     } catch (error) {
@@ -2231,8 +2245,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function backupWorkSessions() {
     try {
-      const response = await fetch('/api/work-sessions-history/backup');
-      const blob = await response.blob();
+      const workSessionsData = await FirebaseWorkSessionsHistory.getAll();
+      const dataStr = JSON.stringify(workSessionsData, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
       downloadFile(blob, `work_sessions_backup_${getDateString()}.json`);
       showSuccessMessage('출퇴근 기록 데이터가 백업되었습니다.');
     } catch (error) {
@@ -2244,17 +2259,11 @@ document.addEventListener("DOMContentLoaded", () => {
   async function backupAll() {
     try {
       showLoadingMessage('전체 데이터를 백업하는 중...');
-      
-      const [booksResponse, staffResponse, workSessionsResponse] = await Promise.all([
-        fetch('/api/books/backup'),
-        fetch('/api/staff/backup'),
-        fetch('/api/work-sessions-history/backup')
-      ]);
 
       const [booksData, staffData, workSessionsData] = await Promise.all([
-        booksResponse.json(),
-        staffResponse.json(),
-        workSessionsResponse.json()
+        FirebaseBooks.getAll(),
+        FirebaseStaff.getAll(),
+        FirebaseWorkSessionsHistory.getAll()
       ]);
 
       const allData = {
@@ -2268,7 +2277,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const dataStr = JSON.stringify(allData, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
       downloadFile(blob, `complete_backup_${getDateString()}.json`);
-      
+
       hideLoadingMessage();
       showSuccessMessage('전체 데이터가 백업되었습니다.');
     } catch (error) {
@@ -2394,7 +2403,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
           showLoadingMessage('책 정보 데이터를 삭제하는 중...');
           
-          const response = await fetch('/api/books/clear', {
+          const response = await fetch(`${BASE_URL}/api/books/clear`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ password: '재활용' })
@@ -2425,7 +2434,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
           showLoadingMessage('직원 정보 데이터를 삭제하는 중...');
           
-          const response = await fetch('/api/staff/clear', {
+          const response = await fetch(`${BASE_URL}/api/staff/clear`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ password: '재활용' })
@@ -2455,7 +2464,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
           showLoadingMessage('출퇴근 기록 데이터를 삭제하는 중...');
           
-          const response = await fetch('/api/work-sessions-history/clear', {
+          const response = await fetch(`${BASE_URL}/api/work-sessions-history/clear`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ password: '재활용' })
@@ -2686,17 +2695,17 @@ document.addEventListener("DOMContentLoaded", () => {
           showLoadingMessage('모든 데이터를 삭제하는 중...');
           
           await Promise.all([
-            fetch('/api/books/clear', {
+            fetch(`${BASE_URL}/api/books/clear`, {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ password: '재활용' })
             }),
-            fetch('/api/staff/clear', {
+            fetch(`${BASE_URL}/api/staff/clear`, {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ password: '재활용' })
             }),
-            fetch('/api/work-sessions-history/clear', {
+            fetch(`${BASE_URL}/api/work-sessions-history/clear`, {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ password: '재활용' })
@@ -3536,15 +3545,31 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function stopWorkSession(task, worker, showProgressModal = true) {
+  async function stopWorkSession(task, worker, showProgressModal = true) {
     console.log(
-      `Stopping work session for task: ${task.id}, worker: ${worker}`
+      `🛑 stopWorkSession 호출 - task: ${task.id}, worker: ${worker}`
     );
+    console.log(`📋 Task 정보:`, {
+      id: task.id,
+      title: task.book?.title,
+      currentStage: task.currentStage,
+      stages: task.stages,
+      hasStages: !!task.stages,
+      stageKeys: task.stages ? Object.keys(task.stages) : []
+    });
 
     if (showProgressModal) {
-      const stage = task.stages[task.currentStage];
+      // stage 안전하게 가져오기
+      const stage = task.stages && task.stages[task.currentStage];
+
+      if (!stage) {
+        console.error(`❌ Stage not found: currentStage=${task.currentStage}`, task);
+        alert(`작업 단계 정보를 찾을 수 없습니다. (단계: ${task.currentStage})\n\n관리자에게 문의하세요.`);
+        return;
+      }
+
       const lastCompletedPage =
-        stage.history.length > 0
+        stage.history && stage.history.length > 0
           ? stage.history[stage.history.length - 1].endPage
           : 0;
 
@@ -3553,10 +3578,54 @@ document.addEventListener("DOMContentLoaded", () => {
         taskId: task.id,
         worker: worker,
         startPage: lastCompletedPage,
+        startTime: null, // 나중에 업데이트
+        taskTitle: task.book ? task.book.title : "Unknown",
+        stage: task.currentStage || "unknown",
       };
 
-      // Open progress modal
-      openProgressUpdateModal(task);
+      console.log(`📤 Firebase에서 세션 제거 시작 - task: ${task.id}`);
+
+      // 즉시 Firebase에서 세션 제거 (다른 사용자 화면에도 즉시 반영)
+      // 세션 정보를 미리 가져오기
+      let sessionInfo = null;
+      try {
+        sessionInfo = await FirebaseWorkSessions.removeSession(task.id);
+        console.log(`✅ Firebase에서 세션 제거 완료 - task: ${task.id}`, sessionInfo);
+
+        // 세션 정보 업데이트
+        if (sessionInfo) {
+          window.currentStoppedSession.startTime = sessionInfo.startTime;
+        } else {
+          window.currentStoppedSession.startTime = new Date().toISOString();
+        }
+
+        // 로컬 currentWorkSessions에서도 즉시 제거 (자신의 UI 즉시 업데이트)
+        currentWorkSessions.delete(task.id);
+        console.log(`🗑️ 로컬 currentWorkSessions에서 제거됨 - task: ${task.id}`);
+
+        // 로컬 UI 즉시 업데이트 (자신의 화면)
+        renderTasks();
+        updateCurrentWorkersDisplay();
+        console.log(`🔄 로컬 UI 업데이트 완료`);
+
+      } catch (error) {
+        console.error("❌ Firebase 세션 제거 실패:", error);
+        window.currentStoppedSession.startTime = new Date().toISOString();
+      }
+
+      // 진행상황 모달 보호 플래그 설정 (이제 Firebase 업데이트가 완료되었으므로)
+      isProgressModalProtected = true;
+
+      // tasks 배열에서 최신 task 가져오기 (데이터 복구가 적용된 최신 버전)
+      const latestTask = tasks.find((t) => t.id === task.id);
+      if (!latestTask) {
+        console.error(`❌ Task not found in tasks array: ${task.id}`);
+        alert("작업 정보를 찾을 수 없습니다. 페이지를 새로고침해주세요.");
+        return;
+      }
+
+      // Open progress modal (최신 task 사용)
+      openProgressUpdateModal(latestTask);
     } else {
       console.warn(
         "stopWorkSession called without showing progress modal. This is not fully handled."
@@ -3565,34 +3634,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 서버에서 현재 작업 세션 로드
-  async function loadCurrentWorkSessions() {
-    try {
-      const response = await fetch(WORK_SESSIONS_API_URL);
-      if (response.ok) {
-        const sessions = await response.json();
-        currentWorkSessions.clear();
-
-        // 서버 데이터를 currentWorkSessions Map에 로드
-        Object.entries(sessions).forEach(([taskId, session]) => {
-          if (session.isWorking) {
-            currentWorkSessions.set(taskId, {
-              startTime: new Date(session.startTime),
-              worker: session.worker,
-              isWorking: true,
-              taskTitle: session.taskTitle,
-              stage: session.stage,
-            });
-          }
-        });
-
-        console.log(
-          `Loaded ${currentWorkSessions.size} current work sessions from server`
-        );
-      }
-    } catch (error) {
-      console.error("Error loading current work sessions:", error);
-    }
-  }
+  // DEPRECATED: Duplicate function removed - using the one at line ~4748
 
   // DEPRECATED: 로컬스토리지 기반 출퇴근 기록 저장 - 이제 서버 기반으로 대체됨
   function saveWorkSessionsToStorage() {
@@ -3628,9 +3670,40 @@ document.addEventListener("DOMContentLoaded", () => {
     completedCount.textContent = completedTasks.length;
   }
 
+  // 실시간 작업자 표시 업데이트 시작
+  function startWorkersDisplayUpdate() {
+    // 기존 타이머가 있으면 정리
+    if (workersDisplayInterval) {
+      clearInterval(workersDisplayInterval);
+      workersDisplayInterval = null;
+    }
+
+    // 작업중인 세션이 있을 때만 타이머 시작
+    if (currentWorkSessions.size > 0) {
+      // 30초마다 화면 업데이트 (작업시간 표시 갱신)
+      workersDisplayInterval = setInterval(() => {
+        if (currentUser && mainDashboard.style.display !== "none") {
+          updateCurrentWorkersDisplay();
+        } else {
+          // 로그아웃 상태면 타이머 정리
+          stopWorkersDisplayUpdate();
+        }
+      }, 30000); // 30초마다
+    }
+  }
+
+  // 실시간 작업자 표시 업데이트 중지
+  function stopWorkersDisplayUpdate() {
+    if (workersDisplayInterval) {
+      clearInterval(workersDisplayInterval);
+      workersDisplayInterval = null;
+    }
+  }
+
   function updateCurrentWorkersDisplay() {
     // 로그인되지 않은 상태에서는 실행하지 않음
     if (!currentUser || mainDashboard.style.display === "none") {
+      stopWorkersDisplayUpdate();
       return;
     }
 
@@ -3686,6 +3759,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (currentWorkSessions.size === 0) {
       currentWorkersDiv.innerHTML =
         '<div style="text-align: center; color: #666;">현재 작업 중인 담당자가 없습니다.</div>';
+      // 작업중인 세션이 없으면 타이머 정리
+      stopWorkersDisplayUpdate();
       return;
     }
 
@@ -3763,32 +3838,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function loadAttendanceData() {
     try {
-      // 서버에서 최신 출석부 데이터 로드
-      const response = await fetch(ATTENDANCE_DATA_API_URL);
-      if (response.ok) {
-        const serverWorkSessions = await response.json();
-        console.log(
-          "Loaded attendance data from server for admin modal:",
-          serverWorkSessions.length,
-          "sessions"
-        );
+      // Firebase에서 출석부 데이터 로드
+      const serverWorkSessions = await FirebaseWorkSessionsHistory.getAll();
+      console.log(
+        "Loaded attendance data from Firebase for admin modal:",
+        serverWorkSessions.length,
+        "sessions"
+      );
 
-        // 현재 관리자 데이터 캐시
-        currentAdminAttendanceData = serverWorkSessions;
+      // 현재 관리자 데이터 캐시
+      currentAdminAttendanceData = serverWorkSessions;
 
-        // 서버 데이터로 출석부 데이터 로드
-        loadAttendanceDataForModalWithData("attendance", serverWorkSessions);
-      } else {
-        console.error(
-          "Failed to load attendance data from server - Status:",
-          response.status
-        );
-        // 빈 배열로 초기화하여 UI 표시
-        currentAdminAttendanceData = [];
-        loadAttendanceDataForModalWithData("attendance", []);
-      }
+      // Firebase 데이터로 출석부 데이터 로드
+      loadAttendanceDataForModalWithData("attendance", serverWorkSessions);
     } catch (error) {
-      console.error("Error loading attendance data from server:", error);
+      console.error("Error loading attendance data from Firebase:", error);
       // 빈 배열로 초기화하여 UI 표시
       currentAdminAttendanceData = [];
       loadAttendanceDataForModalWithData("attendance", []);
@@ -4385,7 +4449,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // 관리자모드 버튼 권한 체크
     checkAdminButtonPermission();
 
-    // 메인 대시보드가 표시될 때 필요한 데이터들 로드
+    // Firebase 실시간 리스너 초기화 (실시간 데이터 동기화)
+    initializeFirebaseListeners();
+
+    // 초기 데이터 로드
     loadTasks();
     loadStaff();
     setTimeout(updateCurrentWorkersDisplay, 1000); // Show current workers after initial load
@@ -4393,18 +4460,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function validateUser(name) {
     try {
-      // 직원 목록을 서버에서 가져와서 확인
-      // const response = await fetch('http://172.30.1.40:3005/staff');
-      const response = await fetch("https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app/staff");
-      let staffList = [];
+      // Firebase에서 직원 목록을 가져와서 확인
+      let staffList = await FirebaseStaff.getAll();
 
-      if (response.ok) {
-        staffList = await response.json();
-      } else {
-        // 서버에서 직원 목록을 가져올 수 없는 경우, 로컬 데이터 사용
+      if (!staffList || staffList.length === 0) {
+        // Firebase에서 직원 목록을 가져올 수 없는 경우, 로컬 데이터 사용
         const savedStaff = localStorage.getItem("staff");
         if (savedStaff) {
           staffList = JSON.parse(savedStaff);
+        } else {
+          staffList = [];
         }
       }
 
@@ -4470,6 +4535,8 @@ document.addEventListener("DOMContentLoaded", () => {
     currentUser = null;
     localStorage.removeItem("currentUser");
     staffNameInput.value = "";
+    // 실시간 업데이트 타이머 정리
+    stopWorkersDisplayUpdate();
     showLoginPage();
   }
 
@@ -4788,24 +4855,21 @@ document.addEventListener("DOMContentLoaded", () => {
   // 페이지 로드 시 서버에서 현재 작업 세션 가져오기
   async function loadCurrentWorkSessions() {
     try {
-      const response = await fetch(WORK_SESSIONS_API_URL);
-      if (response.ok) {
-        const sessions = await response.json();
+      const sessions = await FirebaseWorkSessions.getAll();
 
-        // 서버의 세션 데이터를 로컬에 동기화
-        currentWorkSessions.clear();
-        for (const [taskId, sessionData] of Object.entries(sessions)) {
-          currentWorkSessions.set(taskId, {
-            startTime: new Date(sessionData.startTime),
-            worker: sessionData.worker,
-            isWorking: sessionData.isWorking,
-            taskTitle: getTaskTitle(taskId),
-            stage: getCurrentStage(taskId),
-          });
-        }
-
-        updateCurrentWorkersDisplay();
+      // Firebase의 세션 데이터를 로컬에 동기화
+      currentWorkSessions.clear();
+      for (const [taskId, sessionData] of Object.entries(sessions || {})) {
+        currentWorkSessions.set(taskId, {
+          startTime: new Date(sessionData.startTime),
+          worker: sessionData.worker,
+          isWorking: sessionData.isWorking,
+          taskTitle: getTaskTitle(taskId),
+          stage: getCurrentStage(taskId),
+        });
       }
+
+      updateCurrentWorkersDisplay();
     } catch (error) {
       console.error("현재 작업 세션 로드 실패:", error);
     }
@@ -4851,10 +4915,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // 직원 목록 로드
   async function loadStaffForEvaluation() {
     try {
-      const response = await fetch(STAFF_API_URL);
-      if (response.ok && evaluationStaffSelect) {
-        const staffList = await response.json();
+      const staffList = await FirebaseStaff.getAll();
 
+      if (evaluationStaffSelect) {
         evaluationStaffSelect.innerHTML =
           "<option value=''>직원을 선택하세요</option>";
 
@@ -4900,15 +4963,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 평가 데이터 계산
+  // 평가 데이터 계산 (Firebase 사용)
   async function calculateEvaluationData(year, month, staffId) {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
 
     const [attendanceData, allTasks, allStaff] = await Promise.all([
-      fetch(ATTENDANCE_DATA_API_URL).then((r) => r.json()),
-      fetch(API_URL).then((r) => r.json()),
-      fetch(STAFF_API_URL).then((r) => r.json()),
+      FirebaseWorkSessionsHistory.getAll(),
+      FirebaseBooks.getAll(),
+      FirebaseStaff.getAll(),
     ]);
 
     // 직원 ID로 이름 찾기
@@ -5039,7 +5102,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // 1차 교정
         if (
           task.stages.correction1 &&
-          task.stages.correction1.assignedTo === staffName
+          task.stages.correction1.assignedTo === staffName &&
+          Array.isArray(task.stages.correction1.history)
         ) {
           console.log(
             `${staffName} - 1차 교정 작업 발견:`,
@@ -5049,9 +5113,9 @@ document.addEventListener("DOMContentLoaded", () => {
           task.stages.correction1.history.forEach((historyItem) => {
             const progressDate = parseKoreanDate(historyItem.date);
             console.log(
-              `날짜 확인: ${historyItem.date} -> ${progressDate.toISOString()}`
+              `날짜 확인: ${historyItem.date} -> ${progressDate?.toISOString()}`
             );
-            if (progressDate >= startDate && progressDate <= endDate) {
+            if (progressDate && progressDate >= startDate && progressDate <= endDate) {
               const pages =
                 historyItem.endPage - historyItem.startPage + 1 || 0;
               console.log(
@@ -5066,11 +5130,12 @@ document.addEventListener("DOMContentLoaded", () => {
         // 2차 교정
         if (
           task.stages.correction2 &&
-          task.stages.correction2.assignedTo === staffName
+          task.stages.correction2.assignedTo === staffName &&
+          Array.isArray(task.stages.correction2.history)
         ) {
           task.stages.correction2.history.forEach((historyItem) => {
             const progressDate = parseKoreanDate(historyItem.date);
-            if (progressDate >= startDate && progressDate <= endDate) {
+            if (progressDate && progressDate >= startDate && progressDate <= endDate) {
               const pages =
                 historyItem.endPage - historyItem.startPage + 1 || 0;
               corrector2Pages += pages;
@@ -5082,11 +5147,12 @@ document.addEventListener("DOMContentLoaded", () => {
         // 3차 교정
         if (
           task.stages.correction3 &&
-          task.stages.correction3.assignedTo === staffName
+          task.stages.correction3.assignedTo === staffName &&
+          Array.isArray(task.stages.correction3.history)
         ) {
           task.stages.correction3.history.forEach((historyItem) => {
             const progressDate = parseKoreanDate(historyItem.date);
-            if (progressDate >= startDate && progressDate <= endDate) {
+            if (progressDate && progressDate >= startDate && progressDate <= endDate) {
               const pages =
                 historyItem.endPage - historyItem.startPage + 1 || 0;
               corrector3Pages += pages;
@@ -5098,11 +5164,12 @@ document.addEventListener("DOMContentLoaded", () => {
         // 점역 작업
         if (
           task.stages.transcription &&
-          task.stages.transcription.assignedTo === staffName
+          task.stages.transcription.assignedTo === staffName &&
+          Array.isArray(task.stages.transcription.history)
         ) {
           task.stages.transcription.history.forEach((historyItem) => {
             const progressDate = parseKoreanDate(historyItem.date);
-            if (progressDate >= startDate && progressDate <= endDate) {
+            if (progressDate && progressDate >= startDate && progressDate <= endDate) {
               const pages =
                 historyItem.endPage - historyItem.startPage + 1 || 0;
               transcriberPages += pages;

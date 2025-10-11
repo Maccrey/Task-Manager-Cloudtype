@@ -1,7 +1,7 @@
 {
   "name": "task-manager",
   "version": "1.0.0",
-  "description": "Korean braille book production management dashboard",
+  "description": "Korean braille book production management dashboard with Firebase backend",
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
@@ -11,13 +11,8 @@
     "node": "18.x"
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.2.0",
-    "@mui/material": "^7.2.0",
     "cors": "^2.8.5",
     "express": "^4.18.2",
-    "mongodb": "^6.18.0",
     "ws": "^8.14.2"
   }
 }
