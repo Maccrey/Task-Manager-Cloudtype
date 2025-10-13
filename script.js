@@ -1295,6 +1295,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 진행 상황 업데이트 모달 열기
   function openProgressUpdateModal(task) {
     currentTaskForUpdate = task;
+    document.getElementById("progress-task-id").value = task.id; // ID를 숨겨진 필드에 저장
     const stageKey = task.currentStage;
 
     if (!stageKey || stageKey === "completed") {
@@ -1382,7 +1383,14 @@ document.addEventListener("DOMContentLoaded", () => {
   progressUpdateForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    if (!currentTaskForUpdate) {
+    const taskId = document.getElementById("progress-task-id").value;
+    if (!taskId) {
+      alert("작업 ID를 찾을 수 없습니다. 다시 시도해주세요.");
+      return;
+    }
+
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) {
       alert("작업 정보를 찾을 수 없습니다.");
       return;
     }
@@ -1395,8 +1403,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       dateTime = new Date(dateTime).toISOString();
     }
-
-    const task = currentTaskForUpdate;
     const stageKey = task.currentStage;
     const stage = task.stages[stageKey];
 
@@ -1654,7 +1660,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const stageName = stageNames[stageKey];
                 const currentPages =
-                  stage.history.length > 0
+                  (stage.history && stage.history.length > 0)
                     ? stage.history[stage.history.length - 1].endPage
                     : 0;
                 const progressPercent = (
@@ -1675,7 +1681,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     statusText = stage.status;
                 }
 
-                const historyList = stage.history
+                const historyList = (stage.history || [])
                   .map(
                     (entry) =>
                       `<li>${entry.date}: ${entry.startPage}~${entry.endPage} 페이지</li>`
