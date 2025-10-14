@@ -858,9 +858,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.target === modal) {
       closeModal();
     }
-    if (event.target === progressUpdateModal) {
-      closeProgressUpdateModal();
-    }
+
     if (event.target === bookSelectionModal) {
       closeBookSelectionModal();
     }
