@@ -1425,6 +1425,12 @@ document.addEventListener("DOMContentLoaded", () => {
     updateDatetimeInput.value = localISOTime;
 
     progressUpdateModal.style.display = "flex";
+
+    // Clear previous error message
+    const errorEl = document.getElementById("progress-error-message");
+    if (errorEl) {
+      errorEl.textContent = "";
+    }
   }
 
   // 진행 상황 업데이트 모달 닫기
@@ -1439,11 +1445,30 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTasks();
   }
 
-  progressModalCloseButton.addEventListener("click", closeProgressUpdateModal);
+  progressModalCloseButton.addEventListener("click", () => {
+    alert("경고 : 완료페이지를 넣고 저장하지 않으면 업무시간이 저장되지 않습니다.");
+  });
 
   // 진행 상황 업데이트 폼 제출
   progressUpdateForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    const newPageValue = updatePageInput.value.trim();
+    const infoContainer = document.getElementById("progress-task-info");
+    let errorEl = document.getElementById("progress-error-message");
+
+    if (!newPageValue) {
+      if (!errorEl) {
+        errorEl = document.createElement("p");
+        errorEl.id = "progress-error-message";
+        errorEl.style.color = "red";
+        infoContainer.appendChild(errorEl);
+      }
+      errorEl.textContent = "완료된 페이지를 입력해 주세요";
+      return;
+    } else if (errorEl) {
+      errorEl.textContent = "";
+    }
 
     const taskId = document.getElementById("progress-task-id").value;
     if (!taskId) {
