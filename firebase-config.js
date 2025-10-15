@@ -222,6 +222,7 @@ const FirebaseWorkSessions = {
       console.log('Session already removed from Firebase, using stored session info');
       // 저장된 세션 정보로 completedSession 생성
       const completedSession = {
+        id: Date.now().toString(),
         taskId: taskId,
         worker: window.currentStoppedSession.worker,
         startTime: window.currentStoppedSession.startTime || new Date().toISOString(),
@@ -236,8 +237,7 @@ const FirebaseWorkSessions = {
       };
 
       // 히스토리에 추가
-      const historyKey = `${taskId}-${new Date().getTime()}`;
-      await firebaseSet(`workSessionsHistory/${historyKey}`, completedSession);
+      await firebaseSet(`workSessionsHistory/${completedSession.id}`, completedSession);
 
       return completedSession;
     }
@@ -248,6 +248,7 @@ const FirebaseWorkSessions = {
     }
 
     const completedSession = {
+      id: Date.now().toString(),
       ...session,
       endTime: new Date().toISOString(),
       duration: new Date() - new Date(session.startTime),
@@ -255,8 +256,7 @@ const FirebaseWorkSessions = {
     };
 
     // 히스토리에 추가
-    const historyKey = `${taskId}-${new Date().getTime()}`;
-    await firebaseSet(`workSessionsHistory/${historyKey}`, completedSession);
+    await firebaseSet(`workSessionsHistory/${completedSession.id}`, completedSession);
 
     // 현재 세션 삭제 (아직 남아있다면)
     await firebaseRemove(`workSessions/${taskId}`);
@@ -299,15 +299,27 @@ const FirebaseWorkSessions = {
 const FirebaseWorkSessionsHistory = {
   async getAll() {
     const historyData = await firebaseGet('workSessionsHistory');
-    return historyData ? Object.values(historyData) : [];
+    if (!historyData) return [];
+    return Object.entries(historyData).map(([id, session]) => ({ id, ...session }));
   },
 
   async create(session) {
     // 세션 ID가 있으면 사용하고, 없으면 생성
-    const sessionId = session.id || `${session.taskId}_${session.worker}_${Date.now()}`;
-    await firebaseSet(`workSessionsHistory/${sessionId}`, session);
-    return session;
+    const sessionId = session.id || Date.now().toString();
+    const newSession = { ...session, id: sessionId };
+    await firebaseSet(`workSessionsHistory/${sessionId}`, newSession);
+    return newSession;
   },
+
+  async update(id, session) {
+    await firebaseUpdate(`workSessionsHistory/${id}`, session);
+    return { id, ...session };
+  },
+
+  async delete(id) {
+    await firebaseRemove(`workSessionsHistory/${id}`);
+  },
+
 
   async clear() {
     await firebaseRemove('workSessionsHistory');

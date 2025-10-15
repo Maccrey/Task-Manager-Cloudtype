@@ -3570,6 +3570,124 @@ document.addEventListener("DOMContentLoaded", () => {
     .getElementById("export-attendance-btn")
     ?.addEventListener("click", exportAdminAttendanceRecords);
 
+  document
+    .getElementById("create-attendance-btn")
+    ?.addEventListener("click", () => {
+      openAttendanceEditModal();
+    });
+
+  // Event delegation for edit and delete buttons
+  document.getElementById("attendance-tbody").addEventListener("click", (event) => {
+    if (event.target.classList.contains("edit-attendance-btn")) {
+      const recordId = event.target.dataset.id;
+      const record = findAttendanceRecordById(recordId);
+      if (record) {
+        openAttendanceEditModal(record);
+      }
+    } else if (event.target.classList.contains("delete-attendance-btn")) {
+      const recordId = event.target.dataset.id;
+      if (confirm("정말로 이 출퇴근 기록을 삭제하시겠습니까?")) {
+        deleteAttendanceRecord(recordId);
+      }
+    }
+  });
+
+  // Handle form submission for attendance edit modal
+  document.getElementById("attendance-edit-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    saveAttendanceRecord();
+  });
+
+  // Close modal
+  document.querySelector("#attendance-edit-modal .close-button").addEventListener("click", () => {
+    closeAttendanceEditModal();
+  });
+
+function openAttendanceEditModal(record = null) {
+  const modal = document.getElementById("attendance-edit-modal");
+  const title = document.getElementById("attendance-edit-modal-title");
+  const form = document.getElementById("attendance-edit-form");
+  const workerSelect = document.getElementById("attendance-edit-worker");
+
+  // Populate worker select
+  workerSelect.innerHTML = "";
+  staff.forEach((s) => {
+    const option = document.createElement("option");
+    option.value = s.name;
+    option.textContent = s.name;
+    workerSelect.appendChild(option);
+  });
+
+  if (record) {
+    title.textContent = "출퇴근 기록 수정";
+    document.getElementById("attendance-edit-id").value = record.id;
+    workerSelect.value = record.worker;
+    document.getElementById("attendance-edit-date").value = new Date(record.startTime).toISOString().split('T')[0];
+    document.getElementById("attendance-edit-start-time").value = new Date(record.startTime).toLocaleTimeString('sv-SE').substring(0, 5);
+    document.getElementById("attendance-edit-end-time").value = new Date(record.endTime).toLocaleTimeString('sv-SE').substring(0, 5);
+    document.getElementById("attendance-edit-tasks").value = record.taskTitle;
+  } else {
+    title.textContent = "출퇴근 기록 생성";
+    form.reset();
+    document.getElementById("attendance-edit-id").value = "";
+  }
+
+  modal.style.display = "flex";
+}
+
+function closeAttendanceEditModal() {
+  const modal = document.getElementById("attendance-edit-modal");
+  modal.style.display = "none";
+}
+
+function findAttendanceRecordById(recordId) {
+  if (!currentAdminAttendanceData) return null;
+  return currentAdminAttendanceData.find(record => record.id === recordId);
+}
+
+async function saveAttendanceRecord() {
+  const id = document.getElementById("attendance-edit-id").value;
+  const worker = document.getElementById("attendance-edit-worker").value;
+  const date = document.getElementById("attendance-edit-date").value;
+  const startTime = document.getElementById("attendance-edit-start-time").value;
+  const endTime = document.getElementById("attendance-edit-end-time").value;
+  const tasks = document.getElementById("attendance-edit-tasks").value.split(",").map(t => t.trim());
+
+  const record = {
+    worker,
+    startTime: new Date(`${date}T${startTime}`).toISOString(),
+    endTime: new Date(`${date}T${endTime}`).toISOString(),
+    taskTitle: tasks.join(', '),
+    pagesWorked: 0, // Assuming pages worked is not edited in this modal
+  };
+
+  try {
+    if (id) {
+      await FirebaseWorkSessionsHistory.update(id, record);
+    } else {
+      await FirebaseWorkSessionsHistory.create(record);
+    }
+
+    closeAttendanceEditModal();
+    loadAttendanceData();
+  } catch (error) {
+    console.error("Error saving attendance record:", error);
+    alert("출퇴근 기록 저장에 실패했습니다.");
+  }
+}
+
+async function deleteAttendanceRecord(recordId) {
+  try {
+    await FirebaseWorkSessionsHistory.delete(recordId);
+    loadAttendanceData();
+  } catch (error) {
+    console.error("Error deleting attendance record:", error);
+    alert("출퇴근 기록 삭제에 실패했습니다.");
+  }
+}
+
+
+
   // 직원 관리 이벤트 리스너들
   const staffForm = document.getElementById("staff-form");
   if (staffForm) {
@@ -3952,45 +4070,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Attendance Management Functions
   function calculateAttendanceRecords(sessionsData = []) {
-    const attendanceRecords = new Map(); // worker -> date -> { startTime, endTime, workSessions, tasks }
-
-    sessionsData.forEach((session) => {
+    const records = [];
+    sessionsData.forEach(session => {
       if (!session.startTime || !session.endTime) return;
 
-      const startDate = new Date(session.startTime).toDateString();
-      const worker = session.worker;
-
-      if (!attendanceRecords.has(worker)) {
-        attendanceRecords.set(worker, new Map());
-      }
-
-      const workerRecords = attendanceRecords.get(worker);
-      if (!workerRecords.has(startDate)) {
-        workerRecords.set(startDate, {
-          startTime: new Date(session.startTime),
-          endTime: new Date(session.endTime),
-          workSessions: [],
-          tasks: new Set(),
-        });
-      }
-
-      const dayRecord = workerRecords.get(startDate);
-      dayRecord.workSessions.push(session);
-      dayRecord.tasks.add(session.taskTitle);
-
-      // Update start/end times for the day
-      const sessionStart = new Date(session.startTime);
-      const sessionEnd = new Date(session.endTime);
-
-      if (sessionStart < dayRecord.startTime) {
-        dayRecord.startTime = sessionStart;
-      }
-      if (sessionEnd > dayRecord.endTime) {
-        dayRecord.endTime = sessionEnd;
-      }
+      records.push({
+        id: session.id, // Assuming session has an id
+        worker: session.worker,
+        date: new Date(session.startTime).toDateString(),
+        startTime: new Date(session.startTime),
+        endTime: new Date(session.endTime),
+        tasks: [session.taskTitle],
+        pagesWorked: session.pagesWorked || 0,
+      });
     });
-
-    return attendanceRecords;
+    return records;
   }
 
   async function loadAttendanceData() {
@@ -4277,60 +4371,40 @@ document.addEventListener("DOMContentLoaded", () => {
     const selectedDate = attendanceDate?.value;
     const selectedWorker = attendanceWorker?.value;
 
-    const attendanceRecords = calculateAttendanceRecords(sessionsData);
-    const tableData = [];
+    let tableData = calculateAttendanceRecords(sessionsData);
 
-    attendanceRecords.forEach((workerDays, worker) => {
-      if (selectedWorker && worker !== selectedWorker) return;
-
-      workerDays.forEach((dayRecord, dateStr) => {
-        const date = new Date(dateStr);
-        const year = date.getFullYear().toString();
-        const month = (date.getMonth() + 1).toString().padStart(2, "0");
-        const day = date.getDate().toString().padStart(2, "0");
-
-        // Apply filters
-        if (selectedYear && year !== selectedYear) return;
-        if (selectedMonth && month !== selectedMonth) return;
-        if (selectedDate && day !== selectedDate) return;
-
-        const workTime = Math.round(
-          (dayRecord.endTime - dayRecord.startTime) / 1000 / 60
-        );
-        const totalPages = dayRecord.workSessions.reduce((sum, session) => {
-          return sum + (session.pagesWorked || 0);
-        }, 0);
-
-        tableData.push({
-          date: dateStr,
-          worker: worker,
-          startTime: dayRecord.startTime,
-          endTime: dayRecord.endTime,
-          workTime: workTime,
-          totalPages: totalPages,
-          tasks: dayRecord.tasks,
-          sortDate: date,
-        });
-      });
-    });
+    // Apply filters
+    if (selectedYear) {
+      tableData = tableData.filter(record => record.startTime.getFullYear().toString() === selectedYear);
+    }
+    if (selectedMonth) {
+      tableData = tableData.filter(record => (record.startTime.getMonth() + 1).toString().padStart(2, '0') === selectedMonth);
+    }
+    if (selectedDate) {
+      tableData = tableData.filter(record => record.startTime.getDate().toString().padStart(2, '0') === selectedDate);
+    }
+    if (selectedWorker) {
+      tableData = tableData.filter(record => record.worker === selectedWorker);
+    }
 
     if (tableData.length === 0) {
       attendanceTbody.innerHTML =
-        '<tr><td colspan="7" style="text-align: center; color: #666; padding: 20px;">출근 기록이 없습니다.</td></tr>';
+        '<tr><td colspan="8" style="text-align: center; color: #666; padding: 20px;">출근 기록이 없습니다.</td></tr>';
       return;
     }
 
     // Sort by date (newest first)
-    tableData.sort((a, b) => b.sortDate - a.sortDate);
+    tableData.sort((a, b) => b.startTime - a.startTime);
 
     const tableHtml = tableData
       .map((record) => {
         const tasksText =
-          record.tasks.length > 0 ? record.tasks.join(", ") : "-";
+          record.taskTitle || "-";
+        const workTime = Math.round((record.endTime - record.startTime) / 1000 / 60);
 
         return `
-        <tr>
-          <td>${record.sortDate.toLocaleDateString("ko-KR")}</td>
+        <tr data-id="${record.id}">
+          <td>${record.startTime.toLocaleDateString("ko-KR")}</td>
           <td>${record.worker}</td>
           <td>${record.startTime.toLocaleTimeString("ko-KR", {
             hour: "2-digit",
@@ -4340,11 +4414,15 @@ document.addEventListener("DOMContentLoaded", () => {
             hour: "2-digit",
             minute: "2-digit",
           })}</td>
-          <td>${Math.floor(record.workTime / 60)}시간 ${
-          record.workTime % 60
+          <td>${Math.floor(workTime / 60)}시간 ${
+          workTime % 60
         }분</td>
-          <td>${record.totalPages}페이지</td>
+          <td>${record.pagesWorked}페이지</td>
           <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${tasksText}">${tasksText}</td>
+          <td>
+            <button class="action-btn edit-attendance-btn" data-id="${record.id}">수정</button>
+            <button class="action-btn delete-attendance-btn" data-id="${record.id}">삭제</button>
+          </td>
         </tr>
       `;
       })

@@ -33,7 +33,7 @@
     <div id="main-dashboard" class="main-dashboard" style="display: none">
       <header>
         <div class="header-content">
-          <h1>점자 도서 작업 관리 대시보드 Ver 2.5</h1>
+          <h1>점자 도서 작업 관리 대시보드 Ver 2.6</h1>
           <div class="user-info">
             <button id="symbol-checker-btn" class="symbol-checker-btn">
               특수문자검사
@@ -397,6 +397,9 @@
                   <button id="export-attendance-btn" class="small-btn">
                     출퇴근 기록 내보내기
                   </button>
+                  <button id="create-attendance-btn" class="small-btn">
+                    생성
+                  </button>
                 </div>
               </div>
             </div>
@@ -413,6 +416,7 @@
                       <th>퇴근시간</th>
                       <th>근무시간</th>
                       <th>작업내용</th>
+                      <th>작업</th>
                     </tr>
                   </thead>
                   <tbody id="attendance-tbody">
@@ -965,6 +969,27 @@
       </div>
     </div>
 
+    <div id="attendance-edit-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2 id="attendance-edit-modal-title">출퇴근 기록 수정</h2>
+        <form id="attendance-edit-form">
+          <input type="hidden" id="attendance-edit-id" />
+          <label for="attendance-edit-worker">직원:</label>
+          <select id="attendance-edit-worker" required></select>
+          <label for="attendance-edit-date">날짜:</label>
+          <input type="date" id="attendance-edit-date" required />
+          <label for="attendance-edit-start-time">출근시간:</label>
+          <input type="time" id="attendance-edit-start-time" required />
+          <label for="attendance-edit-end-time">퇴근시간:</label>
+          <input type="time" id="attendance-edit-end-time" required />
+          <label for="attendance-edit-tasks">작업내용:</label>
+          <input type="text" id="attendance-edit-tasks" />
+          <button type="submit">저장</button>
+        </form>
+      </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -976,6 +1001,6 @@
     <script src="firebase-adapter.js"></script>
 
     <!-- 쿠키로 문제가 될 경우 버전을 올려서 쿠키에 영향이 없도록 할 수 있음 -->
-    <script src="script.js?v=1.0.3"></script>
+    <script src="script.js?v=1.0.4"></script>
   </body>
 </html>
