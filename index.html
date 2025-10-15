@@ -33,7 +33,7 @@
     <div id="main-dashboard" class="main-dashboard" style="display: none">
       <header>
         <div class="header-content">
-          <h1>점자 도서 작업 관리 대시보드 Ver 2.6</h1>
+          <h1>점자 도서 작업 관리 대시보드 Ver 2.7</h1>
           <div class="user-info">
             <button id="symbol-checker-btn" class="symbol-checker-btn">
               특수문자검사
@@ -67,7 +67,25 @@
         </section>
 
         <section class="dashboard-section">
-          <h2>진행 중인 작업</h2>
+          <div class="dashboard-section-header">
+            <h2>진행 중인 작업</h2>
+            <div class="task-filters">
+              <button class="filter-btn active" data-filter="all">전체</button>
+              <button class="filter-btn" data-filter="correction1">
+                1차교정
+              </button>
+              <button class="filter-btn" data-filter="correction2">
+                2차교정
+              </button>
+              <button class="filter-btn" data-filter="correction3">
+                3차교정
+              </button>
+              <button class="filter-btn" data-filter="transcription">
+                점역
+              </button>
+              <button class="filter-btn" data-filter="completed">완료</button>
+            </div>
+          </div>
           <div id="task-list" class="task-list">
             <!-- 작업 목록이 여기에 동적으로 추가됩니다. -->
           </div>
@@ -1001,6 +1019,6 @@
     <script src="firebase-adapter.js"></script>
 
     <!-- 쿠키로 문제가 될 경우 버전을 올려서 쿠키에 영향이 없도록 할 수 있음 -->
-    <script src="script.js?v=1.0.4"></script>
+    <script src="script.js?v=2.7.0"></script>
   </body>
 </html>

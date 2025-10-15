@@ -9,7 +9,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const currentUserName = document.getElementById("current-user-name");
   const logoutBtn = document.getElementById("logout-btn");
   const symbolCheckerBtn = document.getElementById("symbol-checker-btn");
-  const brailleTypingBtn = document.getElementById("braille-typing-btn");
+  constbrailleTypingBtn = document.getElementById("braille-typing-btn");
+
+  // Task filter elements
+  const filterButtons = document.querySelectorAll(".filter-btn");
+  let currentFilter = "all"; // Initialize with 'all' filter
 
   const isbnTitleInput = document.getElementById("isbn-title-input");
   const searchButton = document.getElementById("search-button");
@@ -870,6 +874,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // 필터 버튼 이벤트 리스너
+  filterButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      currentFilter = button.dataset.filter;
+      filterButtons.forEach((btn) => btn.classList.remove("active"));
+      button.classList.add("active");
+      renderTasks();
+    });
+  });
+
   // 작업 등록 폼 제출
   taskForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -957,79 +971,48 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderTasks() {
     taskList.innerHTML = "";
 
-    // tasks가 배열이 아니면 빈 배열로 초기화
     if (!Array.isArray(tasks)) {
       console.warn("tasks is not an array, initializing to empty array");
       tasks = [];
     }
 
-    // 서버 연결 상태에 따른 메시지 표시
     if (serverStatus === "offline") {
       taskList.innerHTML =
-        '<div style="display: flex; justify-content: center; align-items: center; min-height: 300px; padding: 40px;">' +
-        '<div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 30px; max-width: 500px; text-align: center; color: #856404; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">' +
-        '<h3 style="margin-top: 0; color: #856404; font-size: 1.3em;">⚠️ Firebase 연결 실패</h3>' +
-        '<p style="margin: 15px 0; line-height: 1.5;">Firebase 데이터베이스에 연결할 수 없습니다.</p>' +
-        '<p style="margin: 15px 0; line-height: 1.5;">네트워크 연결을 확인해주세요.</p>' +
-        "</div>" +
-        "</div>";
+        '<div style="display: flex; justify-content: center; align-items: center; min-height: 300px; padding: 40px;">...</div>';
       return;
     }
 
-    // 완료된 작업 필터링 - 메인 화면에서는 완료된 작업 제외
-    const incompleteTasks = tasks.filter(
-      (task) => task && task.currentStage !== "completed"
-    );
+    let filteredTasks = [];
+    if (currentFilter === "all") {
+      filteredTasks = tasks.filter((task) => task && task.currentStage !== "completed");
+    } else {
+      filteredTasks = tasks.filter((task) => task && task.currentStage === currentFilter);
+    }
 
-    if (incompleteTasks.length === 0) {
+    if (filteredTasks.length === 0) {
       taskList.innerHTML =
-        '<div style="display: flex; justify-content: center; align-items: center; min-height: 300px; padding: 40px;">' +
-        '<div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 30px; max-width: 500px; text-align: center; color: #6c757d; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">' +
-        '<h3 style="margin-top: 0; color: #6c757d; font-size: 1.3em;">📚 작업 목록이 비어있습니다</h3>' +
-        '<p style="margin: 15px 0; line-height: 1.5;">현재 진행 중인 작업이 없습니다.</p>' +
-        '<p style="margin: 15px 0; line-height: 1.5;">새 도서를 등록하거나 검색하여 작업을 시작하세요.</p>' +
-        "</div>" +
-        "</div>";
+        '<div style="display: flex; justify-content: center; align-items: center; min-height: 300px; padding: 40px;">...</div>';
       return;
     }
 
-    incompleteTasks.sort((a, b) => {
-      const aAssignedTo =
-        a.currentStage !== "completed" &&
-        a.stages &&
-        a.stages[a.currentStage] &&
-        a.stages[a.currentStage].assignedTo;
-      const bAssignedTo =
-        b.currentStage !== "completed" &&
-        b.stages &&
-        b.stages[b.currentStage] &&
-        b.stages[b.currentStage].assignedTo;
-
-      // 로그인한 사용자에게 할당된 작업을 최우선으로
+    filteredTasks.sort((a, b) => {
+      const aAssignedTo = a.stages[a.currentStage]?.assignedTo;
+      const bAssignedTo = b.stages[b.currentStage]?.assignedTo;
       const aIsCurrentUser = aAssignedTo === currentUser;
       const bIsCurrentUser = bAssignedTo === currentUser;
 
-      if (aIsCurrentUser && !bIsCurrentUser) {
-        return -1;
-      }
-      if (!aIsCurrentUser && bIsCurrentUser) {
-        return 1;
-      }
+      if (aIsCurrentUser && !bIsCurrentUser) return -1;
+      if (!aIsCurrentUser && bIsCurrentUser) return 1;
 
-      // 둘 다 현재 사용자가 아닌 경우, 담당자 유무로 정렬
       const aHasAssignee = !!aAssignedTo;
       const bHasAssignee = !!bAssignedTo;
 
-      if (aHasAssignee && !bHasAssignee) {
-        return -1;
-      }
-      if (!aHasAssignee && bHasAssignee) {
-        return 1;
-      }
+      if (aHasAssignee && !bHasAssignee) return -1;
+      if (!aHasAssignee && bHasAssignee) return 1;
       return 0;
     });
 
-    incompleteTasks.forEach((task) => {
+    filteredTasks.forEach((task) => {
       const taskItem = document.createElement("div");
       taskItem.classList.add("task-item");
 
@@ -1037,69 +1020,38 @@ document.addEventListener("DOMContentLoaded", () => {
       let currentStageName = "";
       let currentPageForDisplay = 0;
 
-      // task.stages가 없으면 초기화
-      if (!task.stages) {
-        console.warn("Task missing stages property:", task);
-        task.stages = {
-          correction1: { assignedTo: "", history: [] },
-          correction2: { assignedTo: "", history: [] },
-          correction3: { assignedTo: "", history: [] },
-          transcription: { assignedTo: "", history: [] },
-        };
-      }
-
       if (task.currentStage && task.currentStage !== "completed") {
         const stage = task.stages[task.currentStage];
         if (stage && stage.history && stage.history.length > 0) {
-          currentPageForDisplay =
-            stage.history[stage.history.length - 1].endPage;
+          currentPageForDisplay = stage.history[stage.history.length - 1].endPage;
           currentProgress = (currentPageForDisplay / task.totalPages) * 100;
         }
       }
 
       switch (task.currentStage) {
-        case "correction1":
-          currentStageName = "1차 교정";
-          break;
-        case "correction2":
-          currentStageName = "2차 교정";
-          break;
-        case "correction3":
-          currentStageName = "3차 교정";
-          break;
-        case "transcription":
-          currentStageName = "점역";
-          break;
+        case "correction1": currentStageName = "1차 교정"; break;
+        case "correction2": currentStageName = "2차 교정"; break;
+        case "correction3": currentStageName = "3차 교정"; break;
+        case "transcription": currentStageName = "점역"; break;
         case "completed":
           currentStageName = "모든 작업 완료";
           currentProgress = 100;
           currentPageForDisplay = task.totalPages;
           break;
-        default:
-          currentStageName = "알 수 없음";
+        default: currentStageName = "알 수 없음";
       }
 
-      const assignedTo =
-        task.currentStage === "completed"
-          ? "-"
-          : (task.stages && task.stages[task.currentStage]?.assignedTo) ||
-            "미정";
-      const showAssignButton =
-        task.currentStage !== "completed" &&
-        task.stages &&
-        !task.stages[task.currentStage]?.assignedTo;
+      const assignedTo = task.stages[task.currentStage]?.assignedTo || "미정";
+      const showAssignButton = task.currentStage !== "completed" && !assignedTo;
       const noteCount = task.notes ? task.notes.length : 0;
       const isCurrentUserAssigned = currentUser === assignedTo;
 
       let workSessionButtonHtml = "";
       if (assignedTo !== "미정" && task.currentStage !== "completed") {
         const isWorking = currentWorkSessions.has(task.id);
-        const buttonClass = `work-session-button ${
-          isWorking ? "stop" : "start"
-        } ${!isCurrentUserAssigned ? "disabled" : ""}`;
+        const buttonClass = `work-session-button ${isWorking ? "stop" : "start"} ${!isCurrentUserAssigned ? "disabled" : ""}`;
         const buttonText = isWorking ? "작업중지" : "작업시작";
         const disabledAttr = !isCurrentUserAssigned ? "disabled" : "";
-
         workSessionButtonHtml = `<button data-id="${task.id}" class="${buttonClass}" data-worker="${assignedTo}" ${disabledAttr}>${buttonText}</button>`;
       }
 
@@ -1107,46 +1059,30 @@ document.addEventListener("DOMContentLoaded", () => {
       const buttonDisabledAttr = isButtonDisabled ? "disabled" : "";
       const buttonDisabledClass = isButtonDisabled ? "disabled" : "";
 
+      let assigneeText = `${currentStageName} 담당자: ${assignedTo}`;
+      if (task.currentStage === 'correction2' && assignedTo === '미정') {
+        assigneeText = `2차 교정 담당자: 미정`;
+      }
+
       taskItem.innerHTML = `
-                <h3 class="task-title" data-id="${
-                  task.id
-                }" title="클릭하여 작업 히스토리 보기">${stripHtmlTags(
-        task.book.title
-      )}</h3>
-                <p><strong>ISBN:</strong> ${task.book.isbn || "정보 없음"}</p>
-                <p><strong>총 페이지:</strong> ${task.totalPages}</p>
-                <p><strong>현재 단계:</strong> ${currentStageName}</p>
-                <p><strong>진행률:</strong> ${currentProgress.toFixed(
-                  1
-                )}% (${currentPageForDisplay}/${task.totalPages} 페이지)</p>
-                <div class="progress-bar-container">
-                    <div class="progress-bar" style="width: ${Math.min(
-                      currentProgress,
-                      100
-                    )}%;"></div>
-                </div>
-                <p><strong>${currentStageName} 담당자:</strong> ${assignedTo}
-                    ${
-                      showAssignButton
-                        ? `<button class="assign-corrector-button" data-id="${task.id}" data-stage="${task.currentStage}">지정</button>`
-                        : ""
-                    }
-                </p>
-                <div class="task-buttons">
-                    ${
-                      task.currentStage !== "completed"
-                        ? `<button data-id="${task.id}" class="update-progress-button ${buttonDisabledClass}" ${buttonDisabledAttr}>진행 상황 업데이트</button>`
-                        : ""
-                    }
-                    <button data-id="${
-                      task.id
-                    }" class="delete-task-button ${buttonDisabledClass}" ${buttonDisabledAttr}>삭제</button>
-                    <button data-id="${task.id}" class="notes-button ${
-        noteCount === 0 ? "inactive" : ""
-      }">특이사항 <span class="note-count">${noteCount}</span></button>
-                    ${workSessionButtonHtml}
-                </div>
-            `;
+        <h3 class="task-title" data-id="${task.id}" title="클릭하여 작업 히스토리 보기">${stripHtmlTags(task.book.title)}</h3>
+        <p><strong>ISBN:</strong> ${task.book.isbn || "정보 없음"}</p>
+        <p><strong>총 페이지:</strong> ${task.totalPages}</p>
+        <p><strong>현재 단계:</strong> ${currentStageName}</p>
+        <p><strong>진행률:</strong> ${currentProgress.toFixed(1)}% (${currentPageForDisplay}/${task.totalPages} 페이지)</p>
+        <div class="progress-bar-container">
+          <div class="progress-bar" style="width: ${Math.min(currentProgress, 100)}%;"></div>
+        </div>
+        <p><strong>${assigneeText}</strong>
+          ${showAssignButton ? `<button class="assign-corrector-button" data-id="${task.id}" data-stage="${task.currentStage}">지정</button>` : ""}
+        </p>
+        <div class="task-buttons">
+          ${task.currentStage !== "completed" ? `<button data-id="${task.id}" class="update-progress-button ${buttonDisabledClass}" ${buttonDisabledAttr}>진행 상황 업데이트</button>` : ""}
+          <button data-id="${task.id}" class="delete-task-button ${buttonDisabledClass}" ${buttonDisabledAttr}>삭제</button>
+          <button data-id="${task.id}" class="notes-button ${noteCount === 0 ? "inactive" : ""}">특이사항 <span class="note-count">${noteCount}</span></button>
+          ${workSessionButtonHtml}
+        </div>
+      `;
       taskList.appendChild(taskItem);
     });
   }
