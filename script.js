@@ -5703,7 +5703,19 @@ async function deleteAttendanceRecord(recordId) {
     const staffAttendance = attendanceData[staffId];
     const currentDate = new Date(startDate);
 
-    while (currentDate <= endDate) {
+    // 한국시간으로 오늘 18시가 지났는지 확인
+    const now = new Date();
+    const koreaTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+    const includeToday = koreaTime.getHours() >= 18;
+
+    // 오늘 18시가 지나지 않았다면 어제까지만 포함
+    const lastValidDate = new Date();
+    if (!includeToday) {
+      lastValidDate.setDate(lastValidDate.getDate() - 1);
+    }
+    lastValidDate.setHours(23, 59, 59, 999);
+
+    while (currentDate <= endDate && currentDate <= lastValidDate) {
       // 주말 제외 (토: 6, 일: 0)
       if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
         attendanceStats.totalDays++;
@@ -5716,6 +5728,7 @@ async function deleteAttendanceRecord(recordId) {
             ? new Date(dayData.checkOut)
             : null;
 
+          // 달력과 동일한 로직으로 출퇴근 상태 판단
           const isLate =
             checkInTime.getHours() > workStartTime.hour ||
             (checkInTime.getHours() === workStartTime.hour &&
@@ -5727,30 +5740,29 @@ async function deleteAttendanceRecord(recordId) {
               (checkOutTime.getHours() === workEndTime.hour &&
                 checkOutTime.getMinutes() < workEndTime.minute));
 
+          // 연장근무 판단: 18시 이후 또는 다음날 오전 9시 이전 퇴근
           const isOvertime =
             checkOutTime &&
-            (checkOutTime.getHours() > 18 ||
-              (checkOutTime.getHours() === 18 &&
-                checkOutTime.getMinutes() > 0));
+            (checkOutTime.getHours() >= 18 || checkOutTime.getHours() < 9);
 
-          let status = "정상";
+          let status = "";
           if (isLate && isEarlyLeave) {
-            attendanceStats.lateAndEarlyLeave++;
-            status = "지각+조퇴";
+            attendanceStats.late++;
+            attendanceStats.earlyLeave++;
+            status = "지각·조퇴";
           } else if (isLate) {
             attendanceStats.late++;
             status = "지각";
           } else if (isEarlyLeave) {
             attendanceStats.earlyLeave++;
             status = "조퇴";
+          } else if (isOvertime) {
+            attendanceStats.normalAttendance++;
+            attendanceStats.overtime++;
+            status = "연장근무";
           } else {
             attendanceStats.normalAttendance++;
-            status = "정상";
-          }
-
-          if (isOvertime) {
-            attendanceStats.overtime++;
-            status += "+연장";
+            status = "정상근무";
           }
 
           attendanceStats.attendanceDetails.push({
@@ -5835,12 +5847,22 @@ async function deleteAttendanceRecord(recordId) {
         }
       });
 
-      // 각 날짜별 출퇴근 분석 (현재 날짜까지만)
+      // 각 날짜별 출퇴근 분석
       const currentDate = new Date(startDate);
-      const today = new Date();
-      today.setHours(23, 59, 59, 999); // 오늘 끝까지 포함
+      const now = new Date();
 
-      while (currentDate <= endDate && currentDate <= today) {
+      // 한국시간으로 오늘 18시가 지났는지 확인
+      const koreaTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+      const includeToday = koreaTime.getHours() >= 18;
+
+      // 오늘 18시가 지나지 않았다면 어제까지만 포함
+      const lastValidDate = new Date();
+      if (!includeToday) {
+        lastValidDate.setDate(lastValidDate.getDate() - 1);
+      }
+      lastValidDate.setHours(23, 59, 59, 999);
+
+      while (currentDate <= endDate && currentDate <= lastValidDate) {
         // 주말 제외 (토: 6, 일: 0)
         if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
           attendanceStats.totalDays++;
@@ -5884,37 +5906,40 @@ async function deleteAttendanceRecord(recordId) {
             // 분 단위로 소수점 버림
             effectiveWorkMinutes = Math.floor(effectiveWorkMinutes);
 
+            // 달력과 동일한 로직으로 출퇴근 상태 판단
             const isLate =
               checkIn.getHours() > 9 ||
               (checkIn.getHours() === 9 && checkIn.getMinutes() > 5);
 
+            const isEarlyLeave =
+              checkOut &&
+              (checkOut.getHours() < 17 ||
+                (checkOut.getHours() === 17 && checkOut.getMinutes() < 45));
+
+            // 연장근무 판단: 18시 이후 또는 다음날 오전 9시 이전 퇴근
+            const isOvertime =
+              checkOut &&
+              (checkOut.getHours() >= 18 || checkOut.getHours() < 9);
+
             let status = "";
 
-            // 17시 45분 이후 퇴근인지 확인
-            const isAfterEndTime =
-              checkOut &&
-              (checkOut.getHours() > 17 ||
-                (checkOut.getHours() === 17 && checkOut.getMinutes() >= 45));
-
-            if (effectiveWorkMinutes >= 480) {
+            if (isLate && isEarlyLeave) {
+              attendanceStats.late++;
+              attendanceStats.earlyLeave++;
+              status = "지각·조퇴";
+            } else if (isLate) {
+              attendanceStats.late++;
+              status = "지각";
+            } else if (isEarlyLeave) {
+              attendanceStats.earlyLeave++;
+              status = "조퇴";
+            } else if (isOvertime) {
               attendanceStats.normalAttendance++;
-              status = "정상";
-            } else {
-              if (isLate) {
-                attendanceStats.late++;
-                status = "지각";
-              } else if (isAfterEndTime) {
-                // 17시 45분 이후 퇴근했지만 480분 미만인 경우는 정상으로 간주
-                attendanceStats.normalAttendance++;
-                status = "정상";
-              } else {
-                attendanceStats.earlyLeave++;
-                status = "조퇴"; // 17시 45분 이전 퇴근은 조퇴로 간주
-              }
-            }
-
-            if (effectiveWorkMinutes > 480) {
               attendanceStats.overtime++;
+              status = "연장근무";
+            } else {
+              attendanceStats.normalAttendance++;
+              status = "정상근무";
             }
 
             attendanceStats.attendanceDetails.push({
@@ -6508,13 +6533,13 @@ async function deleteAttendanceRecord(recordId) {
     });
 
     const data = {
-      labels: ["정상 출근", "지각", "조퇴", "연장근무"],
+      labels: ["정상근무", "지각", "조퇴", "연장근무"],
       datasets: [
         {
           label: "일수",
           data: [normalAttendance, late, earlyLeave, overtime],
           backgroundColor: [
-            "#28a745", // 정상 - 초록색
+            "#28a745", // 정상근무 - 초록색
             "#ffc107", // 지각 - 노란색
             "#fd7e14", // 조퇴 - 주황색
             "#6f42c1", // 연장근무 - 보라색
