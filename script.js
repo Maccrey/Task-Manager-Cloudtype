@@ -2234,6 +2234,64 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 개선된 데이터 관리 기능
 
+  // 중복/손상된 책 항목 찾기 및 수정
+  async function findAndFixDuplicateBooks() {
+    try {
+      const books = await FirebaseBooks.getAll();
+      console.log("📚 전체 책 목록:", books.length);
+
+      // 중복 및 문제 항목 찾기
+      const issues = [];
+      const booksByTitle = new Map();
+      const invalidIds = [];
+
+      books.forEach((book, index) => {
+        // ID 검증
+        if (!book.id || book.id === 'undefined' || book.id === 'null') {
+          invalidIds.push({ book, index });
+          issues.push(`책 ${index + 1}: 잘못된 ID (${book.id}) - "${book.book?.title || '제목 없음'}"`);
+        }
+
+        // 제목으로 중복 검사
+        const title = book.book?.title;
+        if (title) {
+          if (booksByTitle.has(title)) {
+            const existing = booksByTitle.get(title);
+            issues.push(`중복된 책: "${title}" (ID: ${existing.id}, ${book.id})`);
+          } else {
+            booksByTitle.set(title, book);
+          }
+        }
+      });
+
+      if (issues.length === 0) {
+        alert("중복이나 손상된 데이터가 없습니다.");
+        return;
+      }
+
+      // 문제 항목 표시
+      const message = `발견된 문제:\n\n${issues.join('\n')}\n\n잘못된 ID를 가진 ${invalidIds.length}개 항목을 삭제하시겠습니까?`;
+
+      if (confirm(message)) {
+        // 잘못된 ID 항목 삭제
+        for (const { book } of invalidIds) {
+          try {
+            await FirebaseBooks.delete(book.id);
+            console.log(`❌ 삭제됨: ID=${book.id}, 제목=${book.book?.title}`);
+          } catch (error) {
+            console.error(`삭제 실패: ID=${book.id}`, error);
+          }
+        }
+
+        alert(`${invalidIds.length}개의 잘못된 항목을 삭제했습니다.`);
+        loadTasks(); // 새로고침
+      }
+    } catch (error) {
+      console.error("중복 검사 실패:", error);
+      alert("중복 검사에 실패했습니다: " + error.message);
+    }
+  }
+
   // 데이터 상태 정보 로드
   async function loadDataStatus() {
     try {
@@ -2757,6 +2815,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // 새로운 데이터 관리 버튼들
 
   // 책 정보 관리
+  document
+    .getElementById("check-duplicates-btn")
+    .addEventListener("click", findAndFixDuplicateBooks);
   document
     .getElementById("backup-books-btn")
     .addEventListener("click", backupBooks);

@@ -1049,6 +1049,15 @@ main {
   transition: all 0.3s;
 }
 
+.admin-btn.primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.admin-btn.primary:hover {
+  background-color: #0056b3;
+}
+
 .admin-btn.backup {
   background-color: #17a2b8;
   color: white;

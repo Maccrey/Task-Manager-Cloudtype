@@ -216,6 +216,9 @@
                 </div>
               </div>
               <div class="admin-buttons">
+                <button id="check-duplicates-btn" class="admin-btn primary">
+                  🔍 중복 검사
+                </button>
                 <button id="backup-books-btn" class="admin-btn backup">
                   📥 백업
                 </button>
@@ -708,6 +711,7 @@
                   <option value="correction1">1차 교정</option>
                   <option value="correction2">2차 교정</option>
                   <option value="correction3">3차 교정</option>
+                  <option value="finalCorrection">최종 교정</option>
                   <option value="transcription">점역</option>
                   <option value="completed">완료</option>
                 </select>
@@ -759,6 +763,21 @@
                 >
                 <label
                   >진행 페이지: <span id="corrector3-progress">0</span></label
+                >
+              </div>
+            </div>
+
+            <div class="stage-section">
+              <h4>최종 교정</h4>
+              <div class="stage-info">
+                <label
+                  >담당자:
+                  <select id="final-corrector-assigned" class="stage-input">
+                    <option value="">담당자 선택</option>
+                  </select></label
+                >
+                <label
+                  >진행 페이지: <span id="final-corrector-progress">0</span></label
                 >
               </div>
             </div>
