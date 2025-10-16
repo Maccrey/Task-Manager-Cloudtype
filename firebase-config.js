@@ -160,18 +160,23 @@ const FirebaseBooks = {
         return;
       }
 
+      console.log('🔍 Firebase 원본 데이터 키:', Object.keys(data));
+
       // getAll()과 동일한 로직 사용
       const books = Object.entries(data).map(([key, value]) => {
         // value에 id가 없거나 잘못된 경우 Firebase 키를 사용
         if (!value.id || value.id === 'undefined' || value.id === 'null') {
+          console.warn(`🔧 ID 수정: Firebase 키=${key}를 id로 사용`);
           return { ...value, id: key };
         }
         // id가 이미 있으면 그대로 사용 (하지만 키와 일치하는지 확인)
         if (value.id !== key) {
-          console.warn(`⚠️ ID 불일치: Firebase 키=${key}, 객체 id=${value.id}`);
+          console.warn(`⚠️ ID 불일치: Firebase 키=${key}, 객체 id=${value.id}, 제목=${value.book?.title}`);
         }
         return value;
       });
+
+      console.log('📚 변환된 books 배열:', books.map(b => ({ key: b.id, title: b.book?.title })));
 
       callback(books);
     });
@@ -180,6 +185,60 @@ const FirebaseBooks = {
   // 리스너 제거
   off(callback) {
     firebaseOff('books', callback);
+  },
+
+  // Firebase에서 중복된 책 찾기 및 정리
+  async findAndCleanDuplicates() {
+    console.log('🔍 중복 책 검색 시작...');
+    const booksData = await firebaseGet('books');
+    if (!booksData) {
+      console.log('✅ 책 데이터 없음');
+      return { duplicates: [], cleaned: [] };
+    }
+
+    // Firebase 키와 객체 ID를 매핑
+    const entries = Object.entries(booksData);
+    console.log(`📊 총 ${entries.length}개 항목 검색 중...`);
+
+    // ID별로 그룹화
+    const groupedById = {};
+    for (const [firebaseKey, bookData] of entries) {
+      const bookId = bookData.id || firebaseKey;
+      if (!groupedById[bookId]) {
+        groupedById[bookId] = [];
+      }
+      groupedById[bookId].push({ firebaseKey, bookData });
+    }
+
+    // 중복 찾기
+    const duplicates = [];
+    const cleaned = [];
+
+    for (const [bookId, items] of Object.entries(groupedById)) {
+      if (items.length > 1) {
+        console.warn(`⚠️ 중복 발견: ID=${bookId}, ${items.length}개 항목`);
+        duplicates.push({ bookId, items });
+
+        // 가장 최근 것 유지 (첫 번째 항목)
+        const [keep, ...remove] = items;
+        console.log(`✅ 유지: Firebase 키=${keep.firebaseKey}`);
+
+        // 나머지 삭제
+        for (const item of remove) {
+          console.log(`🗑️ 삭제: Firebase 키=${item.firebaseKey}`);
+          await firebaseRemove(`books/${item.firebaseKey}`);
+          cleaned.push(item.firebaseKey);
+        }
+      }
+    }
+
+    if (duplicates.length === 0) {
+      console.log('✅ 중복 없음');
+    } else {
+      console.log(`✅ ${duplicates.length}개 중복 ID, ${cleaned.length}개 항목 삭제 완료`);
+    }
+
+    return { duplicates, cleaned };
   }
 };
 
@@ -484,4 +543,13 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeFirebase();
 });
 
+// 전역으로 노출 (디버깅용)
+window.FirebaseBooks = FirebaseBooks;
+window.cleanDuplicateBooks = async () => {
+  const result = await FirebaseBooks.findAndCleanDuplicates();
+  console.log('🎯 정리 결과:', result);
+  return result;
+};
+
 console.log('📦 Firebase config module loaded');
+console.log('💡 중복 제거: window.cleanDuplicateBooks() 실행');
