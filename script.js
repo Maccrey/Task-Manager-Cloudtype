@@ -1447,11 +1447,17 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const task = tasks.find((t) => t.id === taskId);
+    // taskId는 string이지만 task.id는 string 또는 number일 수 있으므로 양쪽 비교
+    const task = tasks.find((t) => t.id == taskId || t.id === taskId);
     if (!task) {
       alert("작업 정보를 찾을 수 없습니다.");
       return;
     }
+
+    console.log("🔍 진행 상황 업데이트 시작");
+    console.log("  - Task ID:", taskId);
+    console.log("  - Task 객체:", task);
+    console.log("  - Task ID 타입:", typeof task.id);
 
     const newPage = parseInt(updatePageInput.value);
     let dateTime = updateDatetimeInput.value.trim();
@@ -1551,14 +1557,16 @@ document.addEventListener("DOMContentLoaded", () => {
         stage.status = "completed";
       }
 
-      console.log("Updating task progress:", {
+      console.log("📝 saveTask 호출 전 상태:", {
         taskId: task.id,
+        taskIdType: typeof task.id,
         stage: stageKey,
         newPage: newPage,
         isCompleted: newPage === task.totalPages,
+        historyLength: stage.history.length,
       });
 
-      await saveTask(task);
+      await saveTask(task);  // isNewTask = false (기본값)
 
       console.log("✅ 진행 상황 업데이트 완료 - Task ID:", task.id);
 

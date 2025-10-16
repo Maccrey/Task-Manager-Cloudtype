@@ -94,7 +94,20 @@ const FirebaseBooks = {
   // 모든 책 가져오기
   async getAll() {
     const booksData = await firebaseGet('books');
-    return booksData ? Object.values(booksData) : [];
+    if (!booksData) return [];
+
+    // Firebase 키를 id로 포함시켜서 반환 (누락된 id 방지)
+    return Object.entries(booksData).map(([key, value]) => {
+      // value에 id가 없거나 잘못된 경우 Firebase 키를 사용
+      if (!value.id || value.id === 'undefined' || value.id === 'null') {
+        return { ...value, id: key };
+      }
+      // id가 이미 있으면 그대로 사용 (하지만 키와 일치하는지 확인)
+      if (value.id !== key) {
+        console.warn(`⚠️ ID 불일치: Firebase 키=${key}, 객체 id=${value.id}`);
+      }
+      return value;
+    });
   },
 
   // 책 ID로 가져오기
@@ -115,8 +128,10 @@ const FirebaseBooks = {
   async update(id, bookData) {
     // id를 제외한 데이터만 업데이트 (id 중복 방지)
     const { id: _, ...dataWithoutId } = bookData;
-    await firebaseUpdate(`books/${id}`, dataWithoutId);
-    return { id, ...dataWithoutId };
+    // set()을 사용하여 전체 객체 교체 (update()는 부분 병합만 수행)
+    const bookToSave = { id, ...dataWithoutId };
+    await firebaseSet(`books/${id}`, bookToSave);
+    return bookToSave;
   },
 
   // 책 삭제
