@@ -98,13 +98,13 @@ const FirebaseBooks = {
 
     // Firebase 키를 id로 포함시켜서 반환 (누락된 id 방지)
     return Object.entries(booksData).map(([key, value]) => {
-      // value에 id가 없거나 잘못된 경우 Firebase 키를 사용
-      if (!value.id || value.id === 'undefined' || value.id === 'null') {
-        return { ...value, id: key };
-      }
-      // id가 이미 있으면 그대로 사용 (하지만 키와 일치하는지 확인)
+      // IMPORTANT: 항상 Firebase 키를 id로 사용 (중복 생성 방지)
       if (value.id !== key) {
-        console.warn(`⚠️ ID 불일치: Firebase 키=${key}, 객체 id=${value.id}`);
+        if (value.id && value.id !== 'undefined' && value.id !== 'null') {
+          console.warn(`🔧 ID 불일치 수정: Firebase 키=${key}, 기존 객체 id=${value.id}`);
+        }
+        // Firebase 키로 강제 덮어쓰기
+        return { ...value, id: key };
       }
       return value;
     });
@@ -126,24 +126,32 @@ const FirebaseBooks = {
 
   // 책 업데이트
   async update(id, bookData) {
-    console.log(`📝 FirebaseBooks.update 호출: ID=${id}`);
-    console.log(`📦 bookData:`, bookData);
+    console.log(`📝 FirebaseBooks.update 호출`);
+    console.log(`  - 파라미터 ID: ${id} (타입: ${typeof id})`);
+    console.log(`  - bookData.id: ${bookData.id} (타입: ${typeof bookData.id})`);
+    console.log(`  - 제목: ${bookData.book?.title}`);
 
     // bookData의 id와 파라미터 id 비교
     if (bookData.id && bookData.id !== id) {
-      console.warn(`⚠️ ID 불일치 감지: 파라미터=${id}, bookData.id=${bookData.id}`);
-      console.log(`🔄 파라미터 ID 사용: ${id}`);
+      console.error(`❌ CRITICAL: ID 불일치!`);
+      console.error(`  - 파라미터 ID: ${id}`);
+      console.error(`  - bookData.id: ${bookData.id}`);
+      console.error(`  - 이는 중복 생성의 원인입니다!`);
+      console.log(`🔄 파라미터 ID(${id})를 강제로 사용합니다.`);
     }
 
     // id를 제외한 데이터만 업데이트 (id 중복 방지)
     const { id: _, ...dataWithoutId } = bookData;
     // set()을 사용하여 전체 객체 교체 (update()는 부분 병합만 수행)
+    // IMPORTANT: 반드시 파라미터로 받은 id를 사용 (bookData.id 무시)
     const bookToSave = { id, ...dataWithoutId };
 
-    console.log(`💾 Firebase에 저장: books/${id}`);
+    console.log(`💾 Firebase 저장 경로: books/${id}`);
+    console.log(`💾 저장할 데이터의 id: ${bookToSave.id}`);
+
     await firebaseSet(`books/${id}`, bookToSave);
 
-    console.log(`✅ 책 업데이트 완료: ID=${id}`);
+    console.log(`✅ 책 업데이트 완료: books/${id}`);
     return bookToSave;
   },
 
@@ -164,14 +172,13 @@ const FirebaseBooks = {
 
       // getAll()과 동일한 로직 사용
       const books = Object.entries(data).map(([key, value]) => {
-        // value에 id가 없거나 잘못된 경우 Firebase 키를 사용
-        if (!value.id || value.id === 'undefined' || value.id === 'null') {
-          console.warn(`🔧 ID 수정: Firebase 키=${key}를 id로 사용`);
-          return { ...value, id: key };
-        }
-        // id가 이미 있으면 그대로 사용 (하지만 키와 일치하는지 확인)
+        // IMPORTANT: 항상 Firebase 키를 id로 사용 (중복 생성 방지)
         if (value.id !== key) {
-          console.warn(`⚠️ ID 불일치: Firebase 키=${key}, 객체 id=${value.id}, 제목=${value.book?.title}`);
+          if (value.id && value.id !== 'undefined' && value.id !== 'null') {
+            console.warn(`🔧 ID 불일치 수정: Firebase 키=${key}, 기존 객체 id=${value.id}, 제목=${value.book?.title}`);
+          }
+          // Firebase 키로 강제 덮어쓰기
+          return { ...value, id: key };
         }
         return value;
       });
