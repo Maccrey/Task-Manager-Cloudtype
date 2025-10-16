@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const currentUserName = document.getElementById("current-user-name");
   const logoutBtn = document.getElementById("logout-btn");
   const symbolCheckerBtn = document.getElementById("symbol-checker-btn");
-  constbrailleTypingBtn = document.getElementById("braille-typing-btn");
+  const brailleTypingBtn = document.getElementById("braille-typing-btn");
 
   // Task filter elements
   const filterButtons = document.querySelectorAll(".filter-btn");
@@ -204,13 +204,25 @@ document.addEventListener("DOMContentLoaded", () => {
       firebaseListeners.books = FirebaseBooks.onValue((books) => {
         console.log("📚 Firebase Books 업데이트:", books.length);
 
-        // 중복 ID 확인
+        // 중복 ID 확인 및 제거
         const ids = books.map(b => b.id);
         const uniqueIds = new Set(ids);
         if (ids.length !== uniqueIds.size) {
           console.error("⚠️ 중복된 책 ID 발견!");
           const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
           console.error("중복 ID:", duplicates);
+
+          // 중복 제거: 각 ID에 대해 첫 번째 항목만 유지
+          const seen = new Set();
+          books = books.filter(book => {
+            if (seen.has(book.id)) {
+              console.warn(`🗑️ 중복 제거: ID=${book.id}, 제목=${book.book?.title}`);
+              return false;
+            }
+            seen.add(book.id);
+            return true;
+          });
+          console.log("✅ 중복 제거 후 책 수:", books.length);
         }
 
         tasks = books;
@@ -1566,7 +1578,8 @@ document.addEventListener("DOMContentLoaded", () => {
         historyLength: stage.history.length,
       });
 
-      await saveTask(task);  // isNewTask = false (기본값)
+      // IMPORTANT: isNewTask를 명시적으로 false로 설정
+      await saveTask(task, false);  // isNewTask = false (명시적)
 
       console.log("✅ 진행 상황 업데이트 완료 - Task ID:", task.id);
 
