@@ -113,8 +113,10 @@ const FirebaseBooks = {
 
   // 책 업데이트
   async update(id, bookData) {
-    await firebaseUpdate(`books/${id}`, bookData);
-    return { id, ...bookData };
+    // id를 제외한 데이터만 업데이트 (id 중복 방지)
+    const { id: _, ...dataWithoutId } = bookData;
+    await firebaseUpdate(`books/${id}`, dataWithoutId);
+    return { id, ...dataWithoutId };
   },
 
   // 책 삭제

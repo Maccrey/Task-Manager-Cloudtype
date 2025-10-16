@@ -195,12 +195,26 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       console.log("Firebase 실시간 리스너 초기화 중...");
 
+      // 기존 Books 리스너 제거 (중복 방지)
+      if (firebaseListeners.books) {
+        FirebaseBooks.off();
+      }
+
       // Books 리스너
       firebaseListeners.books = FirebaseBooks.onValue((books) => {
-        console.log("Firebase Books 업데이트:", books.length);
-        console.log("First book data structure:", books[0]); // 데이터 구조 확인
+        console.log("📚 Firebase Books 업데이트:", books.length);
+
+        // 중복 ID 확인
+        const ids = books.map(b => b.id);
+        const uniqueIds = new Set(ids);
+        if (ids.length !== uniqueIds.size) {
+          console.error("⚠️ 중복된 책 ID 발견!");
+          const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+          console.error("중복 ID:", duplicates);
+        }
+
         tasks = books;
-        renderTasks(); // displayTasks 대신 renderTasks 사용
+        renderTasks();
         if (typeof updateAdminTasksTable === "function") {
           updateAdminTasksTable();
         }
@@ -209,15 +223,25 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
 
+      // 기존 Staff 리스너 제거 (중복 방지)
+      if (firebaseListeners.staff) {
+        FirebaseStaff.off();
+      }
+
       // Staff 리스너
       firebaseListeners.staff = FirebaseStaff.onValue((staffList) => {
-        console.log("Firebase Staff 업데이트:", staffList.length);
+        console.log("👥 Firebase Staff 업데이트:", staffList.length);
         staff = staffList;
-        updateStaffDropdowns(); // updateStaffSelects 대신 updateStaffDropdowns 사용
+        updateStaffDropdowns();
         if (typeof displayStaffList === "function") {
           displayStaffList();
         }
       });
+
+      // 기존 Work Sessions 리스너 제거 (중복 방지)
+      if (firebaseListeners.workSessions) {
+        FirebaseWorkSessions.off();
+      }
 
       // Work Sessions 리스너
       firebaseListeners.workSessions = FirebaseWorkSessions.onValue(
@@ -416,6 +440,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 history: [],
                 status: "not_applicable",
               },
+              finalCorrection: {
+                assignedTo: "",
+                history: [],
+                status: "not_applicable",
+              },
               transcription: {
                 assignedTo: "",
                 history: [],
@@ -586,6 +615,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("corrector1"),
       document.getElementById("corrector2"),
       document.getElementById("corrector3"),
+      document.getElementById("final-corrector-assigned"),
       document.getElementById("transcriber"),
       document.getElementById("corrector1-assigned"),
       document.getElementById("corrector2-assigned"),
@@ -939,6 +969,11 @@ document.addEventListener("DOMContentLoaded", () => {
             history: [],
             status: "pending",
           },
+          finalCorrection: {
+            assignedTo: "",
+            history: [],
+            status: isTranscriberEnabled ? "pending" : "not_applicable",
+          },
           transcription: {
             assignedTo: transcriber,
             history: [],
@@ -1032,6 +1067,7 @@ document.addEventListener("DOMContentLoaded", () => {
         case "correction1": currentStageName = "1차 교정"; break;
         case "correction2": currentStageName = "2차 교정"; break;
         case "correction3": currentStageName = "3차 교정"; break;
+        case "finalCorrection": currentStageName = "최종 교정"; break;
         case "transcription": currentStageName = "점역"; break;
         case "completed":
           currentStageName = "모든 작업 완료";
@@ -1298,6 +1334,7 @@ document.addEventListener("DOMContentLoaded", () => {
       correction1: "1차 교정",
       correction2: "2차 교정",
       correction3: "3차 교정",
+      finalCorrection: "최종 교정",
       transcription: "점역",
     };
 
@@ -1523,6 +1560,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       await saveTask(task);
 
+      console.log("✅ 진행 상황 업데이트 완료 - Task ID:", task.id);
+
       // 단계 완료 시 다음 단계로 이동
       if (newPage === task.totalPages) {
         const stageNames = {
@@ -1539,9 +1578,8 @@ document.addEventListener("DOMContentLoaded", () => {
           )}의 ${stageName} 단계가 완료되었습니다!`
         );
         await moveToNextStage(task);
-      } else {
-        renderTasks();
       }
+      // Firebase 리스너가 자동으로 renderTasks()를 호출하므로 여기서는 호출하지 않음
 
       closeProgressUpdateModal();
     } catch (error) {
@@ -1575,6 +1613,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "correction1",
       "correction2",
       "correction3",
+      "finalCorrection",
       "transcription",
     ];
     const currentIndex = stagesOrder.indexOf(task.currentStage);
@@ -1594,6 +1633,7 @@ document.addEventListener("DOMContentLoaded", () => {
             correction1: "1차 교정",
             correction2: "2차 교정",
             correction3: "3차 교정",
+            finalCorrection: "최종 교정",
             transcription: "점역",
           };
 
@@ -1620,7 +1660,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       await saveTask(task);
-      renderTasks();
+      // Firebase 리스너가 자동으로 renderTasks()를 호출하므로 여기서는 호출하지 않음
     } catch (error) {
       console.error("Error moving to next stage:", error);
       console.error("Full error details:", {
@@ -1658,6 +1698,7 @@ document.addEventListener("DOMContentLoaded", () => {
       correction1: "1차 교정",
       correction2: "2차 교정",
       correction3: "3차 교정",
+      finalCorrection: "최종 교정",
       transcription: "점역",
     };
 
@@ -3015,6 +3056,9 @@ document.addEventListener("DOMContentLoaded", () => {
           updatedTask.stages[stage.db].assignedTo = assignedSelect.value;
         }
       });
+
+      const finalCorrectorAssigned = document.getElementById("final-corrector-assigned").value;
+      updatedTask.stages.finalCorrection.assignedTo = finalCorrectorAssigned;
 
       // 서버에 저장
       const response = await fetch(`${API_URL}/${currentDetailTask.id}`, {
