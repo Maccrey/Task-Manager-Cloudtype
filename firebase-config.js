@@ -326,55 +326,59 @@ const FirebaseWorkSessions = {
   },
 
   async end(taskId, pagesWorked) {
-    // 먼저 Firebase에서 세션 확인
     let session = await firebaseGet(`workSessions/${taskId}`);
-
-    // 세션이 없으면 window.currentStoppedSession에서 정보 가져오기
-    // (작업 중지 버튼을 눌렀을 때 이미 Firebase에서 제거되었을 수 있음)
     if (!session && window.currentStoppedSession) {
-      console.log('Session already removed from Firebase, using stored session info');
-      // 저장된 세션 정보로 completedSession 생성
-      const completedSession = {
-        id: Date.now().toString(),
+      session = {
         taskId: taskId,
         worker: window.currentStoppedSession.worker,
         startTime: window.currentStoppedSession.startTime || new Date().toISOString(),
-        endTime: new Date().toISOString(),
-        duration: window.currentStoppedSession.startTime
-          ? new Date() - new Date(window.currentStoppedSession.startTime)
-          : 0,
-        pagesWorked: pagesWorked || 0,
-        isWorking: false,
         taskTitle: window.currentStoppedSession.taskTitle || "Unknown",
-        stage: window.currentStoppedSession.stage || "unknown"
+        stage: window.currentStoppedSession.stage || "unknown",
       };
-
-      // 히스토리에 추가
-      await firebaseSet(`workSessionsHistory/${completedSession.id}`, completedSession);
-
-      return completedSession;
     }
 
     if (!session) {
-      console.warn('No work session found for task:', taskId);
+      console.warn("No work session found for task:", taskId);
       return null;
     }
 
-    const completedSession = {
-      id: Date.now().toString(),
-      ...session,
-      endTime: new Date().toISOString(),
-      duration: new Date() - new Date(session.startTime),
-      pagesWorked: pagesWorked || 0
-    };
+    const endTime = new Date();
+    const duration = endTime - new Date(session.startTime);
 
-    // 히스토리에 추가
-    await firebaseSet(`workSessionsHistory/${completedSession.id}`, completedSession);
+    const history = await FirebaseWorkSessionsHistory.getAll();
+    const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" })).toISOString().split("T")[0];
 
-    // 현재 세션 삭제 (아직 남아있다면)
-    await firebaseRemove(`workSessions/${taskId}`);
+    const existingSession = history.find(s =>
+        s.worker === session.worker &&
+        new Date(new Date(s.startTime).toLocaleString("en-US", { timeZone: "Asia/Seoul" })).toISOString().split("T")[0] === today
+    );
 
-    return completedSession;
+    if (existingSession) {
+      const updatedDuration = (existingSession.duration || 0) + duration;
+      const updatedPagesWorked = (existingSession.pagesWorked || 0) + (pagesWorked || 0);
+      const updatedTaskTitles = [...new Set([...(existingSession.taskTitle?.split(', ') || []), session.taskTitle])].join(', ');
+
+      await FirebaseWorkSessionsHistory.update(existingSession.id, {
+        duration: updatedDuration,
+        pagesWorked: updatedPagesWorked,
+        taskTitle: updatedTaskTitles,
+        endTime: endTime.toISOString(),
+      });
+
+      await firebaseRemove(`workSessions/${taskId}`);
+      return { ...existingSession, duration: updatedDuration, pagesWorked: updatedPagesWorked, taskTitle: updatedTaskTitles, endTime: endTime.toISOString() };
+    } else {
+      const completedSession = {
+        id: Date.now().toString(),
+        ...session,
+        endTime: endTime.toISOString(),
+        duration: duration,
+        pagesWorked: pagesWorked || 0,
+      };
+      await FirebaseWorkSessionsHistory.create(completedSession);
+      await firebaseRemove(`workSessions/${taskId}`);
+      return completedSession;
+    }
   },
 
   async removeSession(taskId) {
