@@ -2866,6 +2866,21 @@ document.addEventListener("DOMContentLoaded", () => {
     .getElementById("restore-staff-input")
     .addEventListener("change", handleStaffRestore);
 
+  document
+    .getElementById("merge-work-sessions-btn")
+    ?.addEventListener("click", async () => {
+      if (confirm("기존 출퇴근 기록을 병합하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+        try {
+          await FirebaseWorkSessionsHistory.mergeWorkSessions();
+          alert("출퇴근 기록이 성공적으로 병합되었습니다.");
+          loadAttendanceData(); // Refresh the view
+        } catch (error) {
+          console.error("Error merging work sessions:", error);
+          alert("출퇴근 기록 병합 중 오류가 발생했습니다.");
+        }
+      }
+    });
+
   // 출퇴근 기록 관리
   document
     .getElementById("backup-work-sessions-btn")

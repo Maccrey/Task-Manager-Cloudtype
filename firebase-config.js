@@ -437,6 +437,40 @@ const FirebaseWorkSessionsHistory = {
     await firebaseRemove(`workSessionsHistory/${id}`);
   },
 
+  async mergeWorkSessions() {
+    const history = await this.getAll();
+    const groupedByWorkerAndDay = {};
+
+    for (const session of history) {
+      const day = new Date(new Date(session.startTime).toLocaleString("en-US", { timeZone: "Asia/Seoul" })).toISOString().split("T")[0];
+      const key = `${session.worker}-${day}`;
+      if (!groupedByWorkerAndDay[key]) {
+        groupedByWorkerAndDay[key] = [];
+      }
+      groupedByWorkerAndDay[key].push(session);
+    }
+
+    for (const key in groupedByWorkerAndDay) {
+      const sessions = groupedByWorkerAndDay[key];
+      if (sessions.length > 1) {
+        const mergedSession = sessions.reduce((acc, s) => {
+          return {
+            ...acc,
+            duration: (acc.duration || 0) + (s.duration || 0),
+            pagesWorked: (acc.pagesWorked || 0) + (s.pagesWorked || 0),
+            taskTitle: [...new Set([...(acc.taskTitle?.split(', ') || []), s.taskTitle])].join(', '),
+            endTime: acc.endTime > s.endTime ? acc.endTime : s.endTime,
+          };
+        });
+
+        for (const session of sessions) {
+          await this.delete(session.id);
+        }
+
+        await this.create(mergedSession);
+      }
+    }
+  },
 
   async clear() {
     await firebaseRemove('workSessionsHistory');
