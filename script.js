@@ -205,18 +205,22 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("📚 Firebase Books 업데이트:", books.length);
 
         // 중복 ID 확인 및 제거
-        const ids = books.map(b => b.id);
+        const ids = books.map((b) => b.id);
         const uniqueIds = new Set(ids);
         if (ids.length !== uniqueIds.size) {
           console.error("⚠️ 중복된 책 ID 발견!");
-          const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+          const duplicates = ids.filter(
+            (id, index) => ids.indexOf(id) !== index
+          );
           console.error("중복 ID:", duplicates);
 
           // 중복 제거: 각 ID에 대해 첫 번째 항목만 유지
           const seen = new Set();
-          books = books.filter(book => {
+          books = books.filter((book) => {
             if (seen.has(book.id)) {
-              console.warn(`🗑️ 중복 제거: ID=${book.id}, 제목=${book.book?.title}`);
+              console.warn(
+                `🗑️ 중복 제거: ID=${book.id}, 제목=${book.book?.title}`
+              );
               return false;
             }
             seen.add(book.id);
@@ -1031,9 +1035,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let filteredTasks = [];
     if (currentFilter === "all") {
-      filteredTasks = tasks.filter((task) => task && task.currentStage !== "completed");
+      filteredTasks = tasks.filter(
+        (task) => task && task.currentStage !== "completed"
+      );
     } else {
-      filteredTasks = tasks.filter((task) => task && task.currentStage === currentFilter);
+      filteredTasks = tasks.filter(
+        (task) => task && task.currentStage === currentFilter
+      );
     }
 
     if (filteredTasks.length === 0) {
@@ -1070,23 +1078,35 @@ document.addEventListener("DOMContentLoaded", () => {
       if (task.currentStage && task.currentStage !== "completed") {
         const stage = task.stages[task.currentStage];
         if (stage && stage.history && stage.history.length > 0) {
-          currentPageForDisplay = stage.history[stage.history.length - 1].endPage;
+          currentPageForDisplay =
+            stage.history[stage.history.length - 1].endPage;
           currentProgress = (currentPageForDisplay / task.totalPages) * 100;
         }
       }
 
       switch (task.currentStage) {
-        case "correction1": currentStageName = "1차 교정"; break;
-        case "correction2": currentStageName = "2차 교정"; break;
-        case "correction3": currentStageName = "3차 교정"; break;
-        case "finalCorrection": currentStageName = "최종 교정"; break;
-        case "transcription": currentStageName = "점역"; break;
+        case "correction1":
+          currentStageName = "1차 교정";
+          break;
+        case "correction2":
+          currentStageName = "2차 교정";
+          break;
+        case "correction3":
+          currentStageName = "3차 교정";
+          break;
+        case "finalCorrection":
+          currentStageName = "최종 교정";
+          break;
+        case "transcription":
+          currentStageName = "점역";
+          break;
         case "completed":
           currentStageName = "모든 작업 완료";
           currentProgress = 100;
           currentPageForDisplay = task.totalPages;
           break;
-        default: currentStageName = "알 수 없음";
+        default:
+          currentStageName = "알 수 없음";
       }
 
       const assignedTo = task.stages[task.currentStage]?.assignedTo || "미정";
@@ -1097,7 +1117,9 @@ document.addEventListener("DOMContentLoaded", () => {
       let workSessionButtonHtml = "";
       if (assignedTo !== "미정" && task.currentStage !== "completed") {
         const isWorking = currentWorkSessions.has(task.id);
-        const buttonClass = `work-session-button ${isWorking ? "stop" : "start"} ${!isCurrentUserAssigned ? "disabled" : ""}`;
+        const buttonClass = `work-session-button ${
+          isWorking ? "stop" : "start"
+        } ${!isCurrentUserAssigned ? "disabled" : ""}`;
         const buttonText = isWorking ? "작업중지" : "작업시작";
         const disabledAttr = !isCurrentUserAssigned ? "disabled" : "";
         workSessionButtonHtml = `<button data-id="${task.id}" class="${buttonClass}" data-worker="${assignedTo}" ${disabledAttr}>${buttonText}</button>`;
@@ -1108,26 +1130,47 @@ document.addEventListener("DOMContentLoaded", () => {
       const buttonDisabledClass = isButtonDisabled ? "disabled" : "";
 
       let assigneeText = `${currentStageName} 담당자: ${assignedTo}`;
-      if (task.currentStage === 'correction2' && assignedTo === '미정') {
+      if (task.currentStage === "correction2" && assignedTo === "미정") {
         assigneeText = `2차 교정 담당자: 미정`;
       }
 
       taskItem.innerHTML = `
-        <h3 class="task-title" data-id="${task.id}" title="클릭하여 작업 히스토리 보기">${stripHtmlTags(task.book.title)}</h3>
+        <h3 class="task-title" data-id="${
+          task.id
+        }" title="클릭하여 작업 히스토리 보기">${stripHtmlTags(
+        task.book.title
+      )}</h3>
         <p><strong>ISBN:</strong> ${task.book.isbn || "정보 없음"}</p>
         <p><strong>총 페이지:</strong> ${task.totalPages}</p>
         <p><strong>현재 단계:</strong> ${currentStageName}</p>
-        <p><strong>진행률:</strong> ${currentProgress.toFixed(1)}% (${currentPageForDisplay}/${task.totalPages} 페이지)</p>
+        <p><strong>진행률:</strong> ${currentProgress.toFixed(
+          1
+        )}% (${currentPageForDisplay}/${task.totalPages} 페이지)</p>
         <div class="progress-bar-container">
-          <div class="progress-bar" style="width: ${Math.min(currentProgress, 100)}%;"></div>
+          <div class="progress-bar" style="width: ${Math.min(
+            currentProgress,
+            100
+          )}%;"></div>
         </div>
         <p><strong>${assigneeText}</strong>
-          ${showAssignButton ? `<button class="assign-corrector-button" data-id="${task.id}" data-stage="${task.currentStage}">지정</button>` : ""}
+          ${
+            showAssignButton
+              ? `<button class="assign-corrector-button" data-id="${task.id}" data-stage="${task.currentStage}">지정</button>`
+              : ""
+          }
         </p>
         <div class="task-buttons">
-          ${task.currentStage !== "completed" ? `<button data-id="${task.id}" class="update-progress-button ${buttonDisabledClass}" ${buttonDisabledAttr}>진행 상황 업데이트</button>` : ""}
-          <button data-id="${task.id}" class="delete-task-button ${buttonDisabledClass}" ${buttonDisabledAttr}>삭제</button>
-          <button data-id="${task.id}" class="notes-button ${noteCount === 0 ? "inactive" : ""}">특이사항 <span class="note-count">${noteCount}</span></button>
+          ${
+            task.currentStage !== "completed"
+              ? `<button data-id="${task.id}" class="update-progress-button ${buttonDisabledClass}" ${buttonDisabledAttr}>진행 상황 업데이트</button>`
+              : ""
+          }
+          <button data-id="${
+            task.id
+          }" class="delete-task-button ${buttonDisabledClass}" ${buttonDisabledAttr}>삭제</button>
+          <button data-id="${task.id}" class="notes-button ${
+        noteCount === 0 ? "inactive" : ""
+      }">특이사항 <span class="note-count">${noteCount}</span></button>
           ${workSessionButtonHtml}
         </div>
       `;
@@ -1429,7 +1472,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   progressModalCloseButton.addEventListener("click", () => {
-    alert("경고 : 완료페이지를 넣고 저장하지 않으면 업무시간이 저장되지 않습니다.");
+    alert(
+      "경고 : 완료페이지를 넣고 저장하지 않으면 업무시간이 저장되지 않습니다."
+    );
   });
 
   // 진행 상황 업데이트 폼 제출
@@ -1579,7 +1624,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       // IMPORTANT: isNewTask를 명시적으로 false로 설정
-      await saveTask(task, false);  // isNewTask = false (명시적)
+      await saveTask(task, false); // isNewTask = false (명시적)
 
       console.log("✅ 진행 상황 업데이트 완료 - Task ID:", task.id);
 
@@ -2268,9 +2313,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       books.forEach((book, index) => {
         // ID 검증
-        if (!book.id || book.id === 'undefined' || book.id === 'null') {
+        if (!book.id || book.id === "undefined" || book.id === "null") {
           invalidIds.push({ book, index });
-          issues.push(`책 ${index + 1}: 잘못된 ID (${book.id}) - "${book.book?.title || '제목 없음'}"`);
+          issues.push(
+            `책 ${index + 1}: 잘못된 ID (${book.id}) - "${
+              book.book?.title || "제목 없음"
+            }"`
+          );
         }
 
         // 제목으로 중복 검사
@@ -2278,7 +2327,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (title) {
           if (booksByTitle.has(title)) {
             const existing = booksByTitle.get(title);
-            issues.push(`중복된 책: "${title}" (ID: ${existing.id}, ${book.id})`);
+            issues.push(
+              `중복된 책: "${title}" (ID: ${existing.id}, ${book.id})`
+            );
           } else {
             booksByTitle.set(title, book);
           }
@@ -2291,7 +2342,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // 문제 항목 표시
-      const message = `발견된 문제:\n\n${issues.join('\n')}\n\n잘못된 ID를 가진 ${invalidIds.length}개 항목을 삭제하시겠습니까?`;
+      const message = `발견된 문제:\n\n${issues.join(
+        "\n"
+      )}\n\n잘못된 ID를 가진 ${invalidIds.length}개 항목을 삭제하시겠습니까?`;
 
       if (confirm(message)) {
         // 잘못된 ID 항목 삭제
@@ -2869,7 +2922,11 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("merge-work-sessions-btn")
     ?.addEventListener("click", async () => {
-      if (confirm("기존 출퇴근 기록을 병합하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+      if (
+        confirm(
+          "기존 출퇴근 기록을 병합하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        )
+      ) {
         try {
           await FirebaseWorkSessionsHistory.mergeWorkSessions();
           alert("출퇴근 기록이 성공적으로 병합되었습니다.");
@@ -3154,7 +3211,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
 
-      const finalCorrectorAssigned = document.getElementById("final-corrector-assigned").value;
+      const finalCorrectorAssigned = document.getElementById(
+        "final-corrector-assigned"
+      ).value;
       updatedTask.stages.finalCorrection.assignedTo = finalCorrectorAssigned;
 
       // 서버에 저장
@@ -3654,116 +3713,137 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
   // Event delegation for edit and delete buttons
-  document.getElementById("attendance-tbody").addEventListener("click", (event) => {
-    if (event.target.classList.contains("edit-attendance-btn")) {
-      const recordId = event.target.dataset.id;
-      const record = findAttendanceRecordById(recordId);
-      if (record) {
-        openAttendanceEditModal(record);
+  document
+    .getElementById("attendance-tbody")
+    .addEventListener("click", (event) => {
+      if (event.target.classList.contains("edit-attendance-btn")) {
+        const recordId = event.target.dataset.id;
+        const record = findAttendanceRecordById(recordId);
+        if (record) {
+          openAttendanceEditModal(record);
+        }
+      } else if (event.target.classList.contains("delete-attendance-btn")) {
+        const recordId = event.target.dataset.id;
+        if (confirm("정말로 이 출퇴근 기록을 삭제하시겠습니까?")) {
+          deleteAttendanceRecord(recordId);
+        }
       }
-    } else if (event.target.classList.contains("delete-attendance-btn")) {
-      const recordId = event.target.dataset.id;
-      if (confirm("정말로 이 출퇴근 기록을 삭제하시겠습니까?")) {
-        deleteAttendanceRecord(recordId);
-      }
-    }
-  });
+    });
 
   // Handle form submission for attendance edit modal
-  document.getElementById("attendance-edit-form").addEventListener("submit", (event) => {
-    event.preventDefault();
-    saveAttendanceRecord();
-  });
+  document
+    .getElementById("attendance-edit-form")
+    .addEventListener("submit", (event) => {
+      event.preventDefault();
+      saveAttendanceRecord();
+    });
 
   // Close modal
-  document.querySelector("#attendance-edit-modal .close-button").addEventListener("click", () => {
-    closeAttendanceEditModal();
-  });
+  document
+    .querySelector("#attendance-edit-modal .close-button")
+    .addEventListener("click", () => {
+      closeAttendanceEditModal();
+    });
 
-function openAttendanceEditModal(record = null) {
-  const modal = document.getElementById("attendance-edit-modal");
-  const title = document.getElementById("attendance-edit-modal-title");
-  const form = document.getElementById("attendance-edit-form");
-  const workerSelect = document.getElementById("attendance-edit-worker");
+  function openAttendanceEditModal(record = null) {
+    const modal = document.getElementById("attendance-edit-modal");
+    const title = document.getElementById("attendance-edit-modal-title");
+    const form = document.getElementById("attendance-edit-form");
+    const workerSelect = document.getElementById("attendance-edit-worker");
 
-  // Populate worker select
-  workerSelect.innerHTML = "";
-  staff.forEach((s) => {
-    const option = document.createElement("option");
-    option.value = s.name;
-    option.textContent = s.name;
-    workerSelect.appendChild(option);
-  });
+    // Populate worker select
+    workerSelect.innerHTML = "";
+    staff.forEach((s) => {
+      const option = document.createElement("option");
+      option.value = s.name;
+      option.textContent = s.name;
+      workerSelect.appendChild(option);
+    });
 
-  if (record) {
-    title.textContent = "출퇴근 기록 수정";
-    document.getElementById("attendance-edit-id").value = record.id;
-    workerSelect.value = record.worker;
-    document.getElementById("attendance-edit-date").value = new Date(record.startTime).toISOString().split('T')[0];
-    document.getElementById("attendance-edit-start-time").value = new Date(record.startTime).toLocaleTimeString('sv-SE').substring(0, 5);
-    document.getElementById("attendance-edit-end-time").value = new Date(record.endTime).toLocaleTimeString('sv-SE').substring(0, 5);
-    document.getElementById("attendance-edit-tasks").value = record.taskTitle;
-  } else {
-    title.textContent = "출퇴근 기록 생성";
-    form.reset();
-    document.getElementById("attendance-edit-id").value = "";
-  }
-
-  modal.style.display = "flex";
-}
-
-function closeAttendanceEditModal() {
-  const modal = document.getElementById("attendance-edit-modal");
-  modal.style.display = "none";
-}
-
-function findAttendanceRecordById(recordId) {
-  if (!currentAdminAttendanceData) return null;
-  return currentAdminAttendanceData.find(record => record.id === recordId);
-}
-
-async function saveAttendanceRecord() {
-  const id = document.getElementById("attendance-edit-id").value;
-  const worker = document.getElementById("attendance-edit-worker").value;
-  const date = document.getElementById("attendance-edit-date").value;
-  const startTime = document.getElementById("attendance-edit-start-time").value;
-  const endTime = document.getElementById("attendance-edit-end-time").value;
-  const tasks = document.getElementById("attendance-edit-tasks").value.split(",").map(t => t.trim());
-
-  const record = {
-    worker,
-    startTime: new Date(`${date}T${startTime}`).toISOString(),
-    endTime: new Date(`${date}T${endTime}`).toISOString(),
-    taskTitle: tasks.join(', '),
-    pagesWorked: 0, // Assuming pages worked is not edited in this modal
-  };
-
-  try {
-    if (id) {
-      await FirebaseWorkSessionsHistory.update(id, record);
+    if (record) {
+      title.textContent = "출퇴근 기록 수정";
+      document.getElementById("attendance-edit-id").value = record.id;
+      workerSelect.value = record.worker;
+      document.getElementById("attendance-edit-date").value = new Date(
+        record.startTime
+      )
+        .toISOString()
+        .split("T")[0];
+      document.getElementById("attendance-edit-start-time").value = new Date(
+        record.startTime
+      )
+        .toLocaleTimeString("sv-SE")
+        .substring(0, 5);
+      document.getElementById("attendance-edit-end-time").value = new Date(
+        record.endTime
+      )
+        .toLocaleTimeString("sv-SE")
+        .substring(0, 5);
+      document.getElementById("attendance-edit-tasks").value = record.taskTitle;
     } else {
-      await FirebaseWorkSessionsHistory.create(record);
+      title.textContent = "출퇴근 기록 생성";
+      form.reset();
+      document.getElementById("attendance-edit-id").value = "";
     }
 
-    closeAttendanceEditModal();
-    loadAttendanceData();
-  } catch (error) {
-    console.error("Error saving attendance record:", error);
-    alert("출퇴근 기록 저장에 실패했습니다.");
+    modal.style.display = "flex";
   }
-}
 
-async function deleteAttendanceRecord(recordId) {
-  try {
-    await FirebaseWorkSessionsHistory.delete(recordId);
-    loadAttendanceData();
-  } catch (error) {
-    console.error("Error deleting attendance record:", error);
-    alert("출퇴근 기록 삭제에 실패했습니다.");
+  function closeAttendanceEditModal() {
+    const modal = document.getElementById("attendance-edit-modal");
+    modal.style.display = "none";
   }
-}
 
+  function findAttendanceRecordById(recordId) {
+    if (!currentAdminAttendanceData) return null;
+    return currentAdminAttendanceData.find((record) => record.id === recordId);
+  }
 
+  async function saveAttendanceRecord() {
+    const id = document.getElementById("attendance-edit-id").value;
+    const worker = document.getElementById("attendance-edit-worker").value;
+    const date = document.getElementById("attendance-edit-date").value;
+    const startTime = document.getElementById(
+      "attendance-edit-start-time"
+    ).value;
+    const endTime = document.getElementById("attendance-edit-end-time").value;
+    const tasks = document
+      .getElementById("attendance-edit-tasks")
+      .value.split(",")
+      .map((t) => t.trim());
+
+    const record = {
+      worker,
+      startTime: new Date(`${date}T${startTime}`).toISOString(),
+      endTime: new Date(`${date}T${endTime}`).toISOString(),
+      taskTitle: tasks.join(", "),
+      pagesWorked: 0, // Assuming pages worked is not edited in this modal
+    };
+
+    try {
+      if (id) {
+        await FirebaseWorkSessionsHistory.update(id, record);
+      } else {
+        await FirebaseWorkSessionsHistory.create(record);
+      }
+
+      closeAttendanceEditModal();
+      loadAttendanceData();
+    } catch (error) {
+      console.error("Error saving attendance record:", error);
+      alert("출퇴근 기록 저장에 실패했습니다.");
+    }
+  }
+
+  async function deleteAttendanceRecord(recordId) {
+    try {
+      await FirebaseWorkSessionsHistory.delete(recordId);
+      loadAttendanceData();
+    } catch (error) {
+      console.error("Error deleting attendance record:", error);
+      alert("출퇴근 기록 삭제에 실패했습니다.");
+    }
+  }
 
   // 직원 관리 이벤트 리스너들
   const staffForm = document.getElementById("staff-form");
@@ -4148,7 +4228,7 @@ async function deleteAttendanceRecord(recordId) {
   // Attendance Management Functions
   function calculateAttendanceRecords(sessionsData = []) {
     const records = [];
-    sessionsData.forEach(session => {
+    sessionsData.forEach((session) => {
       if (!session.startTime || !session.endTime) return;
 
       records.push({
@@ -4452,16 +4532,28 @@ async function deleteAttendanceRecord(recordId) {
 
     // Apply filters
     if (selectedYear) {
-      tableData = tableData.filter(record => record.startTime.getFullYear().toString() === selectedYear);
+      tableData = tableData.filter(
+        (record) => record.startTime.getFullYear().toString() === selectedYear
+      );
     }
     if (selectedMonth) {
-      tableData = tableData.filter(record => (record.startTime.getMonth() + 1).toString().padStart(2, '0') === selectedMonth);
+      tableData = tableData.filter(
+        (record) =>
+          (record.startTime.getMonth() + 1).toString().padStart(2, "0") ===
+          selectedMonth
+      );
     }
     if (selectedDate) {
-      tableData = tableData.filter(record => record.startTime.getDate().toString().padStart(2, '0') === selectedDate);
+      tableData = tableData.filter(
+        (record) =>
+          record.startTime.getDate().toString().padStart(2, "0") ===
+          selectedDate
+      );
     }
     if (selectedWorker) {
-      tableData = tableData.filter(record => record.worker === selectedWorker);
+      tableData = tableData.filter(
+        (record) => record.worker === selectedWorker
+      );
     }
 
     if (tableData.length === 0) {
@@ -4475,9 +4567,10 @@ async function deleteAttendanceRecord(recordId) {
 
     const tableHtml = tableData
       .map((record) => {
-        const tasksText =
-          record.taskTitle || "-";
-        const workTime = Math.round((record.endTime - record.startTime) / 1000 / 60);
+        const tasksText = record.taskTitle || "-";
+        const workTime = Math.round(
+          (record.endTime - record.startTime) / 1000 / 60
+        );
 
         return `
         <tr data-id="${record.id}">
@@ -4491,14 +4584,16 @@ async function deleteAttendanceRecord(recordId) {
             hour: "2-digit",
             minute: "2-digit",
           })}</td>
-          <td>${Math.floor(workTime / 60)}시간 ${
-          workTime % 60
-        }분</td>
+          <td>${Math.floor(workTime / 60)}시간 ${workTime % 60}분</td>
           <td>${record.pagesWorked}페이지</td>
           <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${tasksText}">${tasksText}</td>
           <td>
-            <button class="action-btn edit-attendance-btn" data-id="${record.id}">수정</button>
-            <button class="action-btn delete-attendance-btn" data-id="${record.id}">삭제</button>
+            <button class="action-btn edit-attendance-btn" data-id="${
+              record.id
+            }">수정</button>
+            <button class="action-btn delete-attendance-btn" data-id="${
+              record.id
+            }">삭제</button>
           </td>
         </tr>
       `;
@@ -4869,7 +4964,7 @@ async function deleteAttendanceRecord(recordId) {
 
   if (symbolCheckerBtn) {
     symbolCheckerBtn.addEventListener("click", () => {
-      window.open("https://maccrey.github.io/symbol-checker/", "_blank");
+      window.open("https://checker.maccrey.com", "_blank");
     });
   }
 
@@ -5720,7 +5815,9 @@ async function deleteAttendanceRecord(recordId) {
 
     // 한국시간으로 오늘 18시가 지났는지 확인
     const now = new Date();
-    const koreaTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+    const koreaTime = new Date(
+      now.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
+    );
     const includeToday = koreaTime.getHours() >= 18;
 
     // 오늘 18시가 지나지 않았다면 어제까지만 포함
@@ -5867,7 +5964,9 @@ async function deleteAttendanceRecord(recordId) {
       const now = new Date();
 
       // 한국시간으로 오늘 18시가 지났는지 확인
-      const koreaTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+      const koreaTime = new Date(
+        now.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
+      );
       const includeToday = koreaTime.getHours() >= 18;
 
       // 오늘 18시가 지나지 않았다면 어제까지만 포함
