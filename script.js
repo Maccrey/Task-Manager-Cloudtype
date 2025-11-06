@@ -1765,7 +1765,7 @@ document.addEventListener("DOMContentLoaded", () => {
       correction1: "1차 교정",
       correction2: "2차 교정",
       correction3: "3차 교정",
-      finalCorrection: "최종교정",
+      finalCorrection: "최종 검수",
       transcription: "점역",
     };
 
