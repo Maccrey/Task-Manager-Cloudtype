@@ -841,11 +841,16 @@
     <div id="completed-books-modal" class="modal">
       <div class="modal-content completed-books">
         <span class="close-button">&times;</span>
-        <h2>완료된 도서 목록</h2>
+        <div class="modal-heading">
+          <h2>완료된 도서 목록</h2>
+          <p class="modal-subtitle">
+            완료된 도서의 진행 내역을 확인하고 필요한 데이터를 내보낼 수 있습니다.
+          </p>
+        </div>
 
         <div class="completed-stats">
-          <div class="stat-item">
-            <span class="stat-label">총 완료 작업:</span>
+          <div class="stat-card">
+            <span class="stat-label">총 완료 작업</span>
             <span id="completed-count" class="stat-value">0</span>
           </div>
         </div>
@@ -859,12 +864,14 @@
               진행 목록 내보내기
             </button>
           </div>
-          <input
-            type="text"
-            id="completed-search"
-            placeholder="완료된 도서 검색..."
-            class="search-input"
-          />
+          <div class="search-wrapper">
+            <input
+              type="text"
+              id="completed-search"
+              placeholder="완료된 도서 검색..."
+              class="search-input"
+            />
+          </div>
         </div>
 
         <div class="completed-table-container">
