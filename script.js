@@ -1095,7 +1095,7 @@ document.addEventListener("DOMContentLoaded", () => {
           currentStageName = "3차 교정";
           break;
         case "finalCorrection":
-          currentStageName = "최종 교정";
+          currentStageName = "최종 검수";
           break;
         case "transcription":
           currentStageName = "점역";
@@ -1389,7 +1389,7 @@ document.addEventListener("DOMContentLoaded", () => {
       correction1: "1차 교정",
       correction2: "2차 교정",
       correction3: "3차 교정",
-      finalCorrection: "최종 교정",
+      finalCorrection: "최종 검수",
       transcription: "점역",
     };
 
@@ -1634,7 +1634,7 @@ document.addEventListener("DOMContentLoaded", () => {
           correction1: "1차 교정",
           correction2: "2차 교정",
           correction3: "3차 교정",
-          finalCorrection: "최종교정",
+          finalCorrection: "최종검수",
           transcription: "점역",
         };
 
@@ -1700,7 +1700,7 @@ document.addEventListener("DOMContentLoaded", () => {
             correction1: "1차 교정",
             correction2: "2차 교정",
             correction3: "3차 교정",
-            finalCorrection: "최종 교정",
+            finalCorrection: "최종 검수",
             transcription: "점역",
           };
 
@@ -1765,7 +1765,7 @@ document.addEventListener("DOMContentLoaded", () => {
       correction1: "1차 교정",
       correction2: "2차 교정",
       correction3: "3차 교정",
-      finalCorrection: "최종 교정",
+      finalCorrection: "최종교정",
       transcription: "점역",
     };
 
@@ -1782,6 +1782,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <p><strong>총 페이지:</strong> ${task.totalPages}</p>
             <hr>
             <h4>진행 단계별 현황</h4>
+            <div class="stage-status-section">
             ${Object.keys(stageNames)
               .map((stageKey) => {
                 const stage = task.stages[stageKey];
@@ -1810,7 +1811,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     statusText = stage.status;
                 }
 
-                const historyList = (stage.history || [])
+                const historyListItems = (stage.history || [])
                   .map(
                     (entry) =>
                       `<li>${entry.date}: ${entry.startPage}~${entry.endPage} 페이지</li>`
@@ -1818,22 +1819,23 @@ document.addEventListener("DOMContentLoaded", () => {
                   .join("");
 
                 return `
-                    <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px;">
-                        <p><strong>${stageName}</strong></p>
+                    <div class="stage-status-card">
+                        <p class="stage-status-title"><strong>${stageName}</strong></p>
                         <p>담당자: ${stage.assignedTo || "미정"}</p>
                         <p>진행률: ${currentPages} / ${
                   task.totalPages
                 } 페이지 (${progressPercent}%)</p>
                         <p>상태: ${statusText}</p>
                         ${
-                          historyList
-                            ? `<strong>진행 기록:</strong><ul style="margin-top: 5px;">${historyList}</ul>`
-                            : '<p style="color: #666;">진행 기록 없음</p>'
+                          historyListItems
+                            ? `<div class="stage-history"><strong>진행 기록:</strong><ul class="stage-history-list">${historyListItems}</ul></div>`
+                            : '<p class="stage-history-empty">진행 기록 없음</p>'
                         }
                     </div>
                 `;
               })
               .join("")}
+            </div>
             ${
               task.currentStage === "completed"
                 ? '<p style="color: #4CAF50; font-weight: bold; text-align: center;">🎉 모든 작업이 완료되었습니다! 🎉</p>'
@@ -2236,7 +2238,7 @@ document.addEventListener("DOMContentLoaded", () => {
       correction1: "1차 교정",
       correction2: "2차 교정",
       correction3: "3차 교정",
-      finalCorrection: "최종교정",
+      finalCorrection: "최종검수",
       transcription: "점역",
       completed: "완료",
     };
@@ -3815,7 +3817,9 @@ document.addEventListener("DOMContentLoaded", () => {
     ).value;
     const endTime = document.getElementById("attendance-edit-end-time").value;
     const pagesInput = document.getElementById("attendance-edit-pages").value;
-    const rawTasksInput = document.getElementById("attendance-edit-tasks").value;
+    const rawTasksInput = document.getElementById(
+      "attendance-edit-tasks"
+    ).value;
 
     let pagesWorked = parseInt(pagesInput, 10);
     if (isNaN(pagesWorked) || pagesWorked < 0) {
@@ -4220,7 +4224,7 @@ document.addEventListener("DOMContentLoaded", () => {
           correction1: "1차 교정",
           correction2: "2차 교정",
           correction3: "3차 교정",
-          finalCorrection: "최종교정",
+          finalCorrection: "최종검수",
           transcription: "점역",
         };
         const stageName = stageNames[session.stage] || session.stage;

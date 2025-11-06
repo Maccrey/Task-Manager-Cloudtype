@@ -200,6 +200,23 @@ header {
   border-color: #2e7d32;
 }
 
+.header-link-btn {
+  background-color: #388e3c;
+  color: white;
+  border: 1px solid #388e3c;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+  margin-right: 15px;
+}
+
+.header-link-btn:hover {
+  background-color: #2e7d32;
+  border-color: #2e7d32;
+}
+
 .logout-btn {
   background-color: rgba(255, 255, 255, 0.2);
   color: white;
@@ -520,13 +537,12 @@ main {
 
 .modal-content {
   background-color: #fefefe;
-  margin: 15% auto; /* 15% from the top and centered */
+  margin: 5vh auto;
   padding: 20px;
   border: 1px solid #888;
-  width: 80%; /* Could be more or less, depending on screen size */
-  max-width: 600px;
-  height: auto; /* 높이 제한 해제 */
-  overflow: visible; /* 스크롤 제한 해제 */
+  width: min(90%, 600px);
+  max-height: 85vh;
+  overflow-y: auto;
   border-radius: 8px;
   position: relative;
 }
@@ -593,6 +609,42 @@ main {
   border: 1px dashed #ccc;
   border-radius: 4px;
   background-color: #f9f9f9;
+}
+
+#book-info .stage-status-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 0.75rem;
+}
+
+#book-info .stage-status-card {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+#book-info .stage-status-title {
+  margin: 0 0 6px 0;
+  font-size: 0.95rem;
+  color: #2e7d32;
+}
+
+#book-info .stage-history {
+  margin-top: 6px;
+}
+
+#book-info .stage-history-list {
+  margin: 4px 0 0 16px;
+  padding: 0;
+  list-style: disc;
+}
+
+#book-info .stage-history-empty {
+  color: #777;
+  margin: 6px 0 0 0;
 }
 
 .book-selection-list {

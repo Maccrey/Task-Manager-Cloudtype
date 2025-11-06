@@ -47,7 +47,7 @@
     <div id="main-dashboard" class="main-dashboard" style="display: none">
       <header>
         <div class="header-content">
-          <h1>점자 도서 작업 관리 대시보드 Ver 2.9</h1>
+          <h1>점자 도서 작업 관리 대시보드 Ver 3.0</h1>
           <div class="user-info">
             <button id="symbol-checker-btn" class="symbol-checker-btn">
               특수문자검사
@@ -102,7 +102,7 @@
                 3차교정
               </button>
               <button class="filter-btn" data-filter="finalCorrection">
-                최종교정
+                최종검수
               </button>
               <button class="filter-btn" data-filter="transcription">
                 점역
@@ -731,7 +731,7 @@
                   <option value="correction1">1차 교정</option>
                   <option value="correction2">2차 교정</option>
                   <option value="correction3">3차 교정</option>
-                  <option value="finalCorrection">최종 교정</option>
+                  <option value="finalCorrection">최종 검수</option>
                   <option value="transcription">점역</option>
                   <option value="completed">완료</option>
                 </select>
@@ -788,7 +788,7 @@
             </div>
 
             <div class="stage-section">
-              <h4>최종 교정</h4>
+              <h4>최종 검수</h4>
               <div class="stage-info">
                 <label
                   >담당자:
@@ -1085,6 +1085,6 @@
     <script src="firebase-adapter.js"></script>
 
     <!-- 쿠키로 문제가 될 경우 버전을 올려서 쿠키에 영향이 없도록 할 수 있음 -->
-    <script src="script.js?v=2.9.0"></script>
+    <script src="script.js?v=3.0.0"></script>
   </body>
 </html>
