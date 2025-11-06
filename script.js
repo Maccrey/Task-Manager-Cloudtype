@@ -1634,6 +1634,7 @@ document.addEventListener("DOMContentLoaded", () => {
           correction1: "1차 교정",
           correction2: "2차 교정",
           correction3: "3차 교정",
+          finalCorrection: "최종교정",
           transcription: "점역",
         };
 
@@ -2232,10 +2233,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function getStageDisplayName(stage) {
     const stageNames = {
-      corrector1: "1차 교정",
-      corrector2: "2차 교정",
-      corrector3: "3차 교정",
-      transcriber: "점역",
+      correction1: "1차 교정",
+      correction2: "2차 교정",
+      correction3: "3차 교정",
+      finalCorrection: "최종교정",
+      transcription: "점역",
+      completed: "완료",
     };
     return stageNames[stage] || stage;
   }
@@ -4205,6 +4208,7 @@ document.addEventListener("DOMContentLoaded", () => {
           correction1: "1차 교정",
           correction2: "2차 교정",
           correction3: "3차 교정",
+          finalCorrection: "최종교정",
           transcription: "점역",
         };
         const stageName = stageNames[session.stage] || session.stage;
