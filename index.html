@@ -47,7 +47,7 @@
     <div id="main-dashboard" class="main-dashboard" style="display: none">
       <header>
         <div class="header-content">
-          <h1>점자 도서 작업 관리 대시보드 Ver 2.8</h1>
+          <h1>점자 도서 작업 관리 대시보드 Ver 2.9</h1>
           <div class="user-info">
             <button id="symbol-checker-btn" class="symbol-checker-btn">
               특수문자검사
@@ -292,7 +292,9 @@
                 </div>
               </div>
               <div class="admin-buttons">
-                <button id="merge-work-sessions-btn" class="admin-btn primary">병합</button>
+                <button id="merge-work-sessions-btn" class="admin-btn primary">
+                  병합
+                </button>
                 <button id="backup-work-sessions-btn" class="admin-btn backup">
                   📥 백업
                 </button>
@@ -844,7 +846,8 @@
         <div class="modal-heading">
           <h2>완료된 도서 목록</h2>
           <p class="modal-subtitle">
-            완료된 도서의 진행 내역을 확인하고 필요한 데이터를 내보낼 수 있습니다.
+            완료된 도서의 진행 내역을 확인하고 필요한 데이터를 내보낼 수
+            있습니다.
           </p>
         </div>
 
@@ -1053,8 +1056,19 @@
           <input type="time" id="attendance-edit-start-time" required />
           <label for="attendance-edit-end-time">퇴근시간:</label>
           <input type="time" id="attendance-edit-end-time" required />
-          <label for="attendance-edit-tasks">작업내용:</label>
-          <input type="text" id="attendance-edit-tasks" />
+          <label for="attendance-edit-pages">작업 페이지 수:</label>
+          <input
+            type="number"
+            id="attendance-edit-pages"
+            min="0"
+            placeholder="완료한 페이지 수를 입력하세요"
+          />
+          <label for="attendance-edit-tasks">작업내용 (선택):</label>
+          <input
+            type="text"
+            id="attendance-edit-tasks"
+            placeholder="작업 메모가 있다면 입력하세요"
+          />
           <button type="submit">저장</button>
         </form>
       </div>
@@ -1071,6 +1085,6 @@
     <script src="firebase-adapter.js"></script>
 
     <!-- 쿠키로 문제가 될 경우 버전을 올려서 쿠키에 영향이 없도록 할 수 있음 -->
-    <script src="script.js?v=2.8.4"></script>
+    <script src="script.js?v=2.9.0"></script>
   </body>
 </html>

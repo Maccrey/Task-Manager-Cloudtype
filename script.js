@@ -3782,11 +3782,15 @@ document.addEventListener("DOMContentLoaded", () => {
       )
         .toLocaleTimeString("sv-SE")
         .substring(0, 5);
-      document.getElementById("attendance-edit-tasks").value = record.taskTitle;
+      document.getElementById("attendance-edit-pages").value =
+        record.pagesWorked ?? "";
+      document.getElementById("attendance-edit-tasks").value =
+        record.taskTitle || "";
     } else {
       title.textContent = "출퇴근 기록 생성";
       form.reset();
       document.getElementById("attendance-edit-id").value = "";
+      document.getElementById("attendance-edit-pages").value = "";
     }
 
     modal.style.display = "flex";
@@ -3810,17 +3814,25 @@ document.addEventListener("DOMContentLoaded", () => {
       "attendance-edit-start-time"
     ).value;
     const endTime = document.getElementById("attendance-edit-end-time").value;
-    const tasks = document
-      .getElementById("attendance-edit-tasks")
-      .value.split(",")
-      .map((t) => t.trim());
+    const pagesInput = document.getElementById("attendance-edit-pages").value;
+    const rawTasksInput = document.getElementById("attendance-edit-tasks").value;
+
+    let pagesWorked = parseInt(pagesInput, 10);
+    if (isNaN(pagesWorked) || pagesWorked < 0) {
+      pagesWorked = 0;
+    }
+
+    const tasks = rawTasksInput
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
 
     const record = {
       worker,
       startTime: new Date(`${date}T${startTime}`).toISOString(),
       endTime: new Date(`${date}T${endTime}`).toISOString(),
       taskTitle: tasks.join(", "),
-      pagesWorked: 0, // Assuming pages worked is not edited in this modal
+      pagesWorked,
     };
 
     try {
