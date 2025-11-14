@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const analytics = window.FirebaseAnalytics;
   // 로그인 관련 변수
   let currentUser = null;
   const loginPage = document.getElementById("login-page");
@@ -848,6 +849,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const data = await response.json();
+      const resultCount = Array.isArray(data.result) ? data.result.length : 0;
+      analytics?.logEvent?.("book_search", {
+        query,
+        result_count: resultCount,
+      });
 
       if (data.result && data.result.length > 0) {
         if (data.result.length === 1) {
@@ -872,6 +878,10 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error("Error fetching book data:", error);
       alert(`책 정보를 가져오는 데 실패했습니다: ${error.message}`);
+      analytics?.logEvent?.("book_search_error", {
+        query,
+        message: error.message,
+      });
       openModal(); // 수동 입력 모달 열기
     }
   }
@@ -895,10 +905,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   addNewButton.addEventListener("click", () => {
     openModal();
+    analytics?.logEvent?.("task_modal_opened", {
+      mode: currentBook ? "edit" : "create",
+    });
   });
 
   completedBooksButton.addEventListener("click", () => {
     openCompletedBooksModal();
+    analytics?.logEvent?.("completed_books_viewed", {});
   });
 
   closeButton.addEventListener("click", closeModal);
@@ -927,6 +941,9 @@ document.addEventListener("DOMContentLoaded", () => {
       filterButtons.forEach((btn) => btn.classList.remove("active"));
       button.classList.add("active");
       renderTasks();
+      analytics?.logEvent?.("task_filter_applied", {
+        filter: currentFilter,
+      });
     });
   });
 
@@ -1005,6 +1022,13 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Creating new task:", newTask);
 
       const savedTask = await saveTask(newTask, true);
+      analytics?.logEvent?.("task_created", {
+        task_id: savedTask?.id || newTask.id,
+        title: stripHtmlTags(savedTask?.book?.title || newBook.title),
+        total_pages: totalPages,
+        corrector1,
+        created_by: currentUser || "unknown",
+      });
 
       // 데이터 목록을 다시 로드하여 화면을 갱신
       await loadTasks();
@@ -1015,6 +1039,9 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error("Error adding task:", error);
       alert(`작업을 추가하는 데 실패했습니다: ${error.message}`);
+      analytics?.logEvent?.("task_create_error", {
+        message: error.message,
+      });
     }
   });
 
@@ -4951,26 +4978,33 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    analytics?.logEvent?.("login_attempt", { user_name: staffName });
     // 직원 목록에서 해당 이름이 등록되어 있는지 확인
     const isValidUser = await validateUser(staffName);
 
     if (isValidUser) {
       currentUser = staffName;
       localStorage.setItem("currentUser", currentUser);
+      analytics?.setUserId?.(currentUser);
+      analytics?.logEvent?.("login_success", { user_name: currentUser });
       showMainDashboard();
     } else {
       showLoginError("등록되지 않은 직원입니다. 관리자에게 문의하세요.");
       staffNameInput.value = "";
+      analytics?.logEvent?.("login_failure", { user_name: staffName });
     }
   }
 
   function handleLogout() {
+    const previousUser = currentUser;
     currentUser = null;
     localStorage.removeItem("currentUser");
     staffNameInput.value = "";
     // 실시간 업데이트 타이머 정리
     stopWorkersDisplayUpdate();
     showLoginPage();
+    analytics?.logEvent?.("logout", { user_name: previousUser });
+    analytics?.clearUserId?.();
   }
 
   // 로그인 이벤트 리스너

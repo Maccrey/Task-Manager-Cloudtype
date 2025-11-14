@@ -12,10 +12,30 @@ const firebaseConfig = {
   appId: "1:107033729788949223946:web:f3e8c4c6f8e6d7a8e3c4b5"
 };
 
+const ANALYTICS_PLACEHOLDER_ID = "G-XXXXXXXXXXXX";
+const firebaseMeasurementId =
+  (typeof window !== 'undefined' && window.FIREBASE_MEASUREMENT_ID) ||
+  ANALYTICS_PLACEHOLDER_ID;
+
+const hasAnalyticsMeasurementId =
+  typeof firebaseMeasurementId === 'string' &&
+  firebaseMeasurementId.startsWith('G-') &&
+  firebaseMeasurementId !== ANALYTICS_PLACEHOLDER_ID;
+
+if (hasAnalyticsMeasurementId) {
+  firebaseConfig.measurementId = firebaseMeasurementId;
+} else {
+  console.warn(
+    '⚠️ Firebase Analytics measurementId가 설정되지 않았습니다. window.FIREBASE_MEASUREMENT_ID 또는 firebase-config.js의 ANALYTICS_PLACEHOLDER_ID를 실제 값으로 교체하세요.'
+  );
+}
+
 // Firebase 초기화
 let app;
 let database;
 let isFirebaseInitialized = false;
+let analytics;
+let isAnalyticsInitialized = false;
 
 function initializeFirebase() {
   if (isFirebaseInitialized) {
@@ -26,6 +46,7 @@ function initializeFirebase() {
     // Firebase 앱 초기화
     app = firebase.initializeApp(firebaseConfig);
     database = firebase.database();
+    initializeFirebaseAnalytics();
     isFirebaseInitialized = true;
 
     console.log('✅ Firebase initialized successfully');
@@ -36,6 +57,96 @@ function initializeFirebase() {
     console.error('❌ Firebase initialization failed:', error);
     throw error;
   }
+}
+
+const FirebaseAnalytics = {
+  logEvent(eventName, params = {}) {
+    if (!eventName) {
+      return;
+    }
+
+    const analyticsInstance = getAnalyticsInstance();
+    if (!analyticsInstance || typeof analyticsInstance.logEvent !== 'function') {
+      return;
+    }
+
+    try {
+      analyticsInstance.logEvent(eventName, params);
+    } catch (error) {
+      console.error('❌ Firebase Analytics logEvent failed:', error, { eventName, params });
+    }
+  },
+
+  setUserId(userId) {
+    const analyticsInstance = getAnalyticsInstance();
+    if (!analyticsInstance || typeof analyticsInstance.setUserId !== 'function') {
+      return;
+    }
+
+    try {
+      analyticsInstance.setUserId(userId || null);
+    } catch (error) {
+      console.error('❌ Firebase Analytics setUserId failed:', error);
+    }
+  },
+
+  clearUserId() {
+    this.setUserId(null);
+  },
+
+  setUserProperties(properties = {}) {
+    const analyticsInstance = getAnalyticsInstance();
+    if (!analyticsInstance || typeof analyticsInstance.setUserProperties !== 'function') {
+      return;
+    }
+
+    try {
+      analyticsInstance.setUserProperties(properties);
+    } catch (error) {
+      console.error('❌ Firebase Analytics setUserProperties failed:', error);
+    }
+  },
+
+  isEnabled() {
+    return Boolean(hasAnalyticsMeasurementId && (analytics || isAnalyticsInitialized));
+  }
+};
+
+function initializeFirebaseAnalytics() {
+  if (isAnalyticsInitialized) {
+    return analytics;
+  }
+
+  if (!hasAnalyticsMeasurementId) {
+    return null;
+  }
+
+  if (typeof firebase === 'undefined' || typeof firebase.analytics !== 'function') {
+    console.warn('⚠️ Firebase Analytics SDK가 로드되지 않았습니다. firebase-analytics-compat.js를 포함했는지 확인하세요.');
+    return null;
+  }
+
+  try {
+    analytics = firebase.analytics(app);
+    isAnalyticsInitialized = true;
+    console.log('📈 Firebase Analytics initialized successfully');
+    return analytics;
+  } catch (error) {
+    console.error('❌ Firebase Analytics initialization failed:', error);
+    return null;
+  }
+}
+
+function getAnalyticsInstance() {
+  if (!isFirebaseInitialized) {
+    initializeFirebase();
+  }
+
+  if (analytics) {
+    return analytics;
+  }
+
+  return initializeFirebaseAnalytics();
 }
 
 // Firebase Database 참조 가져오기
@@ -588,8 +699,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeFirebase();
 });
 
-// 전역으로 노출 (디버깅용)
+// 전역으로 노출 (디버깅/통계용)
 window.FirebaseBooks = FirebaseBooks;
+window.FirebaseAnalytics = FirebaseAnalytics;
 window.cleanDuplicateBooks = async () => {
   const result = await FirebaseBooks.findAndCleanDuplicates();
   console.log('🎯 정리 결과:', result);
