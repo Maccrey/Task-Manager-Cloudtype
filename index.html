@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>점자 도서 작업 관리 대시보드</title>
+    <link rel="icon" type="image/png" href="images/Study%20Duck.png" />
     <link rel="stylesheet" href="style.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
   </head>
@@ -27,20 +28,61 @@
         </form>
         <div id="login-error" class="login-error" style="display: none"></div>
       </div>
+      <div class="login-ad-banner">
+        <ins
+          class="kakao_ad_area"
+          style="display: none"
+          data-ad-unit="DAN-7VQcUrfV0TNWMZGM"
+          data-ad-width="728"
+          data-ad-height="90"
+        ></ins>
+      </div>
+      <script
+        type="text/javascript"
+        src="//t1.daumcdn.net/kas/static/ba.min.js"
+        async
+      ></script>
     </div>
 
     <!-- 메인 대시보드 페이지 -->
     <div id="main-dashboard" class="main-dashboard" style="display: none">
       <header>
         <div class="header-content">
-          <h1>점자 도서 작업 관리 대시보드 Ver 2.5</h1>
+          <h1>점자 도서 작업 관리 대시보드 Ver 3.0</h1>
           <div class="user-info">
             <button id="symbol-checker-btn" class="symbol-checker-btn">
               특수문자검사
             </button>
-            <button id="braille-typing-btn" class="braille-typing-btn">
-              점자타자연습
-            </button>
+            <a
+              href="https://typing.maccrey.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style="text-decoration: none"
+            >
+              <button id="braille-typing-btn" class="braille-typing-btn">
+                점자타자연습
+              </button>
+            </a>
+            <a
+              href="https://dashboard.maccrey.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style="text-decoration: none"
+            >
+              <button id="work-dashboard-btn" class="braille-typing-btn">
+                업무대시보드
+              </button>
+            </a>
+            <a
+              href="https://maccrey.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style="text-decoration: none"
+            >
+              <button id="psychology-test-btn" class="braille-typing-btn">
+                심리테스트
+              </button>
+            </a>
             <span id="current-user-name"></span>
             <button id="logout-btn" class="logout-btn">로그아웃</button>
           </div>
@@ -67,7 +109,28 @@
         </section>
 
         <section class="dashboard-section">
-          <h2>진행 중인 작업</h2>
+          <div class="dashboard-section-header">
+            <h2>진행 중인 작업</h2>
+            <div class="task-filters">
+              <button class="filter-btn active" data-filter="all">전체</button>
+              <button class="filter-btn" data-filter="correction1">
+                1차교정
+              </button>
+              <button class="filter-btn" data-filter="correction2">
+                2차교정
+              </button>
+              <button class="filter-btn" data-filter="correction3">
+                3차교정
+              </button>
+              <button class="filter-btn" data-filter="finalCorrection">
+                최종검수
+              </button>
+              <button class="filter-btn" data-filter="transcription">
+                점역
+              </button>
+              <button class="filter-btn" data-filter="completed">완료</button>
+            </div>
+          </div>
           <div id="task-list" class="task-list">
             <!-- 작업 목록이 여기에 동적으로 추가됩니다. -->
           </div>
@@ -118,13 +181,14 @@
       <div class="modal-content">
         <span class="close-button">&times;</span>
         <h2 id="progress-modal-title">진행 상황 업데이트</h2>
+        <div id="progress-task-info"></div>
         <form id="progress-update-form">
-          <p id="progress-task-info"></p>
-          <label for="update-page-input">진행 페이지:</label>
+          <input type="hidden" id="progress-task-id" />
+          <label for="update-page-input">완료된 페이지:</label>
           <input type="number" id="update-page-input" required />
-          <label for="update-datetime-input">작업 날짜 및 시간:</label>
+          <label for="update-datetime-input">완료 시간:</label>
           <input type="datetime-local" id="update-datetime-input" />
-          <button type="submit">업데이트</button>
+          <button type="submit">저장</button>
         </form>
       </div>
     </div>
@@ -190,6 +254,9 @@
                 </div>
               </div>
               <div class="admin-buttons">
+                <button id="check-duplicates-btn" class="admin-btn primary">
+                  🔍 중복 검사
+                </button>
                 <button id="backup-books-btn" class="admin-btn backup">
                   📥 백업
                 </button>
@@ -246,6 +313,9 @@
                 </div>
               </div>
               <div class="admin-buttons">
+                <button id="merge-work-sessions-btn" class="admin-btn primary">
+                  병합
+                </button>
                 <button id="backup-work-sessions-btn" class="admin-btn backup">
                   📥 백업
                 </button>
@@ -396,6 +466,9 @@
                   <button id="export-attendance-btn" class="small-btn">
                     출퇴근 기록 내보내기
                   </button>
+                  <button id="create-attendance-btn" class="small-btn">
+                    생성
+                  </button>
                 </div>
               </div>
             </div>
@@ -412,6 +485,7 @@
                       <th>퇴근시간</th>
                       <th>근무시간</th>
                       <th>작업내용</th>
+                      <th>작업</th>
                     </tr>
                   </thead>
                   <tbody id="attendance-tbody">
@@ -572,7 +646,7 @@
               </div>
               <div class="attendance-summary">
                 <div class="attendance-card">
-                  <h4>정상 출근</h4>
+                  <h4>정상근무</h4>
                   <div class="attendance-value normal" id="normal-attendance">
                     0일
                   </div>
@@ -678,6 +752,7 @@
                   <option value="correction1">1차 교정</option>
                   <option value="correction2">2차 교정</option>
                   <option value="correction3">3차 교정</option>
+                  <option value="finalCorrection">최종 검수</option>
                   <option value="transcription">점역</option>
                   <option value="completed">완료</option>
                 </select>
@@ -734,6 +809,22 @@
             </div>
 
             <div class="stage-section">
+              <h4>최종 검수</h4>
+              <div class="stage-info">
+                <label
+                  >담당자:
+                  <select id="final-corrector-assigned" class="stage-input">
+                    <option value="">담당자 선택</option>
+                  </select></label
+                >
+                <label
+                  >진행 페이지:
+                  <span id="final-corrector-progress">0</span></label
+                >
+              </div>
+            </div>
+
+            <div class="stage-section">
               <h4>점역</h4>
               <div class="stage-info">
                 <label
@@ -773,11 +864,17 @@
     <div id="completed-books-modal" class="modal">
       <div class="modal-content completed-books">
         <span class="close-button">&times;</span>
-        <h2>완료된 도서 목록</h2>
+        <div class="modal-heading">
+          <h2>완료된 도서 목록</h2>
+          <p class="modal-subtitle">
+            완료된 도서의 진행 내역을 확인하고 필요한 데이터를 내보낼 수
+            있습니다.
+          </p>
+        </div>
 
         <div class="completed-stats">
-          <div class="stat-item">
-            <span class="stat-label">총 완료 작업:</span>
+          <div class="stat-card">
+            <span class="stat-label">총 완료 작업</span>
             <span id="completed-count" class="stat-value">0</span>
           </div>
         </div>
@@ -791,12 +888,14 @@
               진행 목록 내보내기
             </button>
           </div>
-          <input
-            type="text"
-            id="completed-search"
-            placeholder="완료된 도서 검색..."
-            class="search-input"
-          />
+          <div class="search-wrapper">
+            <input
+              type="text"
+              id="completed-search"
+              placeholder="완료된 도서 검색..."
+              class="search-input"
+            />
+          </div>
         </div>
 
         <div class="completed-table-container">
@@ -964,9 +1063,45 @@
       </div>
     </div>
 
+    <div id="attendance-edit-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2 id="attendance-edit-modal-title">출퇴근 기록 수정</h2>
+        <form id="attendance-edit-form">
+          <input type="hidden" id="attendance-edit-id" />
+          <label for="attendance-edit-worker">직원:</label>
+          <select id="attendance-edit-worker" required></select>
+          <label for="attendance-edit-date">날짜:</label>
+          <input type="date" id="attendance-edit-date" required />
+          <label for="attendance-edit-start-time">출근시간:</label>
+          <input type="time" id="attendance-edit-start-time" required />
+          <label for="attendance-edit-end-time">퇴근시간:</label>
+          <input type="time" id="attendance-edit-end-time" required />
+          <label for="attendance-edit-pages">작업 페이지 수:</label>
+          <input
+            type="number"
+            id="attendance-edit-pages"
+            min="0"
+            placeholder="완료한 페이지 수를 입력하세요"
+          />
+          <label for="attendance-edit-tasks">작업내용 (선택):</label>
+          <input
+            type="text"
+            id="attendance-edit-tasks"
+            placeholder="작업 메모가 있다면 입력하세요"
+          />
+          <button type="submit">저장</button>
+        </form>
+      </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script>
+      window.FIREBASE_MEASUREMENT_ID = "G-QB9MKN0Z8T";
+    </script>
 
     <!-- Firebase 설정 및 헬퍼 함수 -->
     <script src="firebase-config.js"></script>
@@ -974,7 +1109,7 @@
     <!-- Firebase 어댑터 (fetch를 Firebase로 변환) -->
     <script src="firebase-adapter.js"></script>
 
-    <!-- 메인 스크립트 -->
-    <script src="script.js"></script>
+    <!-- 쿠키로 문제가 될 경우 버전을 올려서 쿠키에 영향이 없도록 할 수 있음 -->
+    <script src="script.js?v=3.0.0"></script>
   </body>
 </html>

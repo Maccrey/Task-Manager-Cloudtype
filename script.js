@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const analytics = window.FirebaseAnalytics;
   // 로그인 관련 변수
   let currentUser = null;
   const loginPage = document.getElementById("login-page");
@@ -10,6 +11,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const logoutBtn = document.getElementById("logout-btn");
   const symbolCheckerBtn = document.getElementById("symbol-checker-btn");
   const brailleTypingBtn = document.getElementById("braille-typing-btn");
+
+  // Task filter elements
+  const filterButtons = document.querySelectorAll(".filter-btn");
+  let currentFilter = "all"; // Initialize with 'all' filter
 
   const isbnTitleInput = document.getElementById("isbn-title-input");
   const searchButton = document.getElementById("search-button");
@@ -125,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let firebaseListeners = {
     books: null,
     staff: null,
-    workSessions: null
+    workSessions: null,
   };
 
   let currentBook = null;
@@ -191,94 +196,154 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       console.log("Firebase 실시간 리스너 초기화 중...");
 
+      // 기존 Books 리스너 제거 (중복 방지)
+      if (firebaseListeners.books) {
+        FirebaseBooks.off();
+      }
+
       // Books 리스너
       firebaseListeners.books = FirebaseBooks.onValue((books) => {
-        console.log("Firebase Books 업데이트:", books.length);
-        console.log("First book data structure:", books[0]); // 데이터 구조 확인
+        console.log("📚 Firebase Books 업데이트:", books.length);
+
+        // 중복 ID 확인 및 제거
+        const ids = books.map((b) => b.id);
+        const uniqueIds = new Set(ids);
+        if (ids.length !== uniqueIds.size) {
+          console.error("⚠️ 중복된 책 ID 발견!");
+          const duplicates = ids.filter(
+            (id, index) => ids.indexOf(id) !== index
+          );
+          console.error("중복 ID:", duplicates);
+
+          // 중복 제거: 각 ID에 대해 첫 번째 항목만 유지
+          const seen = new Set();
+          books = books.filter((book) => {
+            if (seen.has(book.id)) {
+              console.warn(
+                `🗑️ 중복 제거: ID=${book.id}, 제목=${book.book?.title}`
+              );
+              return false;
+            }
+            seen.add(book.id);
+            return true;
+          });
+          console.log("✅ 중복 제거 후 책 수:", books.length);
+        }
+
         tasks = books;
-        renderTasks(); // displayTasks 대신 renderTasks 사용
-        if (typeof updateAdminTasksTable === 'function') {
+        renderTasks();
+        if (typeof updateAdminTasksTable === "function") {
           updateAdminTasksTable();
         }
-        if (typeof updateStatsTab === 'function') {
+        if (typeof updateStatsTab === "function") {
           updateStatsTab();
         }
       });
 
+      // 기존 Staff 리스너 제거 (중복 방지)
+      if (firebaseListeners.staff) {
+        FirebaseStaff.off();
+      }
+
       // Staff 리스너
       firebaseListeners.staff = FirebaseStaff.onValue((staffList) => {
-        console.log("Firebase Staff 업데이트:", staffList.length);
+        console.log("👥 Firebase Staff 업데이트:", staffList.length);
         staff = staffList;
-        updateStaffDropdowns(); // updateStaffSelects 대신 updateStaffDropdowns 사용
-        if (typeof displayStaffList === 'function') {
+        updateStaffDropdowns();
+        if (typeof displayStaffList === "function") {
           displayStaffList();
         }
       });
 
+      // 기존 Work Sessions 리스너 제거 (중복 방지)
+      if (firebaseListeners.workSessions) {
+        FirebaseWorkSessions.off();
+      }
+
       // Work Sessions 리스너
-      firebaseListeners.workSessions = FirebaseWorkSessions.onValue((sessions) => {
-        console.log("🔔 Firebase Work Sessions 리스너 트리거됨");
-        console.log("📊 Sessions 데이터:", sessions);
+      firebaseListeners.workSessions = FirebaseWorkSessions.onValue(
+        (sessions) => {
+          console.log("🔔 Firebase Work Sessions 리스너 트리거됨");
+          console.log("📊 Sessions 데이터:", sessions);
 
-        if (sessions) {
-          console.log("✅ Firebase Work Sessions 업데이트:", Object.keys(sessions).length, "개 세션");
-          // sessions는 객체 형태이므로 배열로 변환
-          workSessions = Object.values(sessions);
+          if (sessions) {
+            console.log(
+              "✅ Firebase Work Sessions 업데이트:",
+              Object.keys(sessions).length,
+              "개 세션"
+            );
+            // sessions는 객체 형태이므로 배열로 변환
+            workSessions = Object.values(sessions);
 
-          // currentWorkSessions Map 업데이트
-          const previousSize = currentWorkSessions.size;
-          currentWorkSessions.clear();
-          for (const [taskId, sessionData] of Object.entries(sessions || {})) {
-            if (sessionData && sessionData.isWorking) {
-              currentWorkSessions.set(taskId, {
-                startTime: new Date(sessionData.startTime),
-                worker: sessionData.worker,
-                isWorking: sessionData.isWorking,
-                taskTitle: getTaskTitle(taskId),
-                stage: getCurrentStage(taskId),
-              });
+            // currentWorkSessions Map 업데이트
+            const previousSize = currentWorkSessions.size;
+            currentWorkSessions.clear();
+            for (const [taskId, sessionData] of Object.entries(
+              sessions || {}
+            )) {
+              if (sessionData && sessionData.isWorking) {
+                currentWorkSessions.set(taskId, {
+                  startTime: new Date(sessionData.startTime),
+                  worker: sessionData.worker,
+                  isWorking: sessionData.isWorking,
+                  taskTitle: getTaskTitle(taskId),
+                  stage: getCurrentStage(taskId),
+                });
+              }
             }
-          }
-          console.log(`📈 currentWorkSessions 업데이트: ${previousSize} → ${currentWorkSessions.size}`);
+            console.log(
+              `📈 currentWorkSessions 업데이트: ${previousSize} → ${currentWorkSessions.size}`
+            );
 
-          // UI 업데이트 - 작업 목록과 현재 작업자 표시 모두 업데이트
-          const progressModal = document.getElementById("progress-update-modal");
-          if (!isProgressModalProtected && (!progressModal || progressModal.style.display !== "flex")) {
-            if (typeof renderTasks === 'function') {
-              console.log("🔄 renderTasks 호출");
-              renderTasks();
+            // UI 업데이트 - 작업 목록과 현재 작업자 표시 모두 업데이트
+            const progressModal = document.getElementById(
+              "progress-update-modal"
+            );
+            if (
+              !isProgressModalProtected &&
+              (!progressModal || progressModal.style.display !== "flex")
+            ) {
+              if (typeof renderTasks === "function") {
+                console.log("🔄 renderTasks 호출");
+                renderTasks();
+              }
             }
-          }
 
-          if (typeof updateCurrentWorkersDisplay === 'function') {
-            console.log("🔄 updateCurrentWorkersDisplay 호출");
-            updateCurrentWorkersDisplay();
-            // 실시간 업데이트 타이머 시작 (작업중인 세션이 있을 때만)
-            startWorkersDisplayUpdate();
-          }
-        } else {
-          console.log("⚠️ Sessions 데이터가 null 또는 비어있음");
-          // sessions가 null이면 모든 세션이 제거된 것
-          const previousSize = currentWorkSessions.size;
-          currentWorkSessions.clear();
-          console.log(`📉 currentWorkSessions 클리어됨: ${previousSize} → 0`);
-
-          // UI 업데이트
-          const progressModal = document.getElementById("progress-update-modal");
-          if (!isProgressModalProtected && (!progressModal || progressModal.style.display !== "flex")) {
-            if (typeof renderTasks === 'function') {
-              console.log("🔄 renderTasks 호출");
-              renderTasks();
+            if (typeof updateCurrentWorkersDisplay === "function") {
+              console.log("🔄 updateCurrentWorkersDisplay 호출");
+              updateCurrentWorkersDisplay();
+              // 실시간 업데이트 타이머 시작 (작업중인 세션이 있을 때만)
+              startWorkersDisplayUpdate();
             }
-          }
+          } else {
+            console.log("⚠️ Sessions 데이터가 null 또는 비어있음");
+            // sessions가 null이면 모든 세션이 제거된 것
+            const previousSize = currentWorkSessions.size;
+            currentWorkSessions.clear();
+            console.log(`📉 currentWorkSessions 클리어됨: ${previousSize} → 0`);
 
-          if (typeof updateCurrentWorkersDisplay === 'function') {
-            console.log("🔄 updateCurrentWorkersDisplay 호출");
-            updateCurrentWorkersDisplay();
-            stopWorkersDisplayUpdate();
+            // UI 업데이트
+            const progressModal = document.getElementById(
+              "progress-update-modal"
+            );
+            if (
+              !isProgressModalProtected &&
+              (!progressModal || progressModal.style.display !== "flex")
+            ) {
+              if (typeof renderTasks === "function") {
+                console.log("🔄 renderTasks 호출");
+                renderTasks();
+              }
+            }
+
+            if (typeof updateCurrentWorkersDisplay === "function") {
+              console.log("🔄 updateCurrentWorkersDisplay 호출");
+              updateCurrentWorkersDisplay();
+              stopWorkersDisplayUpdate();
+            }
           }
         }
-      });
+      );
 
       console.log("Firebase 실시간 리스너 초기화 완료");
       updateStatusDisplay();
@@ -308,7 +373,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Checking Firebase connection...");
 
       // Firebase가 초기화되어 있는지 간단히 확인
-      if (typeof firebase !== 'undefined' && firebase.database) {
+      if (typeof firebase !== "undefined" && firebase.database) {
         serverStatus = "online";
         console.log("Firebase is available");
         return true;
@@ -376,26 +441,60 @@ document.addEventListener("DOMContentLoaded", () => {
         // 데이터 구조 검증 및 복구
         tasks.forEach((task, index) => {
           if (!task.stages) {
-            console.warn(`⚠️ Task ${index} (ID: ${task.id}) has no stages property! Initializing...`, task);
+            console.warn(
+              `⚠️ Task ${index} (ID: ${task.id}) has no stages property! Initializing...`,
+              task
+            );
             task.stages = {
               correction1: { assignedTo: "", history: [], status: "pending" },
-              correction2: { assignedTo: "", history: [], status: "not_applicable" },
-              correction3: { assignedTo: "", history: [], status: "not_applicable" },
-              transcription: { assignedTo: "", history: [], status: "not_applicable" }
+              correction2: {
+                assignedTo: "",
+                history: [],
+                status: "not_applicable",
+              },
+              correction3: {
+                assignedTo: "",
+                history: [],
+                status: "not_applicable",
+              },
+              finalCorrection: {
+                assignedTo: "",
+                history: [],
+                status: "not_applicable",
+              },
+              transcription: {
+                assignedTo: "",
+                history: [],
+                status: "not_applicable",
+              },
             };
           }
 
           if (!task.currentStage) {
-            console.warn(`⚠️ Task ${index} (ID: ${task.id}) has no currentStage property! Setting to correction1...`, task);
+            console.warn(
+              `⚠️ Task ${index} (ID: ${task.id}) has no currentStage property! Setting to correction1...`,
+              task
+            );
             task.currentStage = "correction1";
           }
 
-          if (task.stages && task.currentStage && !task.stages[task.currentStage]) {
-            console.warn(`⚠️ Task ${index} (ID: ${task.id}) currentStage "${task.currentStage}" not found in stages! Initializing stage...`, {
-              currentStage: task.currentStage,
-              availableStages: Object.keys(task.stages)
-            });
-            task.stages[task.currentStage] = { assignedTo: "", history: [], status: "pending" };
+          if (
+            task.stages &&
+            task.currentStage &&
+            !task.stages[task.currentStage]
+          ) {
+            console.warn(
+              `⚠️ Task ${index} (ID: ${task.id}) currentStage "${task.currentStage}" not found in stages! Initializing stage...`,
+              {
+                currentStage: task.currentStage,
+                availableStages: Object.keys(task.stages),
+              }
+            );
+            task.stages[task.currentStage] = {
+              assignedTo: "",
+              history: [],
+              status: "pending",
+            };
           }
         });
 
@@ -420,7 +519,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // 작업 저장/업데이트 함수 (Firebase 사용)
   async function saveTask(task, isNewTask = false) {
     try {
-      console.log(`${isNewTask ? 'Creating' : 'Updating'} task in Firebase:`, task.id);
+      console.log(
+        `${isNewTask ? "Creating" : "Updating"} task in Firebase:`,
+        task.id
+      );
       console.log("Task data being sent:", JSON.stringify(task, null, 2));
 
       let savedTask;
@@ -530,6 +632,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("corrector1"),
       document.getElementById("corrector2"),
       document.getElementById("corrector3"),
+      document.getElementById("final-corrector-assigned"),
       document.getElementById("transcriber"),
       document.getElementById("corrector1-assigned"),
       document.getElementById("corrector2-assigned"),
@@ -746,6 +849,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const data = await response.json();
+      const resultCount = Array.isArray(data.result) ? data.result.length : 0;
+      analytics?.logEvent?.("book_search", {
+        query,
+        result_count: resultCount,
+      });
 
       if (data.result && data.result.length > 0) {
         if (data.result.length === 1) {
@@ -770,6 +878,10 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error("Error fetching book data:", error);
       alert(`책 정보를 가져오는 데 실패했습니다: ${error.message}`);
+      analytics?.logEvent?.("book_search_error", {
+        query,
+        message: error.message,
+      });
       openModal(); // 수동 입력 모달 열기
     }
   }
@@ -793,10 +905,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   addNewButton.addEventListener("click", () => {
     openModal();
+    analytics?.logEvent?.("task_modal_opened", {
+      mode: currentBook ? "edit" : "create",
+    });
   });
 
   completedBooksButton.addEventListener("click", () => {
     openCompletedBooksModal();
+    analytics?.logEvent?.("completed_books_viewed", {});
   });
 
   closeButton.addEventListener("click", closeModal);
@@ -806,9 +922,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.target === modal) {
       closeModal();
     }
-    if (event.target === progressUpdateModal) {
-      closeProgressUpdateModal();
-    }
+
     if (event.target === bookSelectionModal) {
       closeBookSelectionModal();
     }
@@ -818,6 +932,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.target === document.getElementById("attendance-only-modal")) {
       document.getElementById("attendance-only-modal").style.display = "none";
     }
+  });
+
+  // 필터 버튼 이벤트 리스너
+  filterButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      currentFilter = button.dataset.filter;
+      filterButtons.forEach((btn) => btn.classList.remove("active"));
+      button.classList.add("active");
+      renderTasks();
+      analytics?.logEvent?.("task_filter_applied", {
+        filter: currentFilter,
+      });
+    });
   });
 
   // 작업 등록 폼 제출
@@ -875,6 +1002,11 @@ document.addEventListener("DOMContentLoaded", () => {
             history: [],
             status: "pending",
           },
+          finalCorrection: {
+            assignedTo: "",
+            history: [],
+            status: isTranscriberEnabled ? "pending" : "not_applicable",
+          },
           transcription: {
             assignedTo: transcriber,
             history: [],
@@ -890,6 +1022,13 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Creating new task:", newTask);
 
       const savedTask = await saveTask(newTask, true);
+      analytics?.logEvent?.("task_created", {
+        task_id: savedTask?.id || newTask.id,
+        title: stripHtmlTags(savedTask?.book?.title || newBook.title),
+        total_pages: totalPages,
+        corrector1,
+        created_by: currentUser || "unknown",
+      });
 
       // 데이터 목록을 다시 로드하여 화면을 갱신
       await loadTasks();
@@ -900,6 +1039,9 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error("Error adding task:", error);
       alert(`작업을 추가하는 데 실패했습니다: ${error.message}`);
+      analytics?.logEvent?.("task_create_error", {
+        message: error.message,
+      });
     }
   });
 
@@ -907,96 +1049,58 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderTasks() {
     taskList.innerHTML = "";
 
-    // tasks가 배열이 아니면 빈 배열로 초기화
     if (!Array.isArray(tasks)) {
       console.warn("tasks is not an array, initializing to empty array");
       tasks = [];
     }
 
-    // 서버 연결 상태에 따른 메시지 표시
     if (serverStatus === "offline") {
       taskList.innerHTML =
-        '<div style="display: flex; justify-content: center; align-items: center; min-height: 300px; padding: 40px;">' +
-        '<div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 30px; max-width: 500px; text-align: center; color: #856404; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">' +
-        '<h3 style="margin-top: 0; color: #856404; font-size: 1.3em;">⚠️ Firebase 연결 실패</h3>' +
-        '<p style="margin: 15px 0; line-height: 1.5;">Firebase 데이터베이스에 연결할 수 없습니다.</p>' +
-        '<p style="margin: 15px 0; line-height: 1.5;">네트워크 연결을 확인해주세요.</p>' +
-        "</div>" +
-        "</div>";
+        '<div style="display: flex; justify-content: center; align-items: center; min-height: 300px; padding: 40px;">...</div>';
       return;
     }
 
-    // 완료된 작업 필터링 - 메인 화면에서는 완료된 작업 제외
-    const incompleteTasks = tasks.filter(
-      (task) => task && task.currentStage !== "completed"
-    );
+    let filteredTasks = [];
+    if (currentFilter === "all") {
+      filteredTasks = tasks.filter(
+        (task) => task && task.currentStage !== "completed"
+      );
+    } else {
+      filteredTasks = tasks.filter(
+        (task) => task && task.currentStage === currentFilter
+      );
+    }
 
-    if (incompleteTasks.length === 0) {
+    if (filteredTasks.length === 0) {
       taskList.innerHTML =
-        '<div style="display: flex; justify-content: center; align-items: center; min-height: 300px; padding: 40px;">' +
-        '<div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 30px; max-width: 500px; text-align: center; color: #6c757d; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">' +
-        '<h3 style="margin-top: 0; color: #6c757d; font-size: 1.3em;">📚 작업 목록이 비어있습니다</h3>' +
-        '<p style="margin: 15px 0; line-height: 1.5;">현재 진행 중인 작업이 없습니다.</p>' +
-        '<p style="margin: 15px 0; line-height: 1.5;">새 도서를 등록하거나 검색하여 작업을 시작하세요.</p>' +
-        "</div>" +
-        "</div>";
+        '<div style="display: flex; justify-content: center; align-items: center; min-height: 300px; padding: 40px;">...</div>';
       return;
     }
 
-    incompleteTasks.sort((a, b) => {
-      const aAssignedTo =
-        a.currentStage !== "completed" &&
-        a.stages &&
-        a.stages[a.currentStage] &&
-        a.stages[a.currentStage].assignedTo;
-      const bAssignedTo =
-        b.currentStage !== "completed" &&
-        b.stages &&
-        b.stages[b.currentStage] &&
-        b.stages[b.currentStage].assignedTo;
-
-      // 로그인한 사용자에게 할당된 작업을 최우선으로
+    filteredTasks.sort((a, b) => {
+      const aAssignedTo = a.stages[a.currentStage]?.assignedTo;
+      const bAssignedTo = b.stages[b.currentStage]?.assignedTo;
       const aIsCurrentUser = aAssignedTo === currentUser;
       const bIsCurrentUser = bAssignedTo === currentUser;
 
-      if (aIsCurrentUser && !bIsCurrentUser) {
-        return -1;
-      }
-      if (!aIsCurrentUser && bIsCurrentUser) {
-        return 1;
-      }
+      if (aIsCurrentUser && !bIsCurrentUser) return -1;
+      if (!aIsCurrentUser && bIsCurrentUser) return 1;
 
-      // 둘 다 현재 사용자가 아닌 경우, 담당자 유무로 정렬
       const aHasAssignee = !!aAssignedTo;
       const bHasAssignee = !!bAssignedTo;
 
-      if (aHasAssignee && !bHasAssignee) {
-        return -1;
-      }
-      if (!aHasAssignee && bHasAssignee) {
-        return 1;
-      }
+      if (aHasAssignee && !bHasAssignee) return -1;
+      if (!aHasAssignee && bHasAssignee) return 1;
       return 0;
     });
 
-    incompleteTasks.forEach((task) => {
+    filteredTasks.forEach((task) => {
       const taskItem = document.createElement("div");
       taskItem.classList.add("task-item");
 
       let currentProgress = 0;
       let currentStageName = "";
       let currentPageForDisplay = 0;
-
-      // task.stages가 없으면 초기화
-      if (!task.stages) {
-        console.warn("Task missing stages property:", task);
-        task.stages = {
-          correction1: { assignedTo: "", history: [] },
-          correction2: { assignedTo: "", history: [] },
-          correction3: { assignedTo: "", history: [] },
-          transcription: { assignedTo: "", history: [] }
-        };
-      }
 
       if (task.currentStage && task.currentStage !== "completed") {
         const stage = task.stages[task.currentStage];
@@ -1017,6 +1121,9 @@ document.addEventListener("DOMContentLoaded", () => {
         case "correction3":
           currentStageName = "3차 교정";
           break;
+        case "finalCorrection":
+          currentStageName = "최종 검수";
+          break;
         case "transcription":
           currentStageName = "점역";
           break;
@@ -1029,14 +1136,8 @@ document.addEventListener("DOMContentLoaded", () => {
           currentStageName = "알 수 없음";
       }
 
-      const assignedTo =
-        task.currentStage === "completed"
-          ? "-"
-          : (task.stages && task.stages[task.currentStage]?.assignedTo) || "미정";
-      const showAssignButton =
-        task.currentStage !== "completed" &&
-        task.stages &&
-        !task.stages[task.currentStage]?.assignedTo;
+      const assignedTo = task.stages[task.currentStage]?.assignedTo || "미정";
+      const showAssignButton = task.currentStage !== "completed" && !assignedTo;
       const noteCount = task.notes ? task.notes.length : 0;
       const isCurrentUserAssigned = currentUser === assignedTo;
 
@@ -1048,50 +1149,58 @@ document.addEventListener("DOMContentLoaded", () => {
         } ${!isCurrentUserAssigned ? "disabled" : ""}`;
         const buttonText = isWorking ? "작업중지" : "작업시작";
         const disabledAttr = !isCurrentUserAssigned ? "disabled" : "";
-
         workSessionButtonHtml = `<button data-id="${task.id}" class="${buttonClass}" data-worker="${assignedTo}" ${disabledAttr}>${buttonText}</button>`;
       }
 
+      const isButtonDisabled = !isCurrentUserAssigned && assignedTo !== "미정";
+      const buttonDisabledAttr = isButtonDisabled ? "disabled" : "";
+      const buttonDisabledClass = isButtonDisabled ? "disabled" : "";
+
+      let assigneeText = `${currentStageName} 담당자: ${assignedTo}`;
+      if (task.currentStage === "correction2" && assignedTo === "미정") {
+        assigneeText = `2차 교정 담당자: 미정`;
+      }
+
       taskItem.innerHTML = `
-                <h3 class="task-title" data-id="${
-                  task.id
-                }" title="클릭하여 작업 히스토리 보기">${stripHtmlTags(
+        <h3 class="task-title" data-id="${
+          task.id
+        }" title="클릭하여 작업 히스토리 보기">${stripHtmlTags(
         task.book.title
       )}</h3>
-                <p><strong>ISBN:</strong> ${task.book.isbn || "정보 없음"}</p>
-                <p><strong>총 페이지:</strong> ${task.totalPages}</p>
-                <p><strong>현재 단계:</strong> ${currentStageName}</p>
-                <p><strong>진행률:</strong> ${currentProgress.toFixed(
-                  1
-                )}% (${currentPageForDisplay}/${task.totalPages} 페이지)</p>
-                <div class="progress-bar-container">
-                    <div class="progress-bar" style="width: ${Math.min(
-                      currentProgress,
-                      100
-                    )}%;"></div>
-                </div>
-                <p><strong>${currentStageName} 담당자:</strong> ${assignedTo}
-                    ${
-                      showAssignButton
-                        ? `<button class="assign-corrector-button" data-id="${task.id}" data-stage="${task.currentStage}">지정</button>`
-                        : ""
-                    }
-                </p>
-                <div class="task-buttons">
-                    ${
-                      task.currentStage !== "completed"
-                        ? `<button data-id="${task.id}" class="update-progress-button">진행 상황 업데이트</button>`
-                        : ""
-                    }
-                    <button data-id="${
-                      task.id
-                    }" class="delete-task-button">삭제</button>
-                    <button data-id="${task.id}" class="notes-button ${
+        <p><strong>ISBN:</strong> ${task.book.isbn || "정보 없음"}</p>
+        <p><strong>총 페이지:</strong> ${task.totalPages}</p>
+        <p><strong>현재 단계:</strong> ${currentStageName}</p>
+        <p><strong>진행률:</strong> ${currentProgress.toFixed(
+          1
+        )}% (${currentPageForDisplay}/${task.totalPages} 페이지)</p>
+        <div class="progress-bar-container">
+          <div class="progress-bar" style="width: ${Math.min(
+            currentProgress,
+            100
+          )}%;"></div>
+        </div>
+        <p><strong>${assigneeText}</strong>
+          ${
+            showAssignButton
+              ? `<button class="assign-corrector-button" data-id="${task.id}" data-stage="${task.currentStage}">지정</button>`
+              : ""
+          }
+        </p>
+        <div class="task-buttons">
+          ${
+            task.currentStage !== "completed"
+              ? `<button data-id="${task.id}" class="update-progress-button ${buttonDisabledClass}" ${buttonDisabledAttr}>진행 상황 업데이트</button>`
+              : ""
+          }
+          <button data-id="${
+            task.id
+          }" class="delete-task-button ${buttonDisabledClass}" ${buttonDisabledAttr}>삭제</button>
+          <button data-id="${task.id}" class="notes-button ${
         noteCount === 0 ? "inactive" : ""
       }">특이사항 <span class="note-count">${noteCount}</span></button>
-                    ${workSessionButtonHtml}
-                </div>
-            `;
+          ${workSessionButtonHtml}
+        </div>
+      `;
       taskList.appendChild(taskItem);
     });
   }
@@ -1114,7 +1223,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } else if (target.classList.contains("delete-task-button")) {
       const password = prompt("작업을 삭제하려면 비밀번호를 입력하세요:");
-      if (password === "maccrey") {
+      if (password === "maccreytask") {
         if (
           task &&
           confirm(
@@ -1295,6 +1404,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 진행 상황 업데이트 모달 열기
   function openProgressUpdateModal(task) {
     currentTaskForUpdate = task;
+    document.getElementById("progress-task-id").value = task.id; // ID를 숨겨진 필드에 저장
     const stageKey = task.currentStage;
 
     if (!stageKey || stageKey === "completed") {
@@ -1306,6 +1416,7 @@ document.addEventListener("DOMContentLoaded", () => {
       correction1: "1차 교정",
       correction2: "2차 교정",
       correction3: "3차 교정",
+      finalCorrection: "최종 검수",
       transcription: "점역",
     };
 
@@ -1313,8 +1424,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const stage = task.stages && task.stages[stageKey];
 
     if (!stage) {
-      console.error(`❌ openProgressUpdateModal: Stage not found - currentStage=${stageKey}`, task);
-      alert(`작업 단계 정보를 찾을 수 없습니다. (단계: ${stageKey})\n\n페이지를 새로고침해주세요.`);
+      console.error(
+        `❌ openProgressUpdateModal: Stage not found - currentStage=${stageKey}`,
+        task
+      );
+      alert(
+        `작업 단계 정보를 찾을 수 없습니다. (단계: ${stageKey})\n\n페이지를 새로고침해주세요.`
+      );
       return;
     }
 
@@ -1362,6 +1478,12 @@ document.addEventListener("DOMContentLoaded", () => {
     updateDatetimeInput.value = localISOTime;
 
     progressUpdateModal.style.display = "flex";
+
+    // Clear previous error message
+    const errorEl = document.getElementById("progress-error-message");
+    if (errorEl) {
+      errorEl.textContent = "";
+    }
   }
 
   // 진행 상황 업데이트 모달 닫기
@@ -1376,16 +1498,50 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTasks();
   }
 
-  progressModalCloseButton.addEventListener("click", closeProgressUpdateModal);
+  progressModalCloseButton.addEventListener("click", () => {
+    alert(
+      "경고 : 완료페이지를 넣고 저장하지 않으면 업무시간이 저장되지 않습니다."
+    );
+  });
 
   // 진행 상황 업데이트 폼 제출
   progressUpdateForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    if (!currentTaskForUpdate) {
+    const newPageValue = updatePageInput.value.trim();
+    const infoContainer = document.getElementById("progress-task-info");
+    let errorEl = document.getElementById("progress-error-message");
+
+    if (!newPageValue) {
+      if (!errorEl) {
+        errorEl = document.createElement("p");
+        errorEl.id = "progress-error-message";
+        errorEl.style.color = "red";
+        infoContainer.appendChild(errorEl);
+      }
+      errorEl.textContent = "완료된 페이지를 입력해 주세요";
+      return;
+    } else if (errorEl) {
+      errorEl.textContent = "";
+    }
+
+    const taskId = document.getElementById("progress-task-id").value;
+    if (!taskId) {
+      alert("작업 ID를 찾을 수 없습니다. 다시 시도해주세요.");
+      return;
+    }
+
+    // taskId는 string이지만 task.id는 string 또는 number일 수 있으므로 양쪽 비교
+    const task = tasks.find((t) => t.id == taskId || t.id === taskId);
+    if (!task) {
       alert("작업 정보를 찾을 수 없습니다.");
       return;
     }
+
+    console.log("🔍 진행 상황 업데이트 시작");
+    console.log("  - Task ID:", taskId);
+    console.log("  - Task 객체:", task);
+    console.log("  - Task ID 타입:", typeof task.id);
 
     const newPage = parseInt(updatePageInput.value);
     let dateTime = updateDatetimeInput.value.trim();
@@ -1395,8 +1551,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       dateTime = new Date(dateTime).toISOString();
     }
-
-    const task = currentTaskForUpdate;
     const stageKey = task.currentStage;
     const stage = task.stages[stageKey];
 
@@ -1487,14 +1641,19 @@ document.addEventListener("DOMContentLoaded", () => {
         stage.status = "completed";
       }
 
-      console.log("Updating task progress:", {
+      console.log("📝 saveTask 호출 전 상태:", {
         taskId: task.id,
+        taskIdType: typeof task.id,
         stage: stageKey,
         newPage: newPage,
         isCompleted: newPage === task.totalPages,
+        historyLength: stage.history.length,
       });
 
-      await saveTask(task);
+      // IMPORTANT: isNewTask를 명시적으로 false로 설정
+      await saveTask(task, false); // isNewTask = false (명시적)
+
+      console.log("✅ 진행 상황 업데이트 완료 - Task ID:", task.id);
 
       // 단계 완료 시 다음 단계로 이동
       if (newPage === task.totalPages) {
@@ -1502,6 +1661,7 @@ document.addEventListener("DOMContentLoaded", () => {
           correction1: "1차 교정",
           correction2: "2차 교정",
           correction3: "3차 교정",
+          finalCorrection: "최종검수",
           transcription: "점역",
         };
 
@@ -1512,9 +1672,8 @@ document.addEventListener("DOMContentLoaded", () => {
           )}의 ${stageName} 단계가 완료되었습니다!`
         );
         await moveToNextStage(task);
-      } else {
-        renderTasks();
       }
+      // Firebase 리스너가 자동으로 renderTasks()를 호출하므로 여기서는 호출하지 않음
 
       closeProgressUpdateModal();
     } catch (error) {
@@ -1548,6 +1707,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "correction1",
       "correction2",
       "correction3",
+      "finalCorrection",
       "transcription",
     ];
     const currentIndex = stagesOrder.indexOf(task.currentStage);
@@ -1567,6 +1727,7 @@ document.addEventListener("DOMContentLoaded", () => {
             correction1: "1차 교정",
             correction2: "2차 교정",
             correction3: "3차 교정",
+            finalCorrection: "최종 검수",
             transcription: "점역",
           };
 
@@ -1593,7 +1754,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       await saveTask(task);
-      renderTasks();
+      // Firebase 리스너가 자동으로 renderTasks()를 호출하므로 여기서는 호출하지 않음
     } catch (error) {
       console.error("Error moving to next stage:", error);
       console.error("Full error details:", {
@@ -1631,6 +1792,7 @@ document.addEventListener("DOMContentLoaded", () => {
       correction1: "1차 교정",
       correction2: "2차 교정",
       correction3: "3차 교정",
+      finalCorrection: "최종 검수",
       transcription: "점역",
     };
 
@@ -1647,6 +1809,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <p><strong>총 페이지:</strong> ${task.totalPages}</p>
             <hr>
             <h4>진행 단계별 현황</h4>
+            <div class="stage-status-section">
             ${Object.keys(stageNames)
               .map((stageKey) => {
                 const stage = task.stages[stageKey];
@@ -1654,7 +1817,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const stageName = stageNames[stageKey];
                 const currentPages =
-                  stage.history.length > 0
+                  stage.history && stage.history.length > 0
                     ? stage.history[stage.history.length - 1].endPage
                     : 0;
                 const progressPercent = (
@@ -1675,7 +1838,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     statusText = stage.status;
                 }
 
-                const historyList = stage.history
+                const historyListItems = (stage.history || [])
                   .map(
                     (entry) =>
                       `<li>${entry.date}: ${entry.startPage}~${entry.endPage} 페이지</li>`
@@ -1683,22 +1846,23 @@ document.addEventListener("DOMContentLoaded", () => {
                   .join("");
 
                 return `
-                    <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #eee; border-radius: 4px;">
-                        <p><strong>${stageName}</strong></p>
+                    <div class="stage-status-card">
+                        <p class="stage-status-title"><strong>${stageName}</strong></p>
                         <p>담당자: ${stage.assignedTo || "미정"}</p>
                         <p>진행률: ${currentPages} / ${
                   task.totalPages
                 } 페이지 (${progressPercent}%)</p>
                         <p>상태: ${statusText}</p>
                         ${
-                          historyList
-                            ? `<strong>진행 기록:</strong><ul style="margin-top: 5px;">${historyList}</ul>`
-                            : '<p style="color: #666;">진행 기록 없음</p>'
+                          historyListItems
+                            ? `<div class="stage-history"><strong>진행 기록:</strong><ul class="stage-history-list">${historyListItems}</ul></div>`
+                            : '<p class="stage-history-empty">진행 기록 없음</p>'
                         }
                     </div>
                 `;
               })
               .join("")}
+            </div>
             ${
               task.currentStage === "completed"
                 ? '<p style="color: #4CAF50; font-weight: bold; text-align: center;">🎉 모든 작업이 완료되었습니다! 🎉</p>'
@@ -1959,7 +2123,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const password = adminPasswordInput.value;
     console.log("Password submitted:", password);
 
-    if (password === "maccrey") {
+    if (password === "maccreytask") {
       console.log("Password correct, opening admin panel");
       isAdminMode = true;
       closePasswordModal();
@@ -2098,10 +2262,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function getStageDisplayName(stage) {
     const stageNames = {
-      corrector1: "1차 교정",
-      corrector2: "2차 교정",
-      corrector3: "3차 교정",
-      transcriber: "점역",
+      correction1: "1차 교정",
+      correction2: "2차 교정",
+      correction3: "3차 교정",
+      finalCorrection: "최종검수",
+      transcription: "점역",
+      completed: "완료",
     };
     return stageNames[stage] || stage;
   }
@@ -2165,7 +2331,73 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 개선된 데이터 관리 기능
-  
+
+  // 중복/손상된 책 항목 찾기 및 수정
+  async function findAndFixDuplicateBooks() {
+    try {
+      const books = await FirebaseBooks.getAll();
+      console.log("📚 전체 책 목록:", books.length);
+
+      // 중복 및 문제 항목 찾기
+      const issues = [];
+      const booksByTitle = new Map();
+      const invalidIds = [];
+
+      books.forEach((book, index) => {
+        // ID 검증
+        if (!book.id || book.id === "undefined" || book.id === "null") {
+          invalidIds.push({ book, index });
+          issues.push(
+            `책 ${index + 1}: 잘못된 ID (${book.id}) - "${
+              book.book?.title || "제목 없음"
+            }"`
+          );
+        }
+
+        // 제목으로 중복 검사
+        const title = book.book?.title;
+        if (title) {
+          if (booksByTitle.has(title)) {
+            const existing = booksByTitle.get(title);
+            issues.push(
+              `중복된 책: "${title}" (ID: ${existing.id}, ${book.id})`
+            );
+          } else {
+            booksByTitle.set(title, book);
+          }
+        }
+      });
+
+      if (issues.length === 0) {
+        alert("중복이나 손상된 데이터가 없습니다.");
+        return;
+      }
+
+      // 문제 항목 표시
+      const message = `발견된 문제:\n\n${issues.join(
+        "\n"
+      )}\n\n잘못된 ID를 가진 ${invalidIds.length}개 항목을 삭제하시겠습니까?`;
+
+      if (confirm(message)) {
+        // 잘못된 ID 항목 삭제
+        for (const { book } of invalidIds) {
+          try {
+            await FirebaseBooks.delete(book.id);
+            console.log(`❌ 삭제됨: ID=${book.id}, 제목=${book.book?.title}`);
+          } catch (error) {
+            console.error(`삭제 실패: ID=${book.id}`, error);
+          }
+        }
+
+        alert(`${invalidIds.length}개의 잘못된 항목을 삭제했습니다.`);
+        loadTasks(); // 새로고침
+      }
+    } catch (error) {
+      console.error("중복 검사 실패:", error);
+      alert("중복 검사에 실패했습니다: " + error.message);
+    }
+  }
+
   // 데이터 상태 정보 로드
   async function loadDataStatus() {
     try {
@@ -2173,30 +2405,30 @@ document.addEventListener("DOMContentLoaded", () => {
       const [books, staffList, workSessionsHistory] = await Promise.all([
         FirebaseBooks.getAll(),
         FirebaseStaff.getAll(),
-        FirebaseWorkSessionsHistory.getAll()
+        FirebaseWorkSessionsHistory.getAll(),
       ]);
 
       const booksInfo = {
         count: books.length,
         lastModified: new Date().toISOString(),
-        source: 'firebase'
+        source: "firebase",
       };
       const staffInfo = {
         count: staffList.length,
         lastModified: new Date().toISOString(),
-        source: 'firebase'
+        source: "firebase",
       };
       const workSessionsInfo = {
         count: workSessionsHistory.length,
         lastModified: new Date().toISOString(),
-        source: 'firebase'
+        source: "firebase",
       };
 
-      updateDataStatus('books', booksInfo);
-      updateDataStatus('staff', staffInfo);
-      updateDataStatus('work-sessions', workSessionsInfo);
+      updateDataStatus("books", booksInfo);
+      updateDataStatus("staff", staffInfo);
+      updateDataStatus("work-sessions", workSessionsInfo);
     } catch (error) {
-      console.error('데이터 상태 로드 실패:', error);
+      console.error("데이터 상태 로드 실패:", error);
     }
   }
 
@@ -2204,8 +2436,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const statusElement = document.getElementById(`${type}-status`);
     if (!statusElement) return;
 
-    const countElement = statusElement.querySelector('.data-count');
-    const modifiedElement = statusElement.querySelector('.data-modified');
+    const countElement = statusElement.querySelector(".data-count");
+    const modifiedElement = statusElement.querySelector(".data-modified");
 
     if (countElement) {
       countElement.textContent = `${info.count}개 항목`;
@@ -2213,9 +2445,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (modifiedElement && info.lastModified) {
       const date = new Date(info.lastModified);
-      modifiedElement.textContent = `최종 수정: ${date.toLocaleString('ko-KR')}`;
+      modifiedElement.textContent = `최종 수정: ${date.toLocaleString(
+        "ko-KR"
+      )}`;
     } else if (modifiedElement) {
-      modifiedElement.textContent = '최종 수정: -';
+      modifiedElement.textContent = "최종 수정: -";
     }
   }
 
@@ -2224,12 +2458,12 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const booksData = await FirebaseBooks.getAll();
       const dataStr = JSON.stringify(booksData, null, 2);
-      const blob = new Blob([dataStr], { type: 'application/json' });
+      const blob = new Blob([dataStr], { type: "application/json" });
       downloadFile(blob, `books_backup_${getDateString()}.json`);
-      showSuccessMessage('책 정보 데이터가 백업되었습니다.');
+      showSuccessMessage("책 정보 데이터가 백업되었습니다.");
     } catch (error) {
-      console.error('책 정보 백업 실패:', error);
-      showErrorMessage('책 정보 백업 중 오류가 발생했습니다.');
+      console.error("책 정보 백업 실패:", error);
+      showErrorMessage("책 정보 백업 중 오류가 발생했습니다.");
     }
   }
 
@@ -2237,12 +2471,12 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const staffData = await FirebaseStaff.getAll();
       const dataStr = JSON.stringify(staffData, null, 2);
-      const blob = new Blob([dataStr], { type: 'application/json' });
+      const blob = new Blob([dataStr], { type: "application/json" });
       downloadFile(blob, `staff_backup_${getDateString()}.json`);
-      showSuccessMessage('직원 정보 데이터가 백업되었습니다.');
+      showSuccessMessage("직원 정보 데이터가 백업되었습니다.");
     } catch (error) {
-      console.error('직원 정보 백업 실패:', error);
-      showErrorMessage('직원 정보 백업 중 오류가 발생했습니다.');
+      console.error("직원 정보 백업 실패:", error);
+      showErrorMessage("직원 정보 백업 중 오류가 발생했습니다.");
     }
   }
 
@@ -2250,23 +2484,23 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const workSessionsData = await FirebaseWorkSessionsHistory.getAll();
       const dataStr = JSON.stringify(workSessionsData, null, 2);
-      const blob = new Blob([dataStr], { type: 'application/json' });
+      const blob = new Blob([dataStr], { type: "application/json" });
       downloadFile(blob, `work_sessions_backup_${getDateString()}.json`);
-      showSuccessMessage('출퇴근 기록 데이터가 백업되었습니다.');
+      showSuccessMessage("출퇴근 기록 데이터가 백업되었습니다.");
     } catch (error) {
-      console.error('출퇴근 기록 백업 실패:', error);
-      showErrorMessage('출퇴근 기록 백업 중 오류가 발생했습니다.');
+      console.error("출퇴근 기록 백업 실패:", error);
+      showErrorMessage("출퇴근 기록 백업 중 오류가 발생했습니다.");
     }
   }
 
   async function backupAll() {
     try {
-      showLoadingMessage('전체 데이터를 백업하는 중...');
+      showLoadingMessage("전체 데이터를 백업하는 중...");
 
       const [booksData, staffData, workSessionsData] = await Promise.all([
         FirebaseBooks.getAll(),
         FirebaseStaff.getAll(),
-        FirebaseWorkSessionsHistory.getAll()
+        FirebaseWorkSessionsHistory.getAll(),
       ]);
 
       const allData = {
@@ -2274,45 +2508,50 @@ document.addEventListener("DOMContentLoaded", () => {
         staff: staffData,
         workSessions: workSessionsData,
         backupDate: new Date().toISOString(),
-        version: "1.0"
+        version: "1.0",
       };
 
       const dataStr = JSON.stringify(allData, null, 2);
-      const blob = new Blob([dataStr], { type: 'application/json' });
+      const blob = new Blob([dataStr], { type: "application/json" });
       downloadFile(blob, `complete_backup_${getDateString()}.json`);
 
       hideLoadingMessage();
-      showSuccessMessage('전체 데이터가 백업되었습니다.');
+      showSuccessMessage("전체 데이터가 백업되었습니다.");
     } catch (error) {
-      console.error('전체 백업 실패:', error);
+      console.error("전체 백업 실패:", error);
       hideLoadingMessage();
-      showErrorMessage('전체 백업 중 오류가 발생했습니다.');
+      showErrorMessage("전체 백업 중 오류가 발생했습니다.");
     }
   }
 
   // 복원 함수들
   function restoreBooks() {
-    document.getElementById('restore-books-input').click();
+    document.getElementById("restore-books-input").click();
   }
 
   function restoreStaff() {
-    document.getElementById('restore-staff-input').click();
+    document.getElementById("restore-staff-input").click();
   }
 
   function restoreWorkSessions() {
-    document.getElementById('restore-work-sessions-input').click();
+    document.getElementById("restore-work-sessions-input").click();
   }
 
   async function handleBooksRestore(event) {
-    await handleRestore(event, 'books', '/api/books/restore', '책 정보');
+    await handleRestore(event, "books", "/api/books/restore", "책 정보");
   }
 
   async function handleStaffRestore(event) {
-    await handleRestore(event, 'staff', '/api/staff/restore', '직원 정보');
+    await handleRestore(event, "staff", "/api/staff/restore", "직원 정보");
   }
 
   async function handleWorkSessionsRestore(event) {
-    await handleRestore(event, 'work-sessions', '/api/work-sessions-history/restore', '출퇴근 기록');
+    await handleRestore(
+      event,
+      "work-sessions",
+      "/api/work-sessions-history/restore",
+      "출퇴근 기록"
+    );
   }
 
   async function handleRestore(event, type, endpoint, dataName) {
@@ -2324,16 +2563,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const backupData = JSON.parse(text);
 
       if (!Array.isArray(backupData)) {
-        throw new Error('잘못된 백업 파일 형식입니다.');
+        throw new Error("잘못된 백업 파일 형식입니다.");
       }
 
-      if (confirm(`${backupData.length}개의 ${dataName} 항목을 복원하시겠습니까? 현재 데이터는 모두 교체됩니다.`)) {
+      if (
+        confirm(
+          `${backupData.length}개의 ${dataName} 항목을 복원하시겠습니까? 현재 데이터는 모두 교체됩니다.`
+        )
+      ) {
         showLoadingMessage(`${dataName} 데이터를 복원하는 중...`);
-        
+
         const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(backupData)
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(backupData),
         });
 
         if (!response.ok) {
@@ -2341,12 +2584,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const result = await response.json();
-        
+
         hideLoadingMessage();
-        showSuccessMessage(`${dataName} 데이터가 성공적으로 복원되었습니다. (${result.count}개 항목)`);
-        
+        showSuccessMessage(
+          `${dataName} 데이터가 성공적으로 복원되었습니다. (${result.count}개 항목)`
+        );
+
         // 관련 데이터 새로고침
-        if (type === 'books') {
+        if (type === "books") {
           await loadTasks();
         }
         loadAdminData();
@@ -2355,10 +2600,12 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error(`${dataName} 복원 중 오류:`, error);
       hideLoadingMessage();
-      showErrorMessage(`${dataName} 데이터 복원 중 오류가 발생했습니다: ${error.message}`);
+      showErrorMessage(
+        `${dataName} 데이터 복원 중 오류가 발생했습니다: ${error.message}`
+      );
     }
 
-    event.target.value = '';
+    event.target.value = "";
   }
 
   // 삭제 관련 변수
@@ -2366,29 +2613,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 삭제 확인 모달 관련 함수들
   function showDeleteConfirmModal(message, deleteAction) {
-    const modal = document.getElementById('delete-confirm-modal');
-    const messageElement = document.getElementById('delete-confirm-message');
-    const passwordInput = document.getElementById('delete-password');
-    
+    const modal = document.getElementById("delete-confirm-modal");
+    const messageElement = document.getElementById("delete-confirm-message");
+    const passwordInput = document.getElementById("delete-password");
+
     messageElement.textContent = message;
-    passwordInput.value = '';
+    passwordInput.value = "";
     pendingDeleteAction = deleteAction;
-    
-    modal.style.display = 'flex';
+
+    modal.style.display = "flex";
     passwordInput.focus();
   }
 
   function hideDeleteConfirmModal() {
-    const modal = document.getElementById('delete-confirm-modal');
-    modal.style.display = 'none';
+    const modal = document.getElementById("delete-confirm-modal");
+    modal.style.display = "none";
     pendingDeleteAction = null;
   }
 
   async function confirmDelete() {
-    const password = document.getElementById('delete-password').value;
-    
-    if (password !== '재활용') {
-      showErrorMessage('올바른 삭제 암호를 입력해주세요.');
+    const password = document.getElementById("delete-password").value;
+
+    if (password !== "재활용") {
+      showErrorMessage("올바른 삭제 암호를 입력해주세요.");
       return;
     }
 
@@ -2401,30 +2648,30 @@ document.addEventListener("DOMContentLoaded", () => {
   // 삭제 함수들
   async function clearBooks() {
     showDeleteConfirmModal(
-      '정말로 모든 책 정보 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+      "정말로 모든 책 정보 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
       async () => {
         try {
-          showLoadingMessage('책 정보 데이터를 삭제하는 중...');
-          
+          showLoadingMessage("책 정보 데이터를 삭제하는 중...");
+
           const response = await fetch(`${BASE_URL}/api/books/clear`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: '재활용' })
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: "재활용" }),
           });
 
           if (!response.ok) {
-            throw new Error('삭제 실패');
+            throw new Error("삭제 실패");
           }
 
           hideLoadingMessage();
-          showSuccessMessage('책 정보 데이터가 삭제되었습니다.');
+          showSuccessMessage("책 정보 데이터가 삭제되었습니다.");
           await loadTasks();
           loadAdminData();
           loadDataStatus();
         } catch (error) {
-          console.error('책 정보 삭제 실패:', error);
+          console.error("책 정보 삭제 실패:", error);
           hideLoadingMessage();
-          showErrorMessage('책 정보 삭제 중 오류가 발생했습니다.');
+          showErrorMessage("책 정보 삭제 중 오류가 발생했습니다.");
         }
       }
     );
@@ -2432,29 +2679,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function clearStaff() {
     showDeleteConfirmModal(
-      '정말로 모든 직원 정보 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+      "정말로 모든 직원 정보 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
       async () => {
         try {
-          showLoadingMessage('직원 정보 데이터를 삭제하는 중...');
-          
+          showLoadingMessage("직원 정보 데이터를 삭제하는 중...");
+
           const response = await fetch(`${BASE_URL}/api/staff/clear`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: '재활용' })
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: "재활용" }),
           });
 
           if (!response.ok) {
-            throw new Error('삭제 실패');
+            throw new Error("삭제 실패");
           }
 
           hideLoadingMessage();
-          showSuccessMessage('직원 정보 데이터가 삭제되었습니다.');
+          showSuccessMessage("직원 정보 데이터가 삭제되었습니다.");
           loadAdminData();
           loadDataStatus();
         } catch (error) {
-          console.error('직원 정보 삭제 실패:', error);
+          console.error("직원 정보 삭제 실패:", error);
           hideLoadingMessage();
-          showErrorMessage('직원 정보 삭제 중 오류가 발생했습니다.');
+          showErrorMessage("직원 정보 삭제 중 오류가 발생했습니다.");
         }
       }
     );
@@ -2462,29 +2709,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function clearWorkSessions() {
     showDeleteConfirmModal(
-      '정말로 모든 출퇴근 기록 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+      "정말로 모든 출퇴근 기록 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
       async () => {
         try {
-          showLoadingMessage('출퇴근 기록 데이터를 삭제하는 중...');
-          
-          const response = await fetch(`${BASE_URL}/api/work-sessions-history/clear`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: '재활용' })
-          });
+          showLoadingMessage("출퇴근 기록 데이터를 삭제하는 중...");
+
+          const response = await fetch(
+            `${BASE_URL}/api/work-sessions-history/clear`,
+            {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ password: "재활용" }),
+            }
+          );
 
           if (!response.ok) {
-            throw new Error('삭제 실패');
+            throw new Error("삭제 실패");
           }
 
           hideLoadingMessage();
-          showSuccessMessage('출퇴근 기록 데이터가 삭제되었습니다.');
+          showSuccessMessage("출퇴근 기록 데이터가 삭제되었습니다.");
           loadAdminData();
           loadDataStatus();
         } catch (error) {
-          console.error('출퇴근 기록 삭제 실패:', error);
+          console.error("출퇴근 기록 삭제 실패:", error);
           hideLoadingMessage();
-          showErrorMessage('출퇴근 기록 삭제 중 오류가 발생했습니다.');
+          showErrorMessage("출퇴근 기록 삭제 중 오류가 발생했습니다.");
         }
       }
     );
@@ -2493,7 +2743,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 유틸리티 함수들
   function downloadFile(blob, filename) {
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
     link.download = filename;
     document.body.appendChild(link);
@@ -2503,7 +2753,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getDateString() {
-    return new Date().toISOString().split('T')[0];
+    return new Date().toISOString().split("T")[0];
   }
 
   function showSuccessMessage(message) {
@@ -2520,7 +2770,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function hideLoadingMessage() {
-    console.log('✅ 작업 완료');
+    console.log("✅ 작업 완료");
   }
 
   // 기존 함수들 (호환성 유지)
@@ -2669,83 +2919,141 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // 새로운 데이터 관리 버튼들
-  
+
   // 책 정보 관리
-  document.getElementById("backup-books-btn").addEventListener("click", backupBooks);
-  document.getElementById("restore-books-btn").addEventListener("click", restoreBooks);
-  document.getElementById("clear-books-btn").addEventListener("click", clearBooks);
-  document.getElementById("restore-books-input").addEventListener("change", handleBooksRestore);
+  document
+    .getElementById("check-duplicates-btn")
+    .addEventListener("click", findAndFixDuplicateBooks);
+  document
+    .getElementById("backup-books-btn")
+    .addEventListener("click", backupBooks);
+  document
+    .getElementById("restore-books-btn")
+    .addEventListener("click", restoreBooks);
+  document
+    .getElementById("clear-books-btn")
+    .addEventListener("click", clearBooks);
+  document
+    .getElementById("restore-books-input")
+    .addEventListener("change", handleBooksRestore);
 
   // 직원 정보 관리
-  document.getElementById("backup-staff-btn").addEventListener("click", backupStaff);
-  document.getElementById("restore-staff-btn").addEventListener("click", restoreStaff);
-  document.getElementById("clear-staff-btn").addEventListener("click", clearStaff);
-  document.getElementById("restore-staff-input").addEventListener("change", handleStaffRestore);
+  document
+    .getElementById("backup-staff-btn")
+    .addEventListener("click", backupStaff);
+  document
+    .getElementById("restore-staff-btn")
+    .addEventListener("click", restoreStaff);
+  document
+    .getElementById("clear-staff-btn")
+    .addEventListener("click", clearStaff);
+  document
+    .getElementById("restore-staff-input")
+    .addEventListener("change", handleStaffRestore);
 
-  // 출퇴근 기록 관리
-  document.getElementById("backup-work-sessions-btn").addEventListener("click", backupWorkSessions);
-  document.getElementById("restore-work-sessions-btn").addEventListener("click", restoreWorkSessions);
-  document.getElementById("clear-work-sessions-btn").addEventListener("click", clearWorkSessions);
-  document.getElementById("restore-work-sessions-input").addEventListener("change", handleWorkSessionsRestore);
-
-  // 전체 관리
-  document.getElementById("backup-all-btn").addEventListener("click", backupAll);
-  document.getElementById("clear-all-data-btn").addEventListener("click", () => {
-    showDeleteConfirmModal(
-      '정말로 모든 데이터를 삭제하시겠습니까? 책 정보, 직원 정보, 출퇴근 기록이 모두 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
-      async () => {
+  document
+    .getElementById("merge-work-sessions-btn")
+    ?.addEventListener("click", async () => {
+      if (
+        confirm(
+          "기존 출퇴근 기록을 병합하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        )
+      ) {
         try {
-          showLoadingMessage('모든 데이터를 삭제하는 중...');
-          
-          await Promise.all([
-            fetch(`${BASE_URL}/api/books/clear`, {
-              method: 'DELETE',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ password: '재활용' })
-            }),
-            fetch(`${BASE_URL}/api/staff/clear`, {
-              method: 'DELETE',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ password: '재활용' })
-            }),
-            fetch(`${BASE_URL}/api/work-sessions-history/clear`, {
-              method: 'DELETE',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ password: '재활용' })
-            })
-          ]);
-
-          hideLoadingMessage();
-          showSuccessMessage('모든 데이터가 삭제되었습니다.');
-          await loadTasks();
-          loadAdminData();
-          loadDataStatus();
+          await FirebaseWorkSessionsHistory.mergeWorkSessions();
+          alert("출퇴근 기록이 성공적으로 병합되었습니다.");
+          loadAttendanceData(); // Refresh the view
         } catch (error) {
-          console.error('전체 데이터 삭제 실패:', error);
-          hideLoadingMessage();
-          showErrorMessage('데이터 삭제 중 오류가 발생했습니다.');
+          console.error("Error merging work sessions:", error);
+          alert("출퇴근 기록 병합 중 오류가 발생했습니다.");
         }
       }
-    );
-  });
+    });
+
+  // 출퇴근 기록 관리
+  document
+    .getElementById("backup-work-sessions-btn")
+    .addEventListener("click", backupWorkSessions);
+  document
+    .getElementById("restore-work-sessions-btn")
+    .addEventListener("click", restoreWorkSessions);
+  document
+    .getElementById("clear-work-sessions-btn")
+    .addEventListener("click", clearWorkSessions);
+  document
+    .getElementById("restore-work-sessions-input")
+    .addEventListener("change", handleWorkSessionsRestore);
+
+  // 전체 관리
+  document
+    .getElementById("backup-all-btn")
+    .addEventListener("click", backupAll);
+  document
+    .getElementById("clear-all-data-btn")
+    .addEventListener("click", () => {
+      showDeleteConfirmModal(
+        "정말로 모든 데이터를 삭제하시겠습니까? 책 정보, 직원 정보, 출퇴근 기록이 모두 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
+        async () => {
+          try {
+            showLoadingMessage("모든 데이터를 삭제하는 중...");
+
+            await Promise.all([
+              fetch(`${BASE_URL}/api/books/clear`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password: "재활용" }),
+              }),
+              fetch(`${BASE_URL}/api/staff/clear`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password: "재활용" }),
+              }),
+              fetch(`${BASE_URL}/api/work-sessions-history/clear`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password: "재활용" }),
+              }),
+            ]);
+
+            hideLoadingMessage();
+            showSuccessMessage("모든 데이터가 삭제되었습니다.");
+            await loadTasks();
+            loadAdminData();
+            loadDataStatus();
+          } catch (error) {
+            console.error("전체 데이터 삭제 실패:", error);
+            hideLoadingMessage();
+            showErrorMessage("데이터 삭제 중 오류가 발생했습니다.");
+          }
+        }
+      );
+    });
 
   // 삭제 확인 모달 버튼들
-  document.getElementById("confirm-delete-btn").addEventListener("click", confirmDelete);
-  document.getElementById("cancel-delete-btn").addEventListener("click", hideDeleteConfirmModal);
-  
+  document
+    .getElementById("confirm-delete-btn")
+    .addEventListener("click", confirmDelete);
+  document
+    .getElementById("cancel-delete-btn")
+    .addEventListener("click", hideDeleteConfirmModal);
+
   // 암호 입력 시 엔터키 처리
-  document.getElementById("delete-password").addEventListener("keypress", (e) => {
-    if (e.key === 'Enter') {
-      confirmDelete();
-    }
-  });
+  document
+    .getElementById("delete-password")
+    .addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        confirmDelete();
+      }
+    });
 
   // 모달 외부 클릭 시 닫기
-  document.getElementById("delete-confirm-modal").addEventListener("click", (e) => {
-    if (e.target.id === "delete-confirm-modal") {
-      hideDeleteConfirmModal();
-    }
-  });
+  document
+    .getElementById("delete-confirm-modal")
+    .addEventListener("click", (e) => {
+      if (e.target.id === "delete-confirm-modal") {
+        hideDeleteConfirmModal();
+      }
+    });
 
   // 새로고침 및 내보내기 버튼
   document
@@ -2934,6 +3242,11 @@ document.addEventListener("DOMContentLoaded", () => {
           updatedTask.stages[stage.db].assignedTo = assignedSelect.value;
         }
       });
+
+      const finalCorrectorAssigned = document.getElementById(
+        "final-corrector-assigned"
+      ).value;
+      updatedTask.stages.finalCorrection.assignedTo = finalCorrectorAssigned;
 
       // 서버에 저장
       const response = await fetch(`${API_URL}/${currentDetailTask.id}`, {
@@ -3425,6 +3738,159 @@ document.addEventListener("DOMContentLoaded", () => {
     .getElementById("export-attendance-btn")
     ?.addEventListener("click", exportAdminAttendanceRecords);
 
+  document
+    .getElementById("create-attendance-btn")
+    ?.addEventListener("click", () => {
+      openAttendanceEditModal();
+    });
+
+  // Event delegation for edit and delete buttons
+  document
+    .getElementById("attendance-tbody")
+    .addEventListener("click", (event) => {
+      if (event.target.classList.contains("edit-attendance-btn")) {
+        const recordId = event.target.dataset.id;
+        const record = findAttendanceRecordById(recordId);
+        if (record) {
+          openAttendanceEditModal(record);
+        }
+      } else if (event.target.classList.contains("delete-attendance-btn")) {
+        const recordId = event.target.dataset.id;
+        if (confirm("정말로 이 출퇴근 기록을 삭제하시겠습니까?")) {
+          deleteAttendanceRecord(recordId);
+        }
+      }
+    });
+
+  // Handle form submission for attendance edit modal
+  document
+    .getElementById("attendance-edit-form")
+    .addEventListener("submit", (event) => {
+      event.preventDefault();
+      saveAttendanceRecord();
+    });
+
+  // Close modal
+  document
+    .querySelector("#attendance-edit-modal .close-button")
+    .addEventListener("click", () => {
+      closeAttendanceEditModal();
+    });
+
+  function openAttendanceEditModal(record = null) {
+    const modal = document.getElementById("attendance-edit-modal");
+    const title = document.getElementById("attendance-edit-modal-title");
+    const form = document.getElementById("attendance-edit-form");
+    const workerSelect = document.getElementById("attendance-edit-worker");
+
+    // Populate worker select
+    workerSelect.innerHTML = "";
+    staff.forEach((s) => {
+      const option = document.createElement("option");
+      option.value = s.name;
+      option.textContent = s.name;
+      workerSelect.appendChild(option);
+    });
+
+    if (record) {
+      title.textContent = "출퇴근 기록 수정";
+      document.getElementById("attendance-edit-id").value = record.id;
+      workerSelect.value = record.worker;
+      document.getElementById("attendance-edit-date").value = new Date(
+        record.startTime
+      )
+        .toISOString()
+        .split("T")[0];
+      document.getElementById("attendance-edit-start-time").value = new Date(
+        record.startTime
+      )
+        .toLocaleTimeString("sv-SE")
+        .substring(0, 5);
+      document.getElementById("attendance-edit-end-time").value = new Date(
+        record.endTime
+      )
+        .toLocaleTimeString("sv-SE")
+        .substring(0, 5);
+      document.getElementById("attendance-edit-pages").value =
+        record.pagesWorked ?? "";
+      document.getElementById("attendance-edit-tasks").value =
+        record.taskTitle || "";
+    } else {
+      title.textContent = "출퇴근 기록 생성";
+      form.reset();
+      document.getElementById("attendance-edit-id").value = "";
+      document.getElementById("attendance-edit-pages").value = "";
+    }
+
+    modal.style.display = "flex";
+  }
+
+  function closeAttendanceEditModal() {
+    const modal = document.getElementById("attendance-edit-modal");
+    modal.style.display = "none";
+  }
+
+  function findAttendanceRecordById(recordId) {
+    if (!currentAdminAttendanceData) return null;
+    return currentAdminAttendanceData.find((record) => record.id === recordId);
+  }
+
+  async function saveAttendanceRecord() {
+    const id = document.getElementById("attendance-edit-id").value;
+    const worker = document.getElementById("attendance-edit-worker").value;
+    const date = document.getElementById("attendance-edit-date").value;
+    const startTime = document.getElementById(
+      "attendance-edit-start-time"
+    ).value;
+    const endTime = document.getElementById("attendance-edit-end-time").value;
+    const pagesInput = document.getElementById("attendance-edit-pages").value;
+    const rawTasksInput = document.getElementById(
+      "attendance-edit-tasks"
+    ).value;
+
+    let pagesWorked = parseInt(pagesInput, 10);
+    if (isNaN(pagesWorked) || pagesWorked < 0) {
+      pagesWorked = 0;
+    }
+
+    const tasks = rawTasksInput
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
+    const record = {
+      worker,
+      startTime: new Date(`${date}T${startTime}`).toISOString(),
+      endTime: new Date(`${date}T${endTime}`).toISOString(),
+      taskTitle: tasks.join(", "),
+      pagesWorked,
+    };
+
+    try {
+      if (id) {
+        await FirebaseWorkSessionsHistory.update(id, record);
+      } else {
+        await FirebaseWorkSessionsHistory.create(record);
+      }
+
+      closeAttendanceEditModal();
+      loadAttendanceData();
+    } catch (error) {
+      console.error("Error saving attendance record:", error);
+      alert("출퇴근 기록 저장에 실패했습니다.");
+    }
+  }
+
+  async function deleteAttendanceRecord(recordId) {
+    try {
+      await FirebaseWorkSessionsHistory.delete(recordId);
+      loadAttendanceData();
+    } catch (error) {
+      console.error("Error deleting attendance record:", error);
+      alert("출퇴근 기록 삭제에 실패했습니다.");
+    }
+  }
+
   // 직원 관리 이벤트 리스너들
   const staffForm = document.getElementById("staff-form");
   if (staffForm) {
@@ -3558,7 +4024,7 @@ document.addEventListener("DOMContentLoaded", () => {
       currentStage: task.currentStage,
       stages: task.stages,
       hasStages: !!task.stages,
-      stageKeys: task.stages ? Object.keys(task.stages) : []
+      stageKeys: task.stages ? Object.keys(task.stages) : [],
     });
 
     if (showProgressModal) {
@@ -3566,8 +4032,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const stage = task.stages && task.stages[task.currentStage];
 
       if (!stage) {
-        console.error(`❌ Stage not found: currentStage=${task.currentStage}`, task);
-        alert(`작업 단계 정보를 찾을 수 없습니다. (단계: ${task.currentStage})\n\n관리자에게 문의하세요.`);
+        console.error(
+          `❌ Stage not found: currentStage=${task.currentStage}`,
+          task
+        );
+        alert(
+          `작업 단계 정보를 찾을 수 없습니다. (단계: ${task.currentStage})\n\n관리자에게 문의하세요.`
+        );
         return;
       }
 
@@ -3593,7 +4064,10 @@ document.addEventListener("DOMContentLoaded", () => {
       let sessionInfo = null;
       try {
         sessionInfo = await FirebaseWorkSessions.removeSession(task.id);
-        console.log(`✅ Firebase에서 세션 제거 완료 - task: ${task.id}`, sessionInfo);
+        console.log(
+          `✅ Firebase에서 세션 제거 완료 - task: ${task.id}`,
+          sessionInfo
+        );
 
         // 세션 정보 업데이트
         if (sessionInfo) {
@@ -3604,13 +4078,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 로컬 currentWorkSessions에서도 즉시 제거 (자신의 UI 즉시 업데이트)
         currentWorkSessions.delete(task.id);
-        console.log(`🗑️ 로컬 currentWorkSessions에서 제거됨 - task: ${task.id}`);
+        console.log(
+          `🗑️ 로컬 currentWorkSessions에서 제거됨 - task: ${task.id}`
+        );
 
         // 로컬 UI 즉시 업데이트 (자신의 화면)
         renderTasks();
         updateCurrentWorkersDisplay();
         console.log(`🔄 로컬 UI 업데이트 완료`);
-
       } catch (error) {
         console.error("❌ Firebase 세션 제거 실패:", error);
         window.currentStoppedSession.startTime = new Date().toISOString();
@@ -3776,6 +4251,7 @@ document.addEventListener("DOMContentLoaded", () => {
           correction1: "1차 교정",
           correction2: "2차 교정",
           correction3: "3차 교정",
+          finalCorrection: "최종검수",
           transcription: "점역",
         };
         const stageName = stageNames[session.stage] || session.stage;
@@ -3798,45 +4274,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Attendance Management Functions
   function calculateAttendanceRecords(sessionsData = []) {
-    const attendanceRecords = new Map(); // worker -> date -> { startTime, endTime, workSessions, tasks }
-
+    const records = [];
     sessionsData.forEach((session) => {
       if (!session.startTime || !session.endTime) return;
 
-      const startDate = new Date(session.startTime).toDateString();
-      const worker = session.worker;
-
-      if (!attendanceRecords.has(worker)) {
-        attendanceRecords.set(worker, new Map());
-      }
-
-      const workerRecords = attendanceRecords.get(worker);
-      if (!workerRecords.has(startDate)) {
-        workerRecords.set(startDate, {
-          startTime: new Date(session.startTime),
-          endTime: new Date(session.endTime),
-          workSessions: [],
-          tasks: new Set(),
-        });
-      }
-
-      const dayRecord = workerRecords.get(startDate);
-      dayRecord.workSessions.push(session);
-      dayRecord.tasks.add(session.taskTitle);
-
-      // Update start/end times for the day
-      const sessionStart = new Date(session.startTime);
-      const sessionEnd = new Date(session.endTime);
-
-      if (sessionStart < dayRecord.startTime) {
-        dayRecord.startTime = sessionStart;
-      }
-      if (sessionEnd > dayRecord.endTime) {
-        dayRecord.endTime = sessionEnd;
-      }
+      records.push({
+        id: session.id, // Assuming session has an id
+        worker: session.worker,
+        date: new Date(session.startTime).toDateString(),
+        startTime: new Date(session.startTime),
+        endTime: new Date(session.endTime),
+        tasks: [session.taskTitle],
+        pagesWorked: session.pagesWorked || 0,
+      });
     });
-
-    return attendanceRecords;
+    return records;
   }
 
   async function loadAttendanceData() {
@@ -4123,60 +4575,53 @@ document.addEventListener("DOMContentLoaded", () => {
     const selectedDate = attendanceDate?.value;
     const selectedWorker = attendanceWorker?.value;
 
-    const attendanceRecords = calculateAttendanceRecords(sessionsData);
-    const tableData = [];
+    let tableData = calculateAttendanceRecords(sessionsData);
 
-    attendanceRecords.forEach((workerDays, worker) => {
-      if (selectedWorker && worker !== selectedWorker) return;
-
-      workerDays.forEach((dayRecord, dateStr) => {
-        const date = new Date(dateStr);
-        const year = date.getFullYear().toString();
-        const month = (date.getMonth() + 1).toString().padStart(2, "0");
-        const day = date.getDate().toString().padStart(2, "0");
-
-        // Apply filters
-        if (selectedYear && year !== selectedYear) return;
-        if (selectedMonth && month !== selectedMonth) return;
-        if (selectedDate && day !== selectedDate) return;
-
-        const workTime = Math.round(
-          (dayRecord.endTime - dayRecord.startTime) / 1000 / 60
-        );
-        const totalPages = dayRecord.workSessions.reduce((sum, session) => {
-          return sum + (session.pagesWorked || 0);
-        }, 0);
-
-        tableData.push({
-          date: dateStr,
-          worker: worker,
-          startTime: dayRecord.startTime,
-          endTime: dayRecord.endTime,
-          workTime: workTime,
-          totalPages: totalPages,
-          tasks: dayRecord.tasks,
-          sortDate: date,
-        });
-      });
-    });
+    // Apply filters
+    if (selectedYear) {
+      tableData = tableData.filter(
+        (record) => record.startTime.getFullYear().toString() === selectedYear
+      );
+    }
+    if (selectedMonth) {
+      tableData = tableData.filter(
+        (record) =>
+          (record.startTime.getMonth() + 1).toString().padStart(2, "0") ===
+          selectedMonth
+      );
+    }
+    if (selectedDate) {
+      tableData = tableData.filter(
+        (record) =>
+          record.startTime.getDate().toString().padStart(2, "0") ===
+          selectedDate
+      );
+    }
+    if (selectedWorker) {
+      tableData = tableData.filter(
+        (record) => record.worker === selectedWorker
+      );
+    }
 
     if (tableData.length === 0) {
       attendanceTbody.innerHTML =
-        '<tr><td colspan="7" style="text-align: center; color: #666; padding: 20px;">출근 기록이 없습니다.</td></tr>';
+        '<tr><td colspan="8" style="text-align: center; color: #666; padding: 20px;">출근 기록이 없습니다.</td></tr>';
       return;
     }
 
     // Sort by date (newest first)
-    tableData.sort((a, b) => b.sortDate - a.sortDate);
+    tableData.sort((a, b) => b.startTime - a.startTime);
 
     const tableHtml = tableData
       .map((record) => {
-        const tasksText =
-          record.tasks.length > 0 ? record.tasks.join(", ") : "-";
+        const tasksText = record.taskTitle || "-";
+        const workTime = Math.round(
+          (record.endTime - record.startTime) / 1000 / 60
+        );
 
         return `
-        <tr>
-          <td>${record.sortDate.toLocaleDateString("ko-KR")}</td>
+        <tr data-id="${record.id}">
+          <td>${record.startTime.toLocaleDateString("ko-KR")}</td>
           <td>${record.worker}</td>
           <td>${record.startTime.toLocaleTimeString("ko-KR", {
             hour: "2-digit",
@@ -4186,11 +4631,17 @@ document.addEventListener("DOMContentLoaded", () => {
             hour: "2-digit",
             minute: "2-digit",
           })}</td>
-          <td>${Math.floor(record.workTime / 60)}시간 ${
-          record.workTime % 60
-        }분</td>
-          <td>${record.totalPages}페이지</td>
+          <td>${Math.floor(workTime / 60)}시간 ${workTime % 60}분</td>
+          <td>${record.pagesWorked}페이지</td>
           <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${tasksText}">${tasksText}</td>
+          <td>
+            <button class="action-btn edit-attendance-btn" data-id="${
+              record.id
+            }">수정</button>
+            <button class="action-btn delete-attendance-btn" data-id="${
+              record.id
+            }">삭제</button>
+          </td>
         </tr>
       `;
       })
@@ -4391,11 +4842,17 @@ document.addEventListener("DOMContentLoaded", () => {
   if (attendanceCheckButton) {
     attendanceCheckButton.addEventListener("click", function () {
       // 현재 로그인된 사용자 정보 가져오기
-      const currentUser = localStorage.getItem('currentUser');
+      const currentUser = localStorage.getItem("currentUser");
 
       // 새 창에서 달력 페이지 열기
-      const calendarUrl = `attendance-calendar.html${currentUser ? '?user=' + encodeURIComponent(currentUser) : ''}`;
-      window.open(calendarUrl, 'attendance-calendar', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+      const calendarUrl = `attendance-calendar.html${
+        currentUser ? "?user=" + encodeURIComponent(currentUser) : ""
+      }`;
+      window.open(
+        calendarUrl,
+        "attendance-calendar",
+        "width=1200,height=800,scrollbars=yes,resizable=yes"
+      );
     });
   }
 
@@ -4521,26 +4978,33 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    analytics?.logEvent?.("login_attempt", { user_name: staffName });
     // 직원 목록에서 해당 이름이 등록되어 있는지 확인
     const isValidUser = await validateUser(staffName);
 
     if (isValidUser) {
       currentUser = staffName;
       localStorage.setItem("currentUser", currentUser);
+      analytics?.setUserId?.(currentUser);
+      analytics?.logEvent?.("login_success", { user_name: currentUser });
       showMainDashboard();
     } else {
       showLoginError("등록되지 않은 직원입니다. 관리자에게 문의하세요.");
       staffNameInput.value = "";
+      analytics?.logEvent?.("login_failure", { user_name: staffName });
     }
   }
 
   function handleLogout() {
+    const previousUser = currentUser;
     currentUser = null;
     localStorage.removeItem("currentUser");
     staffNameInput.value = "";
     // 실시간 업데이트 타이머 정리
     stopWorkersDisplayUpdate();
     showLoginPage();
+    analytics?.logEvent?.("logout", { user_name: previousUser });
+    analytics?.clearUserId?.();
   }
 
   // 로그인 이벤트 리스너
@@ -4554,7 +5018,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (symbolCheckerBtn) {
     symbolCheckerBtn.addEventListener("click", () => {
-      window.open("https://maccrey.github.io/symbol-checker/", "_blank");
+      window.open("https://checker.maccrey.com", "_blank");
     });
   }
 
@@ -5118,7 +5582,11 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log(
               `날짜 확인: ${historyItem.date} -> ${progressDate?.toISOString()}`
             );
-            if (progressDate && progressDate >= startDate && progressDate <= endDate) {
+            if (
+              progressDate &&
+              progressDate >= startDate &&
+              progressDate <= endDate
+            ) {
               const pages =
                 historyItem.endPage - historyItem.startPage + 1 || 0;
               console.log(
@@ -5138,7 +5606,11 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
           task.stages.correction2.history.forEach((historyItem) => {
             const progressDate = parseKoreanDate(historyItem.date);
-            if (progressDate && progressDate >= startDate && progressDate <= endDate) {
+            if (
+              progressDate &&
+              progressDate >= startDate &&
+              progressDate <= endDate
+            ) {
               const pages =
                 historyItem.endPage - historyItem.startPage + 1 || 0;
               corrector2Pages += pages;
@@ -5155,7 +5627,11 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
           task.stages.correction3.history.forEach((historyItem) => {
             const progressDate = parseKoreanDate(historyItem.date);
-            if (progressDate && progressDate >= startDate && progressDate <= endDate) {
+            if (
+              progressDate &&
+              progressDate >= startDate &&
+              progressDate <= endDate
+            ) {
               const pages =
                 historyItem.endPage - historyItem.startPage + 1 || 0;
               corrector3Pages += pages;
@@ -5172,7 +5648,11 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
           task.stages.transcription.history.forEach((historyItem) => {
             const progressDate = parseKoreanDate(historyItem.date);
-            if (progressDate && progressDate >= startDate && progressDate <= endDate) {
+            if (
+              progressDate &&
+              progressDate >= startDate &&
+              progressDate <= endDate
+            ) {
               const pages =
                 historyItem.endPage - historyItem.startPage + 1 || 0;
               transcriberPages += pages;
@@ -5387,7 +5867,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const staffAttendance = attendanceData[staffId];
     const currentDate = new Date(startDate);
 
-    while (currentDate <= endDate) {
+    // 한국시간으로 오늘 18시가 지났는지 확인
+    const now = new Date();
+    const koreaTime = new Date(
+      now.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
+    );
+    const includeToday = koreaTime.getHours() >= 18;
+
+    // 오늘 18시가 지나지 않았다면 어제까지만 포함
+    const lastValidDate = new Date();
+    if (!includeToday) {
+      lastValidDate.setDate(lastValidDate.getDate() - 1);
+    }
+    lastValidDate.setHours(23, 59, 59, 999);
+
+    while (currentDate <= endDate && currentDate <= lastValidDate) {
       // 주말 제외 (토: 6, 일: 0)
       if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
         attendanceStats.totalDays++;
@@ -5400,6 +5894,7 @@ document.addEventListener("DOMContentLoaded", () => {
             ? new Date(dayData.checkOut)
             : null;
 
+          // 달력과 동일한 로직으로 출퇴근 상태 판단
           const isLate =
             checkInTime.getHours() > workStartTime.hour ||
             (checkInTime.getHours() === workStartTime.hour &&
@@ -5411,30 +5906,29 @@ document.addEventListener("DOMContentLoaded", () => {
               (checkOutTime.getHours() === workEndTime.hour &&
                 checkOutTime.getMinutes() < workEndTime.minute));
 
+          // 연장근무 판단: 18시 이후 또는 다음날 오전 9시 이전 퇴근
           const isOvertime =
             checkOutTime &&
-            (checkOutTime.getHours() > 18 ||
-              (checkOutTime.getHours() === 18 &&
-                checkOutTime.getMinutes() > 0));
+            (checkOutTime.getHours() >= 18 || checkOutTime.getHours() < 9);
 
-          let status = "정상";
+          let status = "";
           if (isLate && isEarlyLeave) {
-            attendanceStats.lateAndEarlyLeave++;
-            status = "지각+조퇴";
+            attendanceStats.late++;
+            attendanceStats.earlyLeave++;
+            status = "지각·조퇴";
           } else if (isLate) {
             attendanceStats.late++;
             status = "지각";
           } else if (isEarlyLeave) {
             attendanceStats.earlyLeave++;
             status = "조퇴";
+          } else if (isOvertime) {
+            attendanceStats.normalAttendance++;
+            attendanceStats.overtime++;
+            status = "연장근무";
           } else {
             attendanceStats.normalAttendance++;
-            status = "정상";
-          }
-
-          if (isOvertime) {
-            attendanceStats.overtime++;
-            status += "+연장";
+            status = "정상근무";
           }
 
           attendanceStats.attendanceDetails.push({
@@ -5508,23 +6002,35 @@ document.addEventListener("DOMContentLoaded", () => {
       const sessionsByDate = {};
       staffSessions.forEach((session) => {
         if (session.startTime) {
-            const sessionDate = new Date(session.startTime);
-            if (sessionDate >= startDate && sessionDate <= endDate) {
-              const dateStr = sessionDate.toISOString().split("T")[0];
-              if (!sessionsByDate[dateStr]) {
-                sessionsByDate[dateStr] = [];
-              }
-              sessionsByDate[dateStr].push(session);
+          const sessionDate = new Date(session.startTime);
+          if (sessionDate >= startDate && sessionDate <= endDate) {
+            const dateStr = sessionDate.toISOString().split("T")[0];
+            if (!sessionsByDate[dateStr]) {
+              sessionsByDate[dateStr] = [];
             }
+            sessionsByDate[dateStr].push(session);
+          }
         }
       });
 
-      // 각 날짜별 출퇴근 분석 (현재 날짜까지만)
+      // 각 날짜별 출퇴근 분석
       const currentDate = new Date(startDate);
-      const today = new Date();
-      today.setHours(23, 59, 59, 999); // 오늘 끝까지 포함
+      const now = new Date();
 
-      while (currentDate <= endDate && currentDate <= today) {
+      // 한국시간으로 오늘 18시가 지났는지 확인
+      const koreaTime = new Date(
+        now.toLocaleString("en-US", { timeZone: "Asia/Seoul" })
+      );
+      const includeToday = koreaTime.getHours() >= 18;
+
+      // 오늘 18시가 지나지 않았다면 어제까지만 포함
+      const lastValidDate = new Date();
+      if (!includeToday) {
+        lastValidDate.setDate(lastValidDate.getDate() - 1);
+      }
+      lastValidDate.setHours(23, 59, 59, 999);
+
+      while (currentDate <= endDate && currentDate <= lastValidDate) {
         // 주말 제외 (토: 6, 일: 0)
         if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
           attendanceStats.totalDays++;
@@ -5533,13 +6039,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
           if (daySessions.length > 0) {
             let totalDuration = 0;
-            daySessions.forEach(session => {
-                // duration이 밀리초 단위로 제공된다고 가정
-                if(session.duration) {
-                    totalDuration += session.duration;
-                } else if (session.startTime && session.endTime) {
-                    totalDuration += new Date(session.endTime) - new Date(session.startTime);
-                }
+            daySessions.forEach((session) => {
+              // duration이 밀리초 단위로 제공된다고 가정
+              if (session.duration) {
+                totalDuration += session.duration;
+              } else if (session.startTime && session.endTime) {
+                totalDuration +=
+                  new Date(session.endTime) - new Date(session.startTime);
+              }
             });
 
             const startTimes = daySessions.map((s) => new Date(s.startTime));
@@ -5548,7 +6055,8 @@ document.addEventListener("DOMContentLoaded", () => {
               .map((s) => new Date(s.endTime));
 
             const checkIn = new Date(Math.min(...startTimes));
-            const checkOut = endTimes.length > 0 ? new Date(Math.max(...endTimes)) : null;
+            const checkOut =
+              endTimes.length > 0 ? new Date(Math.max(...endTimes)) : null;
 
             // 점심시간 (12:00 ~ 13:00) 포함 여부 확인
             const lunchStart = new Date(checkIn);
@@ -5557,44 +6065,49 @@ document.addEventListener("DOMContentLoaded", () => {
             lunchEnd.setHours(13, 0, 0, 0);
 
             const lunchOverlap = checkIn < lunchEnd && checkOut > lunchStart;
-            
+
             let effectiveWorkMinutes = totalDuration / (1000 * 60);
             if (lunchOverlap) {
               effectiveWorkMinutes -= 60;
             }
-            
+
             // 분 단위로 소수점 버림
             effectiveWorkMinutes = Math.floor(effectiveWorkMinutes);
 
-            const isLate = checkIn.getHours() > 9 || (checkIn.getHours() === 9 && checkIn.getMinutes() > 5);
-            
+            // 달력과 동일한 로직으로 출퇴근 상태 판단
+            const isLate =
+              checkIn.getHours() > 9 ||
+              (checkIn.getHours() === 9 && checkIn.getMinutes() > 5);
+
+            const isEarlyLeave =
+              checkOut &&
+              (checkOut.getHours() < 17 ||
+                (checkOut.getHours() === 17 && checkOut.getMinutes() < 45));
+
+            // 연장근무 판단: 18시 이후 또는 다음날 오전 9시 이전 퇴근
+            const isOvertime =
+              checkOut &&
+              (checkOut.getHours() >= 18 || checkOut.getHours() < 9);
+
             let status = "";
 
-            // 17시 45분 이후 퇴근인지 확인
-            const isAfterEndTime = checkOut && (
-              checkOut.getHours() > 17 ||
-              (checkOut.getHours() === 17 && checkOut.getMinutes() >= 45)
-            );
-
-            if (effectiveWorkMinutes >= 480) {
+            if (isLate && isEarlyLeave) {
+              attendanceStats.late++;
+              attendanceStats.earlyLeave++;
+              status = "지각·조퇴";
+            } else if (isLate) {
+              attendanceStats.late++;
+              status = "지각";
+            } else if (isEarlyLeave) {
+              attendanceStats.earlyLeave++;
+              status = "조퇴";
+            } else if (isOvertime) {
               attendanceStats.normalAttendance++;
-              status = "정상";
+              attendanceStats.overtime++;
+              status = "연장근무";
             } else {
-              if (isLate) {
-                attendanceStats.late++;
-                status = "지각";
-              } else if (isAfterEndTime) {
-                // 17시 45분 이후 퇴근했지만 480분 미만인 경우는 정상으로 간주
-                attendanceStats.normalAttendance++;
-                status = "정상";
-              } else {
-                attendanceStats.earlyLeave++;
-                status = "조퇴"; // 17시 45분 이전 퇴근은 조퇴로 간주
-              }
-            }
-            
-            if (effectiveWorkMinutes > 480) {
-                attendanceStats.overtime++;
+              attendanceStats.normalAttendance++;
+              status = "정상근무";
             }
 
             attendanceStats.attendanceDetails.push({
@@ -5603,7 +6116,6 @@ document.addEventListener("DOMContentLoaded", () => {
               checkOut: checkOut ? checkOut.toISOString() : null,
               status: status,
             });
-
           }
         }
         currentDate.setDate(currentDate.getDate() + 1);
@@ -5802,13 +6314,13 @@ document.addEventListener("DOMContentLoaded", () => {
     // 출퇴근 상세 정보 업데이트
     updateAttendanceDetails(data.attendanceStats);
     console.log("renderEvaluationReport에서 renderPerformanceCharts 호출 전");
-    
+
     // DOM 렌더링이 완료된 후 차트 렌더링
     setTimeout(() => {
       console.log("setTimeout 내에서 차트 렌더링 시작");
       renderPerformanceCharts(data);
     }, 100);
-    
+
     console.log("renderEvaluationReport에서 renderPerformanceCharts 호출 후");
   }
 
@@ -5865,7 +6377,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("주간 데이터:", data.weeklyData);
     console.log("출퇴근 통계:", data.attendanceStats);
     console.log("직원 성과:", data.allStaffPerformance);
-    
+
     renderDailyPerformanceChart(data.dailyData);
     renderWeeklyPerformanceChart(data.weeklyData);
     renderAttendanceChart(data.attendanceStats);
@@ -5886,7 +6398,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("일일 차트 캔버스를 찾을 수 없습니다.");
       return;
     }
-    
+
     // 캔버스 상태 확인
     const rect = canvas.getBoundingClientRect();
     console.log("일일 차트 캔버스 찾음:", canvas);
@@ -5900,25 +6412,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const ctx = canvas.getContext("2d");
-    
+
     // 데이터가 비어있는 경우 테스트 데이터 사용
     let dates = Object.keys(dailyData).sort();
     let pages = dates.map((date) => dailyData[date]);
-    
-    console.log("일일 데이터 확인:", {dates, pages, isEmpty: dates.length === 0});
-    
+
+    console.log("일일 데이터 확인:", {
+      dates,
+      pages,
+      isEmpty: dates.length === 0,
+    });
+
     // 데이터가 없으면 기본 데이터 생성
-    if (dates.length === 0 || pages.every(p => p === 0)) {
+    if (dates.length === 0 || pages.every((p) => p === 0)) {
       const today = new Date();
       dates = [];
       pages = [];
       for (let i = 6; i >= 0; i--) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
-        dates.push(date.toISOString().split('T')[0]);
+        dates.push(date.toISOString().split("T")[0]);
         pages.push(Math.floor(Math.random() * 50) + 10); // 테스트 데이터
       }
-      console.log("테스트 데이터 생성:", {dates, pages});
+      console.log("테스트 데이터 생성:", { dates, pages });
     }
 
     // 날짜 라벨 포맷팅
@@ -5972,7 +6488,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
       },
     });
-    
+
     console.log("일일 차트 생성 완료:", dailyChart);
   }
 
@@ -5993,14 +6509,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const ctx = canvas.getContext("2d");
     let weeks = Object.keys(weeklyData).sort();
     let pages = weeks.map((week) => weeklyData[week]);
-    
-    console.log("주간 데이터 확인:", {weeks, pages, isEmpty: weeks.length === 0});
-    
+
+    console.log("주간 데이터 확인:", {
+      weeks,
+      pages,
+      isEmpty: weeks.length === 0,
+    });
+
     // 데이터가 없으면 기본 데이터 생성
-    if (weeks.length === 0 || pages.every(p => p === 0)) {
-      weeks = ['1주차', '2주차', '3주차', '4주차'];
+    if (weeks.length === 0 || pages.every((p) => p === 0)) {
+      weeks = ["1주차", "2주차", "3주차", "4주차"];
       pages = [150, 200, 180, 220]; // 테스트 데이터
-      console.log("주간 테스트 데이터 생성:", {weeks, pages});
+      console.log("주간 테스트 데이터 생성:", { weeks, pages });
     }
 
     // 주차 라벨 포맷팅
@@ -6051,7 +6571,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderStaffComparisonChart(allStaffPerformance, currentStaffId) {
-    console.log("직원 비교 차트 렌더링 시작:", allStaffPerformance, currentStaffId);
+    console.log(
+      "직원 비교 차트 렌더링 시작:",
+      allStaffPerformance,
+      currentStaffId
+    );
     const canvas = document.getElementById("staff-comparison-chart");
     if (!canvas) {
       console.error("직원 비교 차트 캔버스를 찾을 수 없습니다.");
@@ -6068,16 +6592,16 @@ document.addEventListener("DOMContentLoaded", () => {
     let sortedStaff = [...allStaffPerformance].sort(
       (a, b) => b.totalPages - a.totalPages
     );
-    
+
     console.log("직원 성과 데이터 확인:", allStaffPerformance);
-    
+
     // 데이터가 없으면 기본 데이터 생성
     if (!sortedStaff || sortedStaff.length === 0) {
       sortedStaff = [
-        { id: '1', name: '임석훈', totalPages: 300 },
-        { id: '2', name: '송지연', totalPages: 250 },
-        { id: '3', name: '최정윤', totalPages: 200 },
-        { id: '4', name: '김민수', totalPages: 180 }
+        { id: "1", name: "임석훈", totalPages: 300 },
+        { id: "2", name: "송지연", totalPages: 250 },
+        { id: "3", name: "최정윤", totalPages: 200 },
+        { id: "4", name: "김민수", totalPages: 180 },
       ];
       console.log("직원 비교 테스트 데이터 생성:", sortedStaff);
     }
@@ -6160,25 +6684,30 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const ctx = canvas.getContext("2d");
-    
+
     console.log("출퇴근 통계 확인:", attendanceStats);
-    
+
     // 출퇴근 데이터 준비 (기본값 포함)
     const normalAttendance = attendanceStats?.normalAttendance ?? 0;
     const late = attendanceStats?.late ?? 0;
     const earlyLeave = attendanceStats?.earlyLeave ?? 0;
     const overtime = attendanceStats?.overtime ?? 0;
-    
-    console.log("출퇴근 차트 데이터:", {normalAttendance, late, earlyLeave, overtime});
+
+    console.log("출퇴근 차트 데이터:", {
+      normalAttendance,
+      late,
+      earlyLeave,
+      overtime,
+    });
 
     const data = {
-      labels: ["정상 출근", "지각", "조퇴", "연장근무"],
+      labels: ["정상근무", "지각", "조퇴", "연장근무"],
       datasets: [
         {
           label: "일수",
           data: [normalAttendance, late, earlyLeave, overtime],
           backgroundColor: [
-            "#28a745", // 정상 - 초록색
+            "#28a745", // 정상근무 - 초록색
             "#ffc107", // 지각 - 노란색
             "#fd7e14", // 조퇴 - 주황색
             "#6f42c1", // 연장근무 - 보라색
@@ -6540,23 +7069,32 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // 업무평가서 달력 버튼 이벤트 리스너
-  const evaluationCalendarBtn = document.getElementById('evaluation-calendar-btn');
+  const evaluationCalendarBtn = document.getElementById(
+    "evaluation-calendar-btn"
+  );
   if (evaluationCalendarBtn) {
-    evaluationCalendarBtn.addEventListener('click', function() {
+    evaluationCalendarBtn.addEventListener("click", function () {
       // 현재 업무평가서에서 선택된 직원 정보 가져오기
-      const staffSelect = document.getElementById('evaluation-staff');
-      const selectedStaffName = staffSelect && staffSelect.selectedIndex > 0
-        ? staffSelect.options[staffSelect.selectedIndex].textContent
-        : null;
+      const staffSelect = document.getElementById("evaluation-staff");
+      const selectedStaffName =
+        staffSelect && staffSelect.selectedIndex > 0
+          ? staffSelect.options[staffSelect.selectedIndex].textContent
+          : null;
 
       if (!selectedStaffName) {
-        alert('직원을 먼저 선택해주세요.');
+        alert("직원을 먼저 선택해주세요.");
         return;
       }
 
       // 새 창에서 달력 페이지 열기 (선택된 직원으로)
-      const calendarUrl = `attendance-calendar.html?user=${encodeURIComponent(selectedStaffName)}`;
-      window.open(calendarUrl, 'evaluation-attendance-calendar', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+      const calendarUrl = `attendance-calendar.html?user=${encodeURIComponent(
+        selectedStaffName
+      )}`;
+      window.open(
+        calendarUrl,
+        "evaluation-attendance-calendar",
+        "width=1200,height=800,scrollbars=yes,resizable=yes"
+      );
     });
   }
 
