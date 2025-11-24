@@ -12,10 +12,30 @@ const firebaseConfig = {
   appId: "1:107033729788949223946:web:f3e8c4c6f8e6d7a8e3c4b5"
 };
 
+const ANALYTICS_PLACEHOLDER_ID = "G-XXXXXXXXXXXX";
+const firebaseMeasurementId =
+  (typeof window !== 'undefined' && window.FIREBASE_MEASUREMENT_ID) ||
+  ANALYTICS_PLACEHOLDER_ID;
+
+const hasAnalyticsMeasurementId =
+  typeof firebaseMeasurementId === 'string' &&
+  firebaseMeasurementId.startsWith('G-') &&
+  firebaseMeasurementId !== ANALYTICS_PLACEHOLDER_ID;
+
+if (hasAnalyticsMeasurementId) {
+  firebaseConfig.measurementId = firebaseMeasurementId;
+} else {
+  console.warn(
+    '⚠️ Firebase Analytics measurementId가 설정되지 않았습니다. window.FIREBASE_MEASUREMENT_ID 또는 firebase-config.js의 ANALYTICS_PLACEHOLDER_ID를 실제 값으로 교체하세요.'
+  );
+}
+
 // Firebase 초기화
 let app;
 let database;
 let isFirebaseInitialized = false;
+let analytics;
+let isAnalyticsInitialized = false;
 
 function initializeFirebase() {
   if (isFirebaseInitialized) {
@@ -26,6 +46,7 @@ function initializeFirebase() {
     // Firebase 앱 초기화
     app = firebase.initializeApp(firebaseConfig);
     database = firebase.database();
+    initializeFirebaseAnalytics();
     isFirebaseInitialized = true;
 
     console.log('✅ Firebase initialized successfully');
@@ -36,6 +57,96 @@ function initializeFirebase() {
     console.error('❌ Firebase initialization failed:', error);
     throw error;
   }
+}
+
+const FirebaseAnalytics = {
+  logEvent(eventName, params = {}) {
+    if (!eventName) {
+      return;
+    }
+
+    const analyticsInstance = getAnalyticsInstance();
+    if (!analyticsInstance || typeof analyticsInstance.logEvent !== 'function') {
+      return;
+    }
+
+    try {
+      analyticsInstance.logEvent(eventName, params);
+    } catch (error) {
+      console.error('❌ Firebase Analytics logEvent failed:', error, { eventName, params });
+    }
+  },
+
+  setUserId(userId) {
+    const analyticsInstance = getAnalyticsInstance();
+    if (!analyticsInstance || typeof analyticsInstance.setUserId !== 'function') {
+      return;
+    }
+
+    try {
+      analyticsInstance.setUserId(userId || null);
+    } catch (error) {
+      console.error('❌ Firebase Analytics setUserId failed:', error);
+    }
+  },
+
+  clearUserId() {
+    this.setUserId(null);
+  },
+
+  setUserProperties(properties = {}) {
+    const analyticsInstance = getAnalyticsInstance();
+    if (!analyticsInstance || typeof analyticsInstance.setUserProperties !== 'function') {
+      return;
+    }
+
+    try {
+      analyticsInstance.setUserProperties(properties);
+    } catch (error) {
+      console.error('❌ Firebase Analytics setUserProperties failed:', error);
+    }
+  },
+
+  isEnabled() {
+    return Boolean(hasAnalyticsMeasurementId && (analytics || isAnalyticsInitialized));
+  }
+};
+
+function initializeFirebaseAnalytics() {
+  if (isAnalyticsInitialized) {
+    return analytics;
+  }
+
+  if (!hasAnalyticsMeasurementId) {
+    return null;
+  }
+
+  if (typeof firebase === 'undefined' || typeof firebase.analytics !== 'function') {
+    console.warn('⚠️ Firebase Analytics SDK가 로드되지 않았습니다. firebase-analytics-compat.js를 포함했는지 확인하세요.');
+    return null;
+  }
+
+  try {
+    analytics = firebase.analytics(app);
+    isAnalyticsInitialized = true;
+    console.log('📈 Firebase Analytics initialized successfully');
+    return analytics;
+  } catch (error) {
+    console.error('❌ Firebase Analytics initialization failed:', error);
+    return null;
+  }
+}
+
+function getAnalyticsInstance() {
+  if (!isFirebaseInitialized) {
+    initializeFirebase();
+  }
+
+  if (analytics) {
+    return analytics;
+  }
+
+  return initializeFirebaseAnalytics();
 }
 
 // Firebase Database 참조 가져오기
@@ -94,7 +205,20 @@ const FirebaseBooks = {
   // 모든 책 가져오기
   async getAll() {
     const booksData = await firebaseGet('books');
-    return booksData ? Object.values(booksData) : [];
+    if (!booksData) return [];
+
+    // Firebase 키를 id로 포함시켜서 반환 (누락된 id 방지)
+    return Object.entries(booksData).map(([key, value]) => {
+      // IMPORTANT: 항상 Firebase 키를 id로 사용 (중복 생성 방지)
+      if (value.id !== key) {
+        if (value.id && value.id !== 'undefined' && value.id !== 'null') {
+          console.warn(`🔧 ID 불일치 수정: Firebase 키=${key}, 기존 객체 id=${value.id}`);
+        }
+        // Firebase 키로 강제 덮어쓰기
+        return { ...value, id: key };
+      }
+      return value;
+    });
   },
 
   // 책 ID로 가져오기
@@ -113,8 +237,33 @@ const FirebaseBooks = {
 
   // 책 업데이트
   async update(id, bookData) {
-    await firebaseUpdate(`books/${id}`, bookData);
-    return { id, ...bookData };
+    console.log(`📝 FirebaseBooks.update 호출`);
+    console.log(`  - 파라미터 ID: ${id} (타입: ${typeof id})`);
+    console.log(`  - bookData.id: ${bookData.id} (타입: ${typeof bookData.id})`);
+    console.log(`  - 제목: ${bookData.book?.title}`);
+
+    // bookData의 id와 파라미터 id 비교
+    if (bookData.id && bookData.id !== id) {
+      console.error(`❌ CRITICAL: ID 불일치!`);
+      console.error(`  - 파라미터 ID: ${id}`);
+      console.error(`  - bookData.id: ${bookData.id}`);
+      console.error(`  - 이는 중복 생성의 원인입니다!`);
+      console.log(`🔄 파라미터 ID(${id})를 강제로 사용합니다.`);
+    }
+
+    // id를 제외한 데이터만 업데이트 (id 중복 방지)
+    const { id: _, ...dataWithoutId } = bookData;
+    // set()을 사용하여 전체 객체 교체 (update()는 부분 병합만 수행)
+    // IMPORTANT: 반드시 파라미터로 받은 id를 사용 (bookData.id 무시)
+    const bookToSave = { id, ...dataWithoutId };
+
+    console.log(`💾 Firebase 저장 경로: books/${id}`);
+    console.log(`💾 저장할 데이터의 id: ${bookToSave.id}`);
+
+    await firebaseSet(`books/${id}`, bookToSave);
+
+    console.log(`✅ 책 업데이트 완료: books/${id}`);
+    return bookToSave;
   },
 
   // 책 삭제
@@ -125,7 +274,28 @@ const FirebaseBooks = {
   // 실시간 리스너
   onValue(callback) {
     firebaseOnValue('books', (data) => {
-      const books = data ? Object.values(data) : [];
+      if (!data) {
+        callback([]);
+        return;
+      }
+
+      console.log('🔍 Firebase 원본 데이터 키:', Object.keys(data));
+
+      // getAll()과 동일한 로직 사용
+      const books = Object.entries(data).map(([key, value]) => {
+        // IMPORTANT: 항상 Firebase 키를 id로 사용 (중복 생성 방지)
+        if (value.id !== key) {
+          if (value.id && value.id !== 'undefined' && value.id !== 'null') {
+            console.warn(`🔧 ID 불일치 수정: Firebase 키=${key}, 기존 객체 id=${value.id}, 제목=${value.book?.title}`);
+          }
+          // Firebase 키로 강제 덮어쓰기
+          return { ...value, id: key };
+        }
+        return value;
+      });
+
+      console.log('📚 변환된 books 배열:', books.map(b => ({ key: b.id, title: b.book?.title })));
+
       callback(books);
     });
   },
@@ -133,6 +303,60 @@ const FirebaseBooks = {
   // 리스너 제거
   off(callback) {
     firebaseOff('books', callback);
+  },
+
+  // Firebase에서 중복된 책 찾기 및 정리
+  async findAndCleanDuplicates() {
+    console.log('🔍 중복 책 검색 시작...');
+    const booksData = await firebaseGet('books');
+    if (!booksData) {
+      console.log('✅ 책 데이터 없음');
+      return { duplicates: [], cleaned: [] };
+    }
+
+    // Firebase 키와 객체 ID를 매핑
+    const entries = Object.entries(booksData);
+    console.log(`📊 총 ${entries.length}개 항목 검색 중...`);
+
+    // ID별로 그룹화
+    const groupedById = {};
+    for (const [firebaseKey, bookData] of entries) {
+      const bookId = bookData.id || firebaseKey;
+      if (!groupedById[bookId]) {
+        groupedById[bookId] = [];
+      }
+      groupedById[bookId].push({ firebaseKey, bookData });
+    }
+
+    // 중복 찾기
+    const duplicates = [];
+    const cleaned = [];
+
+    for (const [bookId, items] of Object.entries(groupedById)) {
+      if (items.length > 1) {
+        console.warn(`⚠️ 중복 발견: ID=${bookId}, ${items.length}개 항목`);
+        duplicates.push({ bookId, items });
+
+        // 가장 최근 것 유지 (첫 번째 항목)
+        const [keep, ...remove] = items;
+        console.log(`✅ 유지: Firebase 키=${keep.firebaseKey}`);
+
+        // 나머지 삭제
+        for (const item of remove) {
+          console.log(`🗑️ 삭제: Firebase 키=${item.firebaseKey}`);
+          await firebaseRemove(`books/${item.firebaseKey}`);
+          cleaned.push(item.firebaseKey);
+        }
+      }
+    }
+
+    if (duplicates.length === 0) {
+      console.log('✅ 중복 없음');
+    } else {
+      console.log(`✅ ${duplicates.length}개 중복 ID, ${cleaned.length}개 항목 삭제 완료`);
+    }
+
+    return { duplicates, cleaned };
   }
 };
 
@@ -213,55 +437,59 @@ const FirebaseWorkSessions = {
   },
 
   async end(taskId, pagesWorked) {
-    // 먼저 Firebase에서 세션 확인
     let session = await firebaseGet(`workSessions/${taskId}`);
-
-    // 세션이 없으면 window.currentStoppedSession에서 정보 가져오기
-    // (작업 중지 버튼을 눌렀을 때 이미 Firebase에서 제거되었을 수 있음)
     if (!session && window.currentStoppedSession) {
-      console.log('Session already removed from Firebase, using stored session info');
-      // 저장된 세션 정보로 completedSession 생성
-      const completedSession = {
+      session = {
         taskId: taskId,
         worker: window.currentStoppedSession.worker,
         startTime: window.currentStoppedSession.startTime || new Date().toISOString(),
-        endTime: new Date().toISOString(),
-        duration: window.currentStoppedSession.startTime
-          ? new Date() - new Date(window.currentStoppedSession.startTime)
-          : 0,
-        pagesWorked: pagesWorked || 0,
-        isWorking: false,
         taskTitle: window.currentStoppedSession.taskTitle || "Unknown",
-        stage: window.currentStoppedSession.stage || "unknown"
+        stage: window.currentStoppedSession.stage || "unknown",
       };
-
-      // 히스토리에 추가
-      const historyKey = `${taskId}-${new Date().getTime()}`;
-      await firebaseSet(`workSessionsHistory/${historyKey}`, completedSession);
-
-      return completedSession;
     }
 
     if (!session) {
-      console.warn('No work session found for task:', taskId);
+      console.warn("No work session found for task:", taskId);
       return null;
     }
 
-    const completedSession = {
-      ...session,
-      endTime: new Date().toISOString(),
-      duration: new Date() - new Date(session.startTime),
-      pagesWorked: pagesWorked || 0
-    };
+    const endTime = new Date();
+    const duration = endTime - new Date(session.startTime);
 
-    // 히스토리에 추가
-    const historyKey = `${taskId}-${new Date().getTime()}`;
-    await firebaseSet(`workSessionsHistory/${historyKey}`, completedSession);
+    const history = await FirebaseWorkSessionsHistory.getAll();
+    const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" })).toISOString().split("T")[0];
 
-    // 현재 세션 삭제 (아직 남아있다면)
-    await firebaseRemove(`workSessions/${taskId}`);
+    const existingSession = history.find(s =>
+        s.worker === session.worker &&
+        new Date(new Date(s.startTime).toLocaleString("en-US", { timeZone: "Asia/Seoul" })).toISOString().split("T")[0] === today
+    );
 
-    return completedSession;
+    if (existingSession) {
+      const updatedDuration = (existingSession.duration || 0) + duration;
+      const updatedPagesWorked = (existingSession.pagesWorked || 0) + (pagesWorked || 0);
+      const updatedTaskTitles = [...new Set([...(existingSession.taskTitle?.split(', ') || []), session.taskTitle])].join(', ');
+
+      await FirebaseWorkSessionsHistory.update(existingSession.id, {
+        duration: updatedDuration,
+        pagesWorked: updatedPagesWorked,
+        taskTitle: updatedTaskTitles,
+        endTime: endTime.toISOString(),
+      });
+
+      await firebaseRemove(`workSessions/${taskId}`);
+      return { ...existingSession, duration: updatedDuration, pagesWorked: updatedPagesWorked, taskTitle: updatedTaskTitles, endTime: endTime.toISOString() };
+    } else {
+      const completedSession = {
+        id: Date.now().toString(),
+        ...session,
+        endTime: endTime.toISOString(),
+        duration: duration,
+        pagesWorked: pagesWorked || 0,
+      };
+      await FirebaseWorkSessionsHistory.create(completedSession);
+      await firebaseRemove(`workSessions/${taskId}`);
+      return completedSession;
+    }
   },
 
   async removeSession(taskId) {
@@ -299,14 +527,60 @@ const FirebaseWorkSessions = {
 const FirebaseWorkSessionsHistory = {
   async getAll() {
     const historyData = await firebaseGet('workSessionsHistory');
-    return historyData ? Object.values(historyData) : [];
+    if (!historyData) return [];
+    return Object.entries(historyData).map(([id, session]) => ({ id, ...session }));
   },
 
   async create(session) {
     // 세션 ID가 있으면 사용하고, 없으면 생성
-    const sessionId = session.id || `${session.taskId}_${session.worker}_${Date.now()}`;
-    await firebaseSet(`workSessionsHistory/${sessionId}`, session);
-    return session;
+    const sessionId = session.id || Date.now().toString();
+    const newSession = { ...session, id: sessionId };
+    await firebaseSet(`workSessionsHistory/${sessionId}`, newSession);
+    return newSession;
+  },
+
+  async update(id, session) {
+    await firebaseUpdate(`workSessionsHistory/${id}`, session);
+    return { id, ...session };
+  },
+
+  async delete(id) {
+    await firebaseRemove(`workSessionsHistory/${id}`);
+  },
+
+  async mergeWorkSessions() {
+    const history = await this.getAll();
+    const groupedByWorkerAndDay = {};
+
+    for (const session of history) {
+      const day = new Date(new Date(session.startTime).toLocaleString("en-US", { timeZone: "Asia/Seoul" })).toISOString().split("T")[0];
+      const key = `${session.worker}-${day}`;
+      if (!groupedByWorkerAndDay[key]) {
+        groupedByWorkerAndDay[key] = [];
+      }
+      groupedByWorkerAndDay[key].push(session);
+    }
+
+    for (const key in groupedByWorkerAndDay) {
+      const sessions = groupedByWorkerAndDay[key];
+      if (sessions.length > 1) {
+        const mergedSession = sessions.reduce((acc, s) => {
+          return {
+            ...acc,
+            duration: (acc.duration || 0) + (s.duration || 0),
+            pagesWorked: (acc.pagesWorked || 0) + (s.pagesWorked || 0),
+            taskTitle: [...new Set([...(acc.taskTitle?.split(', ') || []), s.taskTitle])].join(', '),
+            endTime: acc.endTime > s.endTime ? acc.endTime : s.endTime,
+          };
+        });
+
+        for (const session of sessions) {
+          await this.delete(session.id);
+        }
+
+        await this.create(mergedSession);
+      }
+    }
   },
 
   async clear() {
@@ -425,4 +699,14 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeFirebase();
 });
 
+// 전역으로 노출 (디버깅/통계용)
+window.FirebaseBooks = FirebaseBooks;
+window.FirebaseAnalytics = FirebaseAnalytics;
+window.cleanDuplicateBooks = async () => {
+  const result = await FirebaseBooks.findAndCleanDuplicates();
+  console.log('🎯 정리 결과:', result);
+  return result;
+};
+
 console.log('📦 Firebase config module loaded');
+console.log('💡 중복 제거: window.cleanDuplicateBooks() 실행');
