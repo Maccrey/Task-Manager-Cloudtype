@@ -34,6 +34,7 @@ if (hasAnalyticsMeasurementId) {
 let app;
 let database;
 let isFirebaseInitialized = false;
+const ENABLE_ANALYTICS = false; // API Key 오류로 인해 비활성화
 let analytics;
 let isAnalyticsInitialized = false;
 
@@ -46,7 +47,7 @@ function initializeFirebase() {
     // Firebase 앱 초기화
     app = firebase.initializeApp(firebaseConfig);
     database = firebase.database();
-    initializeFirebaseAnalytics();
+    // initializeFirebaseAnalytics(); // API Key 오류로 인해 Analytics 비활성화
     isFirebaseInitialized = true;
 
     console.log('✅ Firebase initialized successfully');
@@ -113,6 +114,11 @@ const FirebaseAnalytics = {
 };
 
 function initializeFirebaseAnalytics() {
+  if (!ENABLE_ANALYTICS) {
+    console.log('🚫 Firebase Analytics is disabled via config.');
+    return null;
+  }
+
   if (isAnalyticsInitialized) {
     return analytics;
   }
@@ -460,8 +466,8 @@ const FirebaseWorkSessions = {
     const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" })).toISOString().split("T")[0];
 
     const existingSession = history.find(s =>
-        s.worker === session.worker &&
-        new Date(new Date(s.startTime).toLocaleString("en-US", { timeZone: "Asia/Seoul" })).toISOString().split("T")[0] === today
+      s.worker === session.worker &&
+      new Date(new Date(s.startTime).toLocaleString("en-US", { timeZone: "Asia/Seoul" })).toISOString().split("T")[0] === today
     );
 
     if (existingSession) {

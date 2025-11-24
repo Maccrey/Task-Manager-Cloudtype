@@ -792,12 +792,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (book) {
       bookInfoDiv.innerHTML = `
                 <p><strong>제목:</strong> ${stripHtmlTags(book.title)}</p>
-                <p><strong>저자:</strong> ${
-                  stripHtmlTags(book.author) || "정보 없음"
-                }</p>
-                <p><strong>출판사:</strong> ${
-                  stripHtmlTags(book.publisher) || "정보 없음"
-                }</p>
+                <p><strong>저자:</strong> ${stripHtmlTags(book.author) || "정보 없음"
+        }</p>
+                <p><strong>출판사:</strong> ${stripHtmlTags(book.publisher) || "정보 없음"
+        }</p>
                 <p><strong>ISBN:</strong> ${book.isbn || "정보 없음"}</p>
             `;
     } else {
@@ -1144,9 +1142,8 @@ document.addEventListener("DOMContentLoaded", () => {
       let workSessionButtonHtml = "";
       if (assignedTo !== "미정" && task.currentStage !== "completed") {
         const isWorking = currentWorkSessions.has(task.id);
-        const buttonClass = `work-session-button ${
-          isWorking ? "stop" : "start"
-        } ${!isCurrentUserAssigned ? "disabled" : ""}`;
+        const buttonClass = `work-session-button ${isWorking ? "stop" : "start"
+          } ${!isCurrentUserAssigned ? "disabled" : ""}`;
         const buttonText = isWorking ? "작업중지" : "작업시작";
         const disabledAttr = !isCurrentUserAssigned ? "disabled" : "";
         workSessionButtonHtml = `<button data-id="${task.id}" class="${buttonClass}" data-worker="${assignedTo}" ${disabledAttr}>${buttonText}</button>`;
@@ -1162,11 +1159,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       taskItem.innerHTML = `
-        <h3 class="task-title" data-id="${
-          task.id
+        <h3 class="task-title" data-id="${task.id
         }" title="클릭하여 작업 히스토리 보기">${stripHtmlTags(
-        task.book.title
-      )}</h3>
+          task.book.title
+        )}</h3>
         <p><strong>ISBN:</strong> ${task.book.isbn || "정보 없음"}</p>
         <p><strong>총 페이지:</strong> ${task.totalPages}</p>
         <p><strong>현재 단계:</strong> ${currentStageName}</p>
@@ -1175,29 +1171,25 @@ document.addEventListener("DOMContentLoaded", () => {
         )}% (${currentPageForDisplay}/${task.totalPages} 페이지)</p>
         <div class="progress-bar-container">
           <div class="progress-bar" style="width: ${Math.min(
-            currentProgress,
-            100
-          )}%;"></div>
+          currentProgress,
+          100
+        )}%;"></div>
         </div>
         <p><strong>${assigneeText}</strong>
-          ${
-            showAssignButton
-              ? `<button class="assign-corrector-button" data-id="${task.id}" data-stage="${task.currentStage}">지정</button>`
-              : ""
-          }
+          ${showAssignButton
+          ? `<button class="assign-corrector-button" data-id="${task.id}" data-stage="${task.currentStage}">지정</button>`
+          : ""
+        }
         </p>
         <div class="task-buttons">
-          ${
-            task.currentStage !== "completed"
-              ? `<button data-id="${task.id}" class="update-progress-button ${buttonDisabledClass}" ${buttonDisabledAttr}>진행 상황 업데이트</button>`
-              : ""
-          }
-          <button data-id="${
-            task.id
-          }" class="delete-task-button ${buttonDisabledClass}" ${buttonDisabledAttr}>삭제</button>
-          <button data-id="${task.id}" class="notes-button ${
-        noteCount === 0 ? "inactive" : ""
-      }">특이사항 <span class="note-count">${noteCount}</span></button>
+          ${task.currentStage !== "completed"
+          ? `<button data-id="${task.id}" class="update-progress-button ${buttonDisabledClass}" ${buttonDisabledAttr}>진행 상황 업데이트</button>`
+          : ""
+        }
+          <button data-id="${task.id
+        }" class="delete-task-button ${buttonDisabledClass}" ${buttonDisabledAttr}>삭제</button>
+          <button data-id="${task.id}" class="notes-button ${noteCount === 0 ? "inactive" : ""
+        }">특이사항 <span class="note-count">${noteCount}</span></button>
           ${workSessionButtonHtml}
         </div>
       `;
@@ -1732,8 +1724,7 @@ document.addEventListener("DOMContentLoaded", () => {
           };
 
           alert(
-            `${stripHtmlTags(task.book.title)}의 다음 단계인 ${
-              stageNames[nextStageKey]
+            `${stripHtmlTags(task.book.title)}의 다음 단계인 ${stageNames[nextStageKey]
             }가 시작됩니다.`
           );
           nextStageFound = true;
@@ -1799,75 +1790,70 @@ document.addEventListener("DOMContentLoaded", () => {
     bookInfoDiv.innerHTML = `
             <h4>도서 정보</h4>
             <p><strong>제목:</strong> ${stripHtmlTags(task.book.title)}</p>
-            <p><strong>저자:</strong> ${
-              stripHtmlTags(task.book.author) || "정보 없음"
-            }</p>
-            <p><strong>출판사:</strong> ${
-              stripHtmlTags(task.book.publisher) || "정보 없음"
-            }</p>
+            <p><strong>저자:</strong> ${stripHtmlTags(task.book.author) || "정보 없음"
+      }</p>
+            <p><strong>출판사:</strong> ${stripHtmlTags(task.book.publisher) || "정보 없음"
+      }</p>
             <p><strong>ISBN:</strong> ${task.book.isbn || "정보 없음"}</p>
             <p><strong>총 페이지:</strong> ${task.totalPages}</p>
             <hr>
             <h4>진행 단계별 현황</h4>
             <div class="stage-status-section">
             ${Object.keys(stageNames)
-              .map((stageKey) => {
-                const stage = task.stages[stageKey];
-                if (!stage || stage.status === "not_applicable") return "";
+        .map((stageKey) => {
+          const stage = task.stages[stageKey];
+          if (!stage || stage.status === "not_applicable") return "";
 
-                const stageName = stageNames[stageKey];
-                const currentPages =
-                  stage.history && stage.history.length > 0
-                    ? stage.history[stage.history.length - 1].endPage
-                    : 0;
-                const progressPercent = (
-                  (currentPages / task.totalPages) *
-                  100
-                ).toFixed(1);
+          const stageName = stageNames[stageKey];
+          const currentPages =
+            stage.history && stage.history.length > 0
+              ? stage.history[stage.history.length - 1].endPage
+              : 0;
+          const progressPercent = (
+            (currentPages / task.totalPages) *
+            100
+          ).toFixed(1);
 
-                let statusText = "";
-                switch (stage.status) {
-                  case "pending":
-                    statusText =
-                      task.currentStage === stageKey ? "진행 중" : "대기";
-                    break;
-                  case "completed":
-                    statusText = "완료";
-                    break;
-                  default:
-                    statusText = stage.status;
-                }
+          let statusText = "";
+          switch (stage.status) {
+            case "pending":
+              statusText =
+                task.currentStage === stageKey ? "진행 중" : "대기";
+              break;
+            case "completed":
+              statusText = "완료";
+              break;
+            default:
+              statusText = stage.status;
+          }
 
-                const historyListItems = (stage.history || [])
-                  .map(
-                    (entry) =>
-                      `<li>${entry.date}: ${entry.startPage}~${entry.endPage} 페이지</li>`
-                  )
-                  .join("");
+          const historyListItems = (stage.history || [])
+            .map(
+              (entry) =>
+                `<li>${entry.date}: ${entry.startPage}~${entry.endPage} 페이지</li>`
+            )
+            .join("");
 
-                return `
+          return `
                     <div class="stage-status-card">
                         <p class="stage-status-title"><strong>${stageName}</strong></p>
                         <p>담당자: ${stage.assignedTo || "미정"}</p>
-                        <p>진행률: ${currentPages} / ${
-                  task.totalPages
-                } 페이지 (${progressPercent}%)</p>
+                        <p>진행률: ${currentPages} / ${task.totalPages
+            } 페이지 (${progressPercent}%)</p>
                         <p>상태: ${statusText}</p>
-                        ${
-                          historyListItems
-                            ? `<div class="stage-history"><strong>진행 기록:</strong><ul class="stage-history-list">${historyListItems}</ul></div>`
-                            : '<p class="stage-history-empty">진행 기록 없음</p>'
-                        }
+                        ${historyListItems
+              ? `<div class="stage-history"><strong>진행 기록:</strong><ul class="stage-history-list">${historyListItems}</ul></div>`
+              : '<p class="stage-history-empty">진행 기록 없음</p>'
+            }
                     </div>
                 `;
-              })
-              .join("")}
+        })
+        .join("")}
             </div>
-            ${
-              task.currentStage === "completed"
-                ? '<p style="color: #4CAF50; font-weight: bold; text-align: center;">🎉 모든 작업이 완료되었습니다! 🎉</p>'
-                : ""
-            }
+            ${task.currentStage === "completed"
+        ? '<p style="color: #4CAF50; font-weight: bold; text-align: center;">🎉 모든 작업이 완료되었습니다! 🎉</p>'
+        : ""
+      }
         `;
 
     taskForm.style.display = "none";
@@ -1936,16 +1922,13 @@ document.addEventListener("DOMContentLoaded", () => {
       bookItem.className = "book-selection-item";
       bookItem.innerHTML = `
                 <h4>${book.titleInfo || "제목 없음"}</h4>
-                <p><strong>저자:</strong> ${
-                  book.authorInfo || "저자 정보 없음"
-                }</p>
-                <p><strong>출판사:</strong> ${
-                  book.pubInfo || "출판사 정보 없음"
-                }</p>
+                <p><strong>저자:</strong> ${book.authorInfo || "저자 정보 없음"
+        }</p>
+                <p><strong>출판사:</strong> ${book.pubInfo || "출판사 정보 없음"
+        }</p>
                 <p><strong>ISBN:</strong> ${book.isbn || "ISBN 없음"}</p>
-                <p><strong>출간연도:</strong> ${
-                  book.pubYearInfo || "출간연도 정보 없음"
-                }</p>
+                <p><strong>출간연도:</strong> ${book.pubYearInfo || "출간연도 정보 없음"
+        }</p>
             `;
 
       bookItem.addEventListener("click", () => {
@@ -2023,11 +2006,10 @@ document.addEventListener("DOMContentLoaded", () => {
       noteItem.dataset.noteId = note.noteId;
 
       noteItem.innerHTML = `
-                <p class="note-meta"><strong>작성자:</strong> ${
-                  note.author
-                } | <strong>작성일:</strong> ${new Date(
-        note.createdAt
-      ).toLocaleString("ko-KR")}</p>
+                <p class="note-meta"><strong>작성자:</strong> ${note.author
+        } | <strong>작성일:</strong> ${new Date(
+          note.createdAt
+        ).toLocaleString("ko-KR")}</p>
                 <p>${note.content}</p>
                 <div class="note-actions">
                     <button class="edit-note-button">수정</button>
@@ -2124,10 +2106,11 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Password submitted:", password);
 
     if (password === "maccreytask") {
-      console.log("Password correct, opening admin panel");
+      console.log("Password correct, redirecting to admin page");
       isAdminMode = true;
       closePasswordModal();
-      openAdminPanel();
+      // openAdminPanel(); // 기존 모달 방식 비활성화
+      window.location.href = 'admin.html'; // 새 페이지로 이동
     } else {
       console.log("Password incorrect");
       adminPasswordInput.value = "";
@@ -2226,21 +2209,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const row = document.createElement("tr");
       row.innerHTML = `
                 <td>${task.id}</td>
-                <td class="editable task-clickable" data-field="title" data-task-id="${
-                  task.id
-                }">${stripHtmlTags(task.book.title) || ""}</td>
-                <td class="editable" data-field="author">${
-                  stripHtmlTags(task.book.author) || ""
-                }</td>
+                <td class="editable task-clickable" data-field="title" data-task-id="${task.id
+        }">${stripHtmlTags(task.book.title) || ""}</td>
+                <td class="editable" data-field="author">${stripHtmlTags(task.book.author) || ""
+        }</td>
                 <td>${getStageDisplayName(task.currentStage)}</td>
                 <td>${calculateProgress(task)}%</td>
                 <td>
-                    <button class="action-btn edit-btn" onclick="editTask('${
-                      task.id
-                    }')">수정</button>
-                    <button class="action-btn delete-btn" onclick="deleteTask('${
-                      task.id
-                    }')">삭제</button>
+                    <button class="action-btn edit-btn" onclick="editTask('${task.id
+        }')">수정</button>
+                    <button class="action-btn delete-btn" onclick="deleteTask('${task.id
+        }')">삭제</button>
                 </td>
             `;
       row.dataset.taskId = task.id;
@@ -2279,14 +2258,13 @@ document.addEventListener("DOMContentLoaded", () => {
       dataInfo.innerHTML = `
             <p><strong>총 작업 수:</strong> ${tasks.length}개</p>
             <p><strong>마지막 업데이트:</strong> ${new Date().toLocaleString(
-              "ko-KR"
-            )}</p>
-            <p><strong>서버 상태:</strong> ${
-              serverStatus === "online" ? "온라인" : "오프라인"
-            }</p>
+        "ko-KR"
+      )}</p>
+            <p><strong>서버 상태:</strong> ${serverStatus === "online" ? "온라인" : "오프라인"
+        }</p>
             <p><strong>데이터베이스 크기:</strong> ${Math.round(
-              JSON.stringify(tasks).length / 1024
-            )}KB</p>
+          JSON.stringify(tasks).length / 1024
+        )}KB</p>
         `;
     }
   }
@@ -2300,9 +2278,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const avgProgress =
       total > 0
         ? Math.round(
-            tasks.reduce((sum, task) => sum + calculateProgress(task), 0) /
-              total
-          )
+          tasks.reduce((sum, task) => sum + calculateProgress(task), 0) /
+          total
+        )
         : 0;
 
     document.getElementById("total-tasks").textContent = total;
@@ -2348,8 +2326,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!book.id || book.id === "undefined" || book.id === "null") {
           invalidIds.push({ book, index });
           issues.push(
-            `책 ${index + 1}: 잘못된 ID (${book.id}) - "${
-              book.book?.title || "제목 없음"
+            `책 ${index + 1}: 잘못된 ID (${book.id}) - "${book.book?.title || "제목 없음"
             }"`
           );
         }
@@ -3156,9 +3133,8 @@ document.addEventListener("DOMContentLoaded", () => {
       stageDiv.className = "history-stage";
 
       let historyHtml = `<h5>${stageName}</h5>`;
-      historyHtml += `<p><strong>담당자:</strong> ${
-        stageData.assignedTo || "미정"
-      }</p>`;
+      historyHtml += `<p><strong>담당자:</strong> ${stageData.assignedTo || "미정"
+        }</p>`;
 
       if (stageData.history && stageData.history.length > 0) {
         historyHtml += "<div>";
@@ -3373,9 +3349,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       row.innerHTML = `
-                <td class="task-clickable-completed" data-task-id="${
-                  task.id
-                }">${stripHtmlTags(task.book.title) || "제목 없음"}</td>
+                <td class="task-clickable-completed" data-task-id="${task.id
+        }">${stripHtmlTags(task.book.title) || "제목 없음"}</td>
                 <td>${stripHtmlTags(task.book.author) || "저자 없음"}</td>
                 <td>${task.totalPages || 0}</td>
                 <td>${formattedDate}</td>
@@ -3529,9 +3504,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const link = document.createElement("a");
     link.href = url;
-    link.download = `completed_books_${
-      new Date().toISOString().split("T")[0]
-    }.csv`;
+    link.download = `completed_books_${new Date().toISOString().split("T")[0]
+      }.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -3629,9 +3603,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const link = document.createElement("a");
     link.href = url;
-    link.download = `in_progress_books_${
-      new Date().toISOString().split("T")[0]
-    }.csv`;
+    link.download = `in_progress_books_${new Date().toISOString().split("T")[0]
+      }.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -4192,16 +4165,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       currentWorkersDiv = document.createElement("div");
       currentWorkersDiv.id = "current-workers-display";
-      currentWorkersDiv.style.cssText = `
-        background: #e8f5e8;
-        border: 1px solid #4CAF50;
-        border-radius: 8px;
-        margin: 20px auto;
-        padding: 15px;
-        font-size: 0.9em;
-        max-width: 1200px;
-        text-align: center;
-      `;
+      // Removed inline styles, now handled by CSS
 
       // 더 안전한 방법으로 요소 추가 - 메인 섹션에 추가하도록 수정
       const searchSection = document.querySelector(".search-section");
@@ -4236,7 +4200,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (currentWorkSessions.size === 0) {
       currentWorkersDiv.innerHTML =
-        '<div style="text-align: center; color: #666;">현재 작업 중인 담당자가 없습니다.</div>';
+        '<div class="no-workers">현재 작업 중인 담당자가 없습니다.</div>';
       // 작업중인 세션이 없으면 타이머 정리
       stopWorkersDisplayUpdate();
       return;
@@ -4259,15 +4223,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const workerName = session.worker || "Unknown";
 
         return `
-        <div style="display: inline-block; background: white; padding: 5px 10px; margin: 2px; border-radius: 20px; border: 1px solid #4CAF50; color: #333;">
-          <strong style="color: #2e7d32;">${workerName}</strong> - ${stageName} (작업시간: ${duration}분)
+        <div class="worker-badge">
+          <span class="worker-name">${workerName}</span> - ${stageName} (작업시간: ${duration}분)
         </div>
       `;
       })
       .join("");
 
     currentWorkersDiv.innerHTML = `
-      <div style="font-weight: bold; margin-bottom: 5px;">현재 작업 중 (${currentWorkSessions.size}명)</div>
+      <div class="header-text">현재 작업 중 (${currentWorkSessions.size}명)</div>
       <div>${workersHtml}</div>
     `;
   }
@@ -4533,24 +4497,23 @@ document.addEventListener("DOMContentLoaded", () => {
         const tasksHtml =
           record.tasks.length > 0
             ? `<div style="font-size: 0.9em; color: #666; margin-top: 5px;">작업: ${record.tasks.join(
-                ", "
-              )}</div>`
+              ", "
+            )}</div>`
             : "";
 
         return `
         <div class="attendance-summary-item">
           <strong>${record.worker}</strong> - 
           출근: ${record.startTime.toLocaleTimeString("ko-KR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}, 
+          hour: "2-digit",
+          minute: "2-digit",
+        })}, 
           퇴근: ${record.endTime.toLocaleTimeString("ko-KR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}, 
-          근무시간: ${Math.floor(record.workTime / 60)}시간 ${
-          record.workTime % 60
-        }분
+          hour: "2-digit",
+          minute: "2-digit",
+        })}, 
+          근무시간: ${Math.floor(record.workTime / 60)}시간 ${record.workTime % 60
+          }분
           ${tasksHtml}
         </div>
       `;
@@ -4624,23 +4587,21 @@ document.addEventListener("DOMContentLoaded", () => {
           <td>${record.startTime.toLocaleDateString("ko-KR")}</td>
           <td>${record.worker}</td>
           <td>${record.startTime.toLocaleTimeString("ko-KR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}</td>
+          hour: "2-digit",
+          minute: "2-digit",
+        })}</td>
           <td>${record.endTime.toLocaleTimeString("ko-KR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}</td>
+          hour: "2-digit",
+          minute: "2-digit",
+        })}</td>
           <td>${Math.floor(workTime / 60)}시간 ${workTime % 60}분</td>
           <td>${record.pagesWorked}페이지</td>
           <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${tasksText}">${tasksText}</td>
           <td>
-            <button class="action-btn edit-attendance-btn" data-id="${
-              record.id
-            }">수정</button>
-            <button class="action-btn delete-attendance-btn" data-id="${
-              record.id
-            }">삭제</button>
+            <button class="action-btn edit-attendance-btn" data-id="${record.id
+          }">수정</button>
+            <button class="action-btn delete-attendance-btn" data-id="${record.id
+          }">삭제</button>
           </td>
         </tr>
       `;
@@ -4820,9 +4781,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const link = document.createElement("a");
     link.href = url;
-    link.download = `attendance_records_${
-      new Date().toISOString().split("T")[0]
-    }.csv`;
+    link.download = `attendance_records_${new Date().toISOString().split("T")[0]
+      }.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -4845,9 +4805,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const currentUser = localStorage.getItem("currentUser");
 
       // 새 창에서 달력 페이지 열기
-      const calendarUrl = `attendance-calendar.html${
-        currentUser ? "?user=" + encodeURIComponent(currentUser) : ""
-      }`;
+      const calendarUrl = `attendance-calendar.html${currentUser ? "?user=" + encodeURIComponent(currentUser) : ""
+        }`;
       window.open(
         calendarUrl,
         "attendance-calendar",
@@ -5558,9 +5517,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let transcriberPages = 0;
 
     console.log(`${staffName}의 성과 계산 시작:`, {
-      기간: `${startDate.toISOString().split("T")[0]} ~ ${
-        endDate.toISOString().split("T")[0]
-      }`,
+      기간: `${startDate.toISOString().split("T")[0]} ~ ${endDate.toISOString().split("T")[0]
+        }`,
       총작업수: tasks.length,
     });
 
@@ -6236,9 +6194,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const departmentAvg =
       data.allStaffPerformance.length > 0
         ? Math.round(
-            data.allStaffPerformance.reduce((sum, s) => sum + s.totalPages, 0) /
-              data.allStaffPerformance.length
-          )
+          data.allStaffPerformance.reduce((sum, s) => sum + s.totalPages, 0) /
+          data.allStaffPerformance.length
+        )
         : 0;
 
     // 성과 비교 (부서 평균 대비)
@@ -6275,26 +6233,22 @@ document.addEventListener("DOMContentLoaded", () => {
         </tr>
         <tr>
           <td>일평균 처리량</td>
-          <td>${
-            data.workDays > 0
-              ? Math.round(data.performance.corrector1Pages / data.workDays)
-              : 0
-          }</td>
-          <td>${
-            data.workDays > 0
-              ? Math.round(data.performance.corrector2Pages / data.workDays)
-              : 0
-          }</td>
-          <td>${
-            data.workDays > 0
-              ? Math.round(data.performance.corrector3Pages / data.workDays)
-              : 0
-          }</td>
-          <td>${
-            data.workDays > 0
-              ? Math.round(data.performance.transcriberPages / data.workDays)
-              : 0
-          }</td>
+          <td>${data.workDays > 0
+          ? Math.round(data.performance.corrector1Pages / data.workDays)
+          : 0
+        }</td>
+          <td>${data.workDays > 0
+          ? Math.round(data.performance.corrector2Pages / data.workDays)
+          : 0
+        }</td>
+          <td>${data.workDays > 0
+          ? Math.round(data.performance.corrector3Pages / data.workDays)
+          : 0
+        }</td>
+          <td>${data.workDays > 0
+          ? Math.round(data.performance.transcriberPages / data.workDays)
+          : 0
+        }</td>
           <td><strong>${avgDailyPages}</strong></td>
         </tr>
         <tr>
@@ -6304,9 +6258,9 @@ document.addEventListener("DOMContentLoaded", () => {
         <tr>
           <td>생산성 지수</td>
           <td colspan="5"><strong>${calculateProductivityIndex(
-            data.performance.totalPages,
-            data.workDays
-          )}</strong></td>
+          data.performance.totalPages,
+          data.workDays
+        )}</strong></td>
         </tr>
       `;
     }

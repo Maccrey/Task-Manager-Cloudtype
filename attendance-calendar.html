@@ -1,44 +1,37 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>출퇴근 기록 달력</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f5f5f5;
+            /* Background handled by style.css */
+            min-height: 100vh;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
             padding: 20px;
+            color: var(--text-main);
         }
 
         .header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-
-        .title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .controls {
-            display: flex;
-            gap: 15px;
             align-items: center;
         }
 
@@ -49,31 +42,38 @@
         }
 
         .date-selector label {
-            font-weight: bold;
-            color: #555;
+            font-weight: 600;
+            color: var(--text-main);
         }
 
         .date-selector select {
             padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
             font-size: 14px;
-            background: white;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
             min-width: 80px;
         }
 
-        .nav-button {
-            background: #007bff;
+        .date-selector select option {
+            background: #1a1a2e;
             color: white;
+        }
+
+        .nav-button {
+            background: var(--primary-color);
+            color: #000;
             border: none;
             padding: 8px 15px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
+            font-weight: 600;
         }
 
         .nav-button:hover {
-            background: #0056b3;
+            background: #4cdbb5;
         }
 
         .today-button {
@@ -91,9 +91,9 @@
         }
 
         .print-button {
-            background: #6c757d;
+            background: rgba(255, 255, 255, 0.1);
             color: white;
-            border: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 8px 15px;
             border-radius: 4px;
             cursor: pointer;
@@ -102,7 +102,7 @@
         }
 
         .print-button:hover {
-            background: #545b62;
+            background: rgba(255, 255, 255, 0.2);
         }
 
         .calendar {
@@ -112,74 +112,77 @@
         }
 
         .calendar th {
-            background-color: #f8f9fa;
+            background-color: rgba(255, 255, 255, 0.05);
             padding: 15px 8px;
             text-align: center;
-            font-weight: bold;
-            border: 1px solid #dee2e6;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             font-size: 14px;
+            color: var(--text-main);
         }
 
         .calendar th.sunday {
-            color: #dc3545;
+            color: #ff6b6b;
         }
 
         .calendar th.saturday {
-            color: #007bff;
+            color: #64ffda;
         }
 
         .calendar td {
-            border: 1px solid #dee2e6;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 8px;
             vertical-align: top;
             height: 140px;
             width: 14.28%;
             position: relative;
-            background: white;
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-main);
         }
 
         .calendar td.other-month {
-            background-color: #f8f9fa;
-            color: #6c757d;
+            background-color: rgba(0, 0, 0, 0.2);
+            color: rgba(255, 255, 255, 0.3);
         }
 
         .calendar td.today {
-            background-color: #fff3cd;
+            background-color: rgba(100, 255, 218, 0.1);
+            border: 1px solid var(--primary-color);
         }
 
         .calendar td.has-attendance {
-            background-color: #d4edda;
+            background-color: rgba(100, 255, 218, 0.05);
         }
 
         .calendar td.has-late {
-            background-color: #fff3cd;
+            background-color: rgba(255, 193, 7, 0.1);
         }
 
         .calendar td.has-early-leave {
-            background-color: #f8d7da;
+            background-color: rgba(255, 107, 107, 0.1);
         }
 
         .calendar td.has-overtime {
-            background-color: #cce5ff;
+            background-color: rgba(13, 202, 240, 0.1);
         }
 
         .calendar td.holiday {
-            background-color: #ffe6e6;
-            color: #d63384;
+            background-color: rgba(255, 107, 107, 0.05);
+            color: #ff6b6b;
         }
 
         .calendar td.holiday .date-number {
-            color: #d63384;
+            color: #ff6b6b;
             font-weight: bold;
         }
 
         .holiday-name {
             font-size: 9px;
-            color: #d63384;
+            color: #ff6b6b;
             font-weight: bold;
             margin-top: 1px;
             padding: 1px 3px;
-            background-color: rgba(214, 51, 132, 0.1);
+            background-color: rgba(255, 107, 107, 0.1);
             border-radius: 2px;
             text-align: center;
         }
@@ -202,13 +205,14 @@
             margin-bottom: 3px;
         }
 
-        .start-time, .end-time {
-            color: #495057;
+        .start-time,
+        .end-time {
+            color: rgba(255, 255, 255, 0.7);
             font-size: 10px;
         }
 
         .work-hours {
-            color: #007bff;
+            color: var(--primary-color);
             font-weight: bold;
             font-size: 10px;
             margin-bottom: 2px;
@@ -220,35 +224,35 @@
         }
 
         .status-late {
-            color: #856404;
+            color: #ffc107;
             background-color: rgba(255, 193, 7, 0.2);
             padding: 1px 3px;
             border-radius: 2px;
         }
 
         .status-early-leave {
-            color: #721c24;
-            background-color: rgba(248, 215, 218, 0.8);
+            color: #ff6b6b;
+            background-color: rgba(255, 107, 107, 0.2);
             padding: 1px 3px;
             border-radius: 2px;
         }
 
         .status-overtime {
-            color: #0c5460;
+            color: #0dcaf0;
             background-color: rgba(13, 202, 240, 0.2);
             padding: 1px 3px;
             border-radius: 2px;
         }
 
         .status-normal {
-            color: #155724;
-            background-color: rgba(212, 237, 218, 0.8);
+            color: #64ffda;
+            background-color: rgba(100, 255, 218, 0.2);
             padding: 1px 3px;
             border-radius: 2px;
         }
 
         .tasks-info {
-            color: #6c757d;
+            color: rgba(255, 255, 255, 0.5);
             font-size: 9px;
             margin-top: 2px;
         }
@@ -256,33 +260,34 @@
         .loading {
             text-align: center;
             padding: 40px;
-            color: #6c757d;
+            color: rgba(255, 255, 255, 0.7);
         }
 
         .error {
             text-align: center;
             padding: 40px;
-            color: #dc3545;
+            color: #ff6b6b;
         }
 
         .no-data {
             text-align: center;
             padding: 40px;
-            color: #6c757d;
+            color: rgba(255, 255, 255, 0.5);
         }
 
         .summary-section {
             margin-bottom: 20px;
             padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 6px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .summary-title {
             font-size: 16px;
             font-weight: bold;
             margin-bottom: 10px;
-            color: #333;
+            color: var(--text-main);
         }
 
         .summary-stats {
@@ -292,33 +297,33 @@
         }
 
         .stat-item {
-            background: white;
+            background: rgba(255, 255, 255, 0.05);
             padding: 12px;
-            border-radius: 4px;
-            border-left: 4px solid #007bff;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
         }
 
         .stat-label {
             font-size: 12px;
-            color: #6c757d;
+            color: rgba(255, 255, 255, 0.6);
             margin-bottom: 3px;
         }
 
         .stat-value {
             font-size: 16px;
             font-weight: bold;
-            color: #333;
+            color: white;
         }
 
         .user-info {
             font-size: 18px;
-            color: #007bff;
+            color: var(--primary-color);
             margin-left: 15px;
             font-weight: normal;
-            background-color: #f8f9fa;
+            background-color: rgba(255, 255, 255, 0.1);
             padding: 5px 12px;
             border-radius: 20px;
-            border: 1px solid #dee2e6;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
 
@@ -340,11 +345,11 @@
         .memo-icon svg {
             width: 100%;
             height: 100%;
-            fill: #6c757d;
+            fill: rgba(255, 255, 255, 0.5);
         }
 
         .memo-icon:hover svg {
-            fill: #495057;
+            fill: #fff;
         }
 
         .memo-text {
@@ -369,18 +374,21 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.5);
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
             align-items: center;
             justify-content: center;
         }
 
         .memo-modal-content {
-            background-color: #fefefe;
+            background: #1a1a2e;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             width: 400px;
             max-width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
         }
 
         .memo-modal-header {
@@ -389,17 +397,17 @@
             align-items: center;
             margin-bottom: 20px;
             padding-bottom: 10px;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .memo-modal-title {
             font-size: 18px;
             font-weight: bold;
-            color: #333;
+            color: white;
         }
 
         .memo-close {
-            color: #aaa;
+            color: rgba(255, 255, 255, 0.5);
             font-size: 24px;
             font-weight: bold;
             cursor: pointer;
@@ -408,7 +416,7 @@
         }
 
         .memo-close:hover {
-            color: #000;
+            color: white;
         }
 
         .memo-input-group {
@@ -418,16 +426,18 @@
         .memo-input {
             width: 100%;
             padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
             font-size: 14px;
             resize: none;
             box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
         }
 
         .memo-char-count {
             font-size: 12px;
-            color: #6c757d;
+            color: rgba(255, 255, 255, 0.5);
             text-align: right;
             margin-top: 5px;
         }
@@ -439,7 +449,7 @@
         .memo-suggestions-title {
             font-size: 14px;
             font-weight: bold;
-            color: #555;
+            color: rgba(255, 255, 255, 0.7);
             margin-bottom: 8px;
         }
 
@@ -450,17 +460,18 @@
         }
 
         .suggestion-btn {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 4px 8px;
             border-radius: 12px;
             font-size: 12px;
             cursor: pointer;
             transition: all 0.2s;
+            color: white;
         }
 
         .suggestion-btn:hover {
-            background: #e9ecef;
+            background: rgba(255, 255, 255, 0.2);
         }
 
         .memo-buttons {
@@ -478,30 +489,32 @@
         }
 
         .memo-btn-save {
-            background: #007bff;
-            color: white;
+            background: var(--primary-color);
+            color: #000;
+            font-weight: 600;
         }
 
         .memo-btn-save:hover {
-            background: #0056b3;
+            background: #4cdbb5;
         }
 
         .memo-btn-cancel {
-            background: #6c757d;
+            background: rgba(255, 255, 255, 0.1);
             color: white;
         }
 
         .memo-btn-cancel:hover {
-            background: #545b62;
+            background: rgba(255, 255, 255, 0.2);
         }
 
         .memo-btn-delete {
-            background: #dc3545;
-            color: white;
+            background: rgba(220, 53, 69, 0.2);
+            color: #ff6b6b;
+            border: 1px solid rgba(220, 53, 69, 0.3);
         }
 
         .memo-btn-delete:hover {
-            background: #c82333;
+            background: rgba(220, 53, 69, 0.3);
         }
 
         /* 프린트 전용 스타일 - A4 가로모드 */
@@ -529,6 +542,8 @@
                 box-shadow: none;
                 border-radius: 0;
                 background: white !important;
+                border: none !important;
+                backdrop-filter: none !important;
             }
 
             .header {
@@ -542,6 +557,8 @@
                 font-size: 18px;
                 font-weight: bold;
                 color: #000 !important;
+                background: none !important;
+                -webkit-text-fill-color: black !important;
             }
 
             .user-info {
@@ -553,8 +570,12 @@
             }
 
             /* 컨트롤 버튼들 숨기기 */
-            .controls, .nav-button, .today-button, .print-button,
-            .memo-icon, .memo-modal {
+            .controls,
+            .nav-button,
+            .today-button,
+            .print-button,
+            .memo-icon,
+            .memo-modal {
                 display: none !important;
             }
 
@@ -725,7 +746,8 @@
                 margin-bottom: 2px;
             }
 
-            .start-time, .end-time {
+            .start-time,
+            .end-time {
                 color: #000 !important;
                 font-size: 8px;
             }
@@ -799,7 +821,9 @@
             }
 
             /* 로딩, 에러 메시지 숨기기 */
-            .loading, .error, .no-data {
+            .loading,
+            .error,
+            .no-data {
                 display: none !important;
             }
 
@@ -938,7 +962,9 @@
                 flex: 1;
             }
 
-            .nav-button, .today-button, .print-button {
+            .nav-button,
+            .today-button,
+            .print-button {
                 padding: 4px 8px;
                 font-size: 11px;
                 margin: 1px;
@@ -1002,7 +1028,8 @@
                 margin-bottom: 1px;
             }
 
-            .start-time, .end-time {
+            .start-time,
+            .end-time {
                 font-size: 7px;
             }
 
@@ -1105,7 +1132,9 @@
                 padding: 3px 5px;
             }
 
-            .nav-button, .today-button, .print-button {
+            .nav-button,
+            .today-button,
+            .print-button {
                 padding: 3px 6px;
                 font-size: 10px;
                 min-height: 24px;
@@ -1124,11 +1153,14 @@
                 font-size: 7px;
             }
 
-            .start-time, .end-time, .work-hours {
+            .start-time,
+            .end-time,
+            .work-hours {
                 font-size: 6px;
             }
 
-            .status-info, .tasks-info {
+            .status-info,
+            .tasks-info {
                 font-size: 5px;
             }
 
@@ -1191,6 +1223,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -1251,7 +1284,8 @@
             </div>
 
             <div class="memo-input-group">
-                <textarea id="memo-input" class="memo-input" placeholder="메모를 입력하세요..." maxlength="20" rows="3"></textarea>
+                <textarea id="memo-input" class="memo-input" placeholder="메모를 입력하세요..." maxlength="20"
+                    rows="3"></textarea>
                 <div class="memo-char-count">
                     <span id="memo-char-current">0</span> / 20자
                 </div>
@@ -1292,25 +1326,23 @@
     <script src="firebase-adapter.js"></script>
 
     <script>
+
         let attendanceData = [];
         let currentUser = null;
         let currentDate = new Date();
-        let memos = {}; // 날짜별 메모 저장 객체 (dateKey: memo)
-        let currentMemoDate = null; // 현재 편집 중인 메모의 날짜
-        let holidays = {}; // 공휴일 데이터 저장 객체 (dateKey: holidayName)
+        let memos = {}; // 날짜별 메모 (dateKey: memo)
+        let currentMemoDate = null; // 현재 열려있는 메모 모달의 날짜
+        let holidays = {}; // 공휴일 데이터 (dateKey: holidayName)
 
-        // Legacy API Base URL - no longer used (migrated to Firebase)
-        // const BASE_URL = 'https://port-0-task-manager-cloudtype-mg1kg2i5183fc9ef.sel3.cloudtype.app';
-
-        // 공휴일 API 설정 (실제 사용 시 API 키 필요)
+        // 공휴일 API 키 (실제 키가 없으면 기본값 사용)
         const HOLIDAY_API_CONFIG = {
-            serviceKey: 'YOUR_API_KEY_HERE', // 실제 API 키로 변경 필요
+            serviceKey: 'YOUR_API_KEY_HERE', // 실제 API 키를 여기에 입력
             baseUrl: 'https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo',
             // CORS 문제 해결을 위한 프록시 URL (필요 시)
             proxyUrl: '' // 예: 'https://cors-anywhere.herokuapp.com/'
         };
 
-        // URL에서 사용자 정보 가져오기
+        // URL에서 사용자 이름 가져오기
         function getCurrentUser() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('user');
@@ -1319,47 +1351,43 @@
         // 공휴일 API에서 공휴일 정보 가져오기
         async function fetchHolidays(year, month) {
             try {
-                // 로컬 스토리지에서 캐시된 공휴일 데이터 확인
+                // 로컬 스토리지 캐시 확인 (공휴일 데이터는 잘 변하지 않음)
                 const cacheKey = `holidays-${year}-${String(month + 1).padStart(2, '0')}`;
                 const cachedData = localStorage.getItem(cacheKey);
 
                 if (cachedData) {
                     const cached = JSON.parse(cachedData);
-                    // 캐시가 24시간 이내인 경우 사용
+                    // 캐시된지 24시간이 지나지 않았으면 사용
                     if (new Date().getTime() - cached.timestamp < 24 * 60 * 60 * 1000) {
                         console.log('캐시된 공휴일 데이터 사용:', cached.holidays);
                         return cached.holidays;
                     }
                 }
 
-                console.log(`${year}년 ${month + 1}월 공휴일 정보를 API에서 가져오는 중...`);
+                console.log(`${year}년 ${month + 1}월 공휴일 정보 API에서 가져오는 중...`);
 
-                // API 키가 설정되지 않은 경우 기본 공휴일 데이터 사용
+                // API 키가 없거나 기본값이면 기본 공휴일 데이터 사용
                 if (HOLIDAY_API_CONFIG.serviceKey === 'YOUR_API_KEY_HERE') {
-                    console.warn('공휴일 API 키가 설정되지 않음. 기본 공휴일 데이터를 사용합니다.');
+                    console.warn('공휴일 API 키가 설정되지 않았습니다. 기본 공휴일 데이터를 사용합니다.');
                     return getDefaultHolidays(year, month);
                 }
 
-                // API 호출 URL 생성
+                // API 요청 URL 생성
                 const solYear = year;
                 const solMonth = String(month + 1).padStart(2, '0');
                 const url = `${HOLIDAY_API_CONFIG.proxyUrl}${HOLIDAY_API_CONFIG.baseUrl}?serviceKey=${HOLIDAY_API_CONFIG.serviceKey}&pageNo=1&numOfRows=31&solYear=${solYear}&solMonth=${solMonth}&_type=json`;
 
                 const response = await fetch(url);
-
                 if (!response.ok) {
-                    throw new Error(`공휴일 API 호출 실패: ${response.status}`);
+                    throw new Error(`공휴일 API 요청 실패: ${response.status}`);
                 }
 
                 const data = await response.json();
                 console.log('공휴일 API 응답:', data);
 
                 const holidayData = {};
-
                 if (data.response && data.response.body && data.response.body.items) {
-                    const items = Array.isArray(data.response.body.items.item)
-                        ? data.response.body.items.item
-                        : [data.response.body.items.item];
+                    const items = Array.isArray(data.response.body.items.item) ? data.response.body.items.item : [data.response.body.items.item];
 
                     items.forEach(item => {
                         if (item && item.locdate && item.dateName) {
@@ -1387,71 +1415,54 @@
             }
         }
 
-        // 기본 공휴일 데이터 (API 사용 불가 시 대체)
+        // 기본 공휴일 데이터 (API 사용 불가 시 대체용)
         function getDefaultHolidays(year, month) {
             const defaultHolidays = {
-                // 2025년 공휴일 (정확한 날짜)
+                // 2025년 공휴일 (예상치)
                 '2025-01-01': '신정',
-                '2025-01-28': '설날연휴',
+                '2025-01-28': '설날전날',
                 '2025-01-29': '설날',
-                '2025-01-30': '설날연휴',
+                '2025-01-30': '설날다음날',
                 '2025-03-01': '삼일절',
                 '2025-05-05': '어린이날',
-                '2025-05-06': '어린이날 대체휴일',
+                '2025-05-06': '어린이날 대체공휴일',
                 '2025-06-06': '현충일',
                 '2025-08-15': '광복절',
                 '2025-10-03': '개천절',
-                '2025-10-05': '추석연휴',
+                '2025-10-05': '추석전날',
                 '2025-10-06': '추석',
-                '2025-10-07': '추석연휴',
+                '2025-10-07': '추석다음날',
                 '2025-10-08': '추석 대체공휴일',
                 '2025-10-09': '한글날',
                 '2025-12-25': '성탄절',
 
-                // 2024년 공휴일 (정확한 날짜)
+                // 2024년 공휴일 (예상치)
                 '2024-01-01': '신정',
-                '2024-02-09': '설날연휴',
+                '2024-02-09': '설날전날',
                 '2024-02-10': '설날',
-                '2024-02-11': '설날연휴',
-                '2024-02-12': '설날 대체휴일',
+                '2024-02-11': '설날다음날',
+                '2024-02-12': '설날 대체공휴일',
                 '2024-03-01': '삼일절',
-                '2024-04-10': '국회의원선거',
+                '2024-04-10': '제22대 국회의원선거',
                 '2024-05-05': '어린이날',
-                '2024-05-06': '어린이날 대체휴일',
+                '2024-05-06': '어린이날 대체공휴일',
                 '2024-05-15': '부처님오신날',
                 '2024-06-06': '현충일',
                 '2024-08-15': '광복절',
-                '2024-09-16': '추석연휴',
+                '2024-09-16': '추석전날',
                 '2024-09-17': '추석',
-                '2024-09-18': '추석연휴',
+                '2024-09-18': '추석다음날',
                 '2024-10-03': '개천절',
                 '2024-10-09': '한글날',
-                '2024-12-25': '성탄절',
-
-                // 2023년 공휴일 (참고용)
-                '2023-01-01': '신정',
-                '2023-01-21': '설날연휴',
-                '2023-01-22': '설날',
-                '2023-01-23': '설날연휴',
-                '2023-01-24': '설날 대체휴일',
-                '2023-03-01': '삼일절',
-                '2023-05-05': '어린이날',
-                '2023-05-27': '부처님오신날',
-                '2023-05-29': '부처님오신날 대체휴일',
-                '2023-06-06': '현충일',
-                '2023-08-15': '광복절',
-                '2023-09-28': '추석연휴',
-                '2023-09-29': '추석',
-                '2023-09-30': '추석연휴',
-                '2023-10-03': '개천절',
-                '2023-10-09': '한글날',
-                '2023-12-25': '성탄절'
+                '2024-12-25': '성탄절'
             };
 
-            // 해당 년월의 공휴일만 필터링
-            // month는 JavaScript 월 인덱스 (0-11)이므로 +1 해서 실제 월 번호로 변환
+            // 해당 월의 공휴일만 필터링
+            // month는 JavaScript 기준 (0-11)이므로 +1 필요
+            // 하지만 여기서는 문자열 비교만 하므로 0패딩 처리
             const monthHolidays = {};
-            const actualMonth = month + 1; // JavaScript 월 인덱스를 실제 월로 변환
+            const actualMonth = month + 1;
+            // JavaScript 기준 월을 문자열로 변환
             const yearMonth = `${year}-${String(actualMonth).padStart(2, '0')}`;
 
             Object.keys(defaultHolidays).forEach(date => {
@@ -1459,15 +1470,15 @@
                     monthHolidays[date] = defaultHolidays[date];
                 }
             });
+
             return monthHolidays;
         }
 
-        // Firebase에서 출퇴근 데이터 가져오기
+        // Firebase에서 근무 기록 데이터 가져오기
         async function fetchAttendanceData() {
             try {
-                console.log('출퇴근 히스토리 데이터를 Firebase에서 가져오는 중...');
-
-                // Firebase에서 출퇴근 히스토리 가져오기
+                console.log('근무 기록 히스토리 데이터를 Firebase에서 가져오는 중...');
+                // Firebase에서 근무 기록 히스토리 데이터 가져오기
                 const historyData = await FirebaseWorkSessionsHistory.getAll();
                 console.log('가져온 히스토리 데이터:', historyData);
                 console.log('히스토리 데이터 개수:', historyData.length);
@@ -1476,8 +1487,8 @@
                     return historyData;
                 }
 
-                // 히스토리가 없으면 현재 진행 중인 세션 가져오기
-                console.log('현재 진행 중인 세션 확인...');
+                // 히스토리 데이터가 없으면 현재 작업 세션 데이터 가져오기
+                console.log('현재 작업 세션 데이터 확인 중...');
                 const currentData = await FirebaseWorkSessions.getAll();
                 console.log('현재 세션 데이터:', currentData);
 
@@ -1485,33 +1496,32 @@
                     return currentData;
                 }
 
-                console.warn('출퇴근 데이터가 없습니다.');
+                console.warn('근무 기록 데이터가 없습니다.');
                 return [];
-
             } catch (error) {
-                console.error('Firebase에서 출퇴근 데이터 가져오기 실패:', error);
+                console.error('Firebase에서 근무 기록 데이터 가져오기 실패:', error);
                 return [];
             }
         }
 
-        // 사용자별 출퇴근 데이터 필터링
+        // 특정 사용자의 근무 기록 데이터 필터링
         function filterUserAttendanceData(data, user) {
             console.log('데이터 필터링:', { totalData: data.length, user });
             if (!user) {
-                console.log('사용자가 지정되지 않음, 모든 데이터 반환');
+                console.log('사용자가 지정되지 않았으므로 전체 데이터 표시');
                 return data;
             }
             const filtered = data.filter(session => session.worker === user);
-            console.log(`${user} 사용자의 데이터:`, filtered.length, '개');
+            console.log(`${user} 사용자의 데이터:`, filtered.length, '건');
             return filtered;
         }
 
-        // 년도 선택기 초기화
+        // 연도 선택기 초기화
         function initializeYearSelect() {
             const yearSelect = document.getElementById('year-select');
             const currentYear = new Date().getFullYear();
 
-            // 현재 년도 기준으로 ±5년
+            // 현재 연도를 기준으로 앞뒤 5년
             for (let year = currentYear - 5; year <= currentYear + 5; year++) {
                 const option = document.createElement('option');
                 option.value = year;
@@ -1524,8 +1534,7 @@
         // 월 선택기 초기화
         function initializeMonthSelect() {
             const monthSelect = document.getElementById('month-select');
-            const months = ['1월', '2월', '3월', '4월', '5월', '6월',
-                           '7월', '8월', '9월', '10월', '11월', '12월'];
+            const months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
 
             months.forEach((month, index) => {
                 const option = document.createElement('option');
@@ -1536,46 +1545,46 @@
             });
         }
 
-        // 근무 시간 기준 (오전 9시 5분 이전 출근, 오후 5시 45분 이후 퇴근, 8시간 근무)
+        // 근무 시간 규정 (평일 9:05 이전 출근, 오후 5:45 이후 퇴근, 8시간 근무)
         const WORK_SCHEDULE = {
-            START_HOUR: 9,      // 정상 출근 시간
-            START_MINUTE: 5,    // 정상 출근 분
-            END_HOUR: 17,       // 정상 퇴근 시간
-            END_MINUTE: 45,     // 정상 퇴근 분
-            WORK_HOURS: 8 * 60  // 표준 근무 시간 (분)
+            START_HOUR: 9,      // 출근 시간 시
+            START_MINUTE: 5,    // 출근 시간 분
+            END_HOUR: 17,       // 퇴근 시간 시
+            END_MINUTE: 45,     // 퇴근 시간 분
+            WORK_HOURS: 8 * 60  // 하루 근무 시간 (분)
         };
 
-        // 출퇴근 상태 판단
+        // 출퇴근 상태 판별
         function getAttendanceStatus(startTime, endTime, totalMinutes) {
             const start = new Date(startTime);
             const end = endTime ? new Date(endTime) : null;
 
             const isLate = start.getHours() > WORK_SCHEDULE.START_HOUR ||
-                          (start.getHours() === WORK_SCHEDULE.START_HOUR && start.getMinutes() > WORK_SCHEDULE.START_MINUTE);
+                (start.getHours() === WORK_SCHEDULE.START_HOUR && start.getMinutes() > WORK_SCHEDULE.START_MINUTE);
 
             const isEarlyLeave = end && (end.getHours() < WORK_SCHEDULE.END_HOUR ||
-                                (end.getHours() === WORK_SCHEDULE.END_HOUR && end.getMinutes() < WORK_SCHEDULE.END_MINUTE));
+                (end.getHours() === WORK_SCHEDULE.END_HOUR && end.getMinutes() < WORK_SCHEDULE.END_MINUTE));
 
-            // 연장근무 판단: 18시 이후 또는 다음날 오전 9시 이전 퇴근
+            // 초과근무 판별: 18시 이후 퇴근하거나 평일이 아닌 날 출근
             const isOvertime = end && (
                 end.getHours() >= 18 || // 18시 이후 퇴근
-                end.getHours() < 9      // 다음날 오전 9시 이전 퇴근
+                end.getHours() < 9      // 평일이 아닌 날 출근 (예시)
             );
 
             if (isLate && isEarlyLeave) {
-                return { status: 'late-early', text: '지각·조퇴' };
+                return { status: 'late-early', text: '지각/조퇴' };
             } else if (isLate) {
                 return { status: 'late', text: '지각' };
             } else if (isEarlyLeave) {
                 return { status: 'early-leave', text: '조퇴' };
             } else if (isOvertime) {
-                return { status: 'overtime', text: '연장근무' };
+                return { status: 'overtime', text: '초과근무' };
             } else {
                 return { status: 'normal', text: '정상근무' };
             }
         }
 
-        // 날짜별 출퇴근 데이터 그룹화
+        // 날짜별로 근무 기록 데이터 그룹화
         function groupAttendanceByDate(data) {
             console.log('그룹화할 데이터:', data.length, '개');
             const grouped = {};
@@ -1589,9 +1598,8 @@
                 }
 
                 const date = new Date(session.startTime);
-                // 한국 시간대로 조정
-                const koreanDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
-                const dateKey = `${koreanDate.getFullYear()}-${String(koreanDate.getMonth() + 1).padStart(2, '0')}-${String(koreanDate.getDate()).padStart(2, '0')}`;
+                // Use robust date formatting with timezone to avoid issues
+                const dateKey = date.toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
                 console.log('날짜 키:', dateKey);
 
                 if (!grouped[dateKey]) {
@@ -1644,12 +1652,12 @@
             return grouped;
         }
 
-        // 시간을 시:분 형식으로 변환
+        // 시간 포맷팅 (HH:MM)
         function formatTime(date) {
             return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
         }
 
-        // 분을 시간:분 형식으로 변환
+        // 지속시간 포맷팅 (XH YM)
         function formatDuration(minutes) {
             const hours = Math.floor(minutes / 60);
             const mins = minutes % 60;
@@ -1662,12 +1670,14 @@
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
 
-            // 월요일을 첫 번째 요일로 설정 (월=0, 화=1, ..., 일=6)
+            // 첫째 날의 요일 (0: 일요일, 1: 월요일, ..., 6: 토요일)
+            // 월요일을 시작으로 하려면 (day + 6) % 7
             const firstDayOfWeek = (firstDay.getDay() + 6) % 7; // 0=월요일, 6=일요일
+
             const startDate = new Date(firstDay);
             startDate.setDate(firstDay.getDate() - firstDayOfWeek);
 
-            // 마지막 날이 포함된 주가 언제인지 계산
+            // 마지막 날 이후의 날짜들도 채워서 꽉 찬 달력 만들기 (선택사항)
             const lastDayOfWeek = (lastDay.getDay() + 6) % 7; // 0=월요일, 6=일요일
             const daysFromStart = (lastDay.getDate() + firstDayOfWeek - 1);
             const weeksToShow = Math.ceil(daysFromStart / 7);
@@ -1687,7 +1697,7 @@
                     const cell = document.createElement('td');
                     const dateStr = `${cellDate.getFullYear()}-${String(cellDate.getMonth() + 1).padStart(2, '0')}-${String(cellDate.getDate()).padStart(2, '0')}`;
 
-                    // 다른 달의 날짜
+                    // 다른 달 날짜
                     if (cellDate.getMonth() !== month) {
                         cell.classList.add('other-month');
                     }
@@ -1703,15 +1713,15 @@
                         cell.classList.add('holiday');
                     }
 
-                    // 출퇴근 데이터가 있는 날짜
+                    // 근무 기록 데이터 확인
                     const dayData = attendanceData[dateStr];
                     if (dayData && dayData.sessions.length > 0) {
-                        // 출퇴근 상태에 따른 스타일 적용
+                        // 근무 상태 판별 (휴일이 아닐 때만)
                         const status = getAttendanceStatus(dayData.startTime, dayData.endTime, dayData.totalMinutes);
 
                         cell.classList.add('has-attendance');
 
-                        // 상태별 추가 클래스 적용 (공휴일이 아닌 경우에만)
+                        // 상태별 클래스 추가 (공휴일이 아닌 경우에만)
                         if (!holidayName) {
                             if (status.status === 'late' || status.status === 'late-early') {
                                 cell.classList.add('has-late');
@@ -1725,7 +1735,7 @@
 
                     let cellContent = `<div class="date-number">${cellDate.getDate()}</div>`;
 
-                    // 공휴일 표시
+                    // 공휴일 이름
                     if (holidayName) {
                         cellContent += `<div class="holiday-name">${holidayName}</div>`;
                     }
@@ -1743,22 +1753,22 @@
                                 </div>
                                 <div class="work-hours">${formatDuration(dayData.totalMinutes)}</div>
                                 ${!holidayName ? `
-                                <div class="status-info">
-                                    <span class="status-${status.status}">${status.text}</span>
-                                </div>
+                                    <div class="status-info">
+                                        <span class="status-${status.status}">${status.text}</span>
+                                    </div>
                                 ` : ''}
-                                <div class="tasks-info">${dayData.tasks.size}개 작업 | ${dayData.totalPages}페이지</div>
+                                <div class="tasks-info">${dayData.tasks.size}개 작업 | ${dayData.totalPages}p 완료</div>
                             </div>
                         `;
                     }
 
-                    // 메모가 있는 경우 표시
+                    // 메모가 있으면 표시
                     const memo = memos[dateStr];
                     if (memo) {
                         cellContent += `<div class="memo-text">${memo}</div>`;
                     }
 
-                    // 연필 아이콘 추가 (현재 달의 날짜에만)
+                    // 메모 아이콘 (이번 달 날짜에만)
                     if (cellDate.getMonth() === month) {
                         cellContent += `
                             <div class="memo-icon" onclick="openMemoModal('${dateStr}')">
@@ -1777,7 +1787,7 @@
             }
         }
 
-        // 월별 요약 통계 생성
+        // 월별 요약 생성
         function generateMonthlySummary(year, month, attendanceData) {
             const summarySection = document.getElementById('summary-section');
             const summaryStats = document.getElementById('summary-stats');
@@ -1803,24 +1813,24 @@
 
             summaryStats.innerHTML = `
                 <div class="stat-item">
-                    <div class="stat-label">근무 일수</div>
+                    <div class="stat-label">근무일수</div>
                     <div class="stat-value">${totalWorkDays}일</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-label">총 근무 시간</div>
+                    <div class="stat-label">총 근무시간</div>
                     <div class="stat-value">${formatDuration(totalWorkMinutes)}</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-label">평균 근무 시간</div>
+                    <div class="stat-label">평균 근무시간</div>
                     <div class="stat-value">${formatDuration(avgWorkMinutes)}</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-label">참여한 작업</div>
+                    <div class="stat-label">작업 개수</div>
                     <div class="stat-value">${totalTasks.size}개</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">총 작업 페이지</div>
-                    <div class="stat-value">${totalPages}페이지</div>
+                    <div class="stat-value">${totalPages}p 완료</div>
                 </div>
             `;
 
@@ -1841,7 +1851,7 @@
                 const year = parseInt(document.getElementById('year-select').value);
                 const month = parseInt(document.getElementById('month-select').value);
 
-                // 출퇴근 데이터와 공휴일 데이터 동시 로드
+                // 근무 기록 데이터와 공휴일 데이터 병렬로 가져오기
                 const [rawData, holidayData] = await Promise.all([
                     fetchAttendanceData(),
                     fetchHolidays(year, month)
@@ -1866,7 +1876,7 @@
             }
         }
 
-        // 이전/다음 월로 이동
+        // 이전/다음 달 이동
         function navigateMonth(direction) {
             const yearSelect = document.getElementById('year-select');
             const monthSelect = document.getElementById('month-select');
@@ -1875,7 +1885,6 @@
             let month = parseInt(monthSelect.value);
 
             month += direction;
-
             if (month < 0) {
                 month = 11;
                 year--;
@@ -1886,7 +1895,6 @@
 
             yearSelect.value = year;
             monthSelect.value = month;
-
             updateCalendar();
         }
 
@@ -1898,28 +1906,25 @@
             updateCalendar();
         }
 
-        // Firebase에서 메모 데이터 불러오기
+        // Firebase에서 메모 데이터 로드
         async function loadMemos() {
             try {
                 const user = currentUser || 'all';
-                console.log('Firebase에서 메모 데이터 불러오는 중...', user);
-
+                console.log('Firebase에서 메모 데이터 로드 시작...', user);
                 memos = await FirebaseAttendanceMemos.getAll(user);
-                console.log('Firebase에서 메모 데이터 불러옴:', memos);
+                console.log('Firebase에서 메모 데이터 로드됨:', memos);
             } catch (error) {
-                console.error('Firebase 메모 불러오기 오류:', error);
+                console.error('Firebase 메모 로드 실패:', error);
                 memos = {};
             }
         }
 
-        // Firebase에 개별 메모 저장
+        // Firebase에 메모 저장
         async function saveMemo(dateStr, memo) {
             try {
                 const user = currentUser || 'all';
-                console.log('Firebase에 메모 저장 중...', { user, dateStr, memo });
-
+                console.log('Firebase에 메모 저장 시작...', { user, dateStr, memo });
                 const success = await FirebaseAttendanceMemos.set(user, dateStr, memo);
-
                 if (success) {
                     console.log('메모 저장 성공');
                     return true;
@@ -1933,14 +1938,12 @@
             }
         }
 
-        // Firebase에서 개별 메모 삭제
+        // Firebase에서 메모 삭제
         async function deleteMemoFromServer(dateStr) {
             try {
                 const user = currentUser || 'all';
-                console.log('Firebase에서 메모 삭제 중...', { user, dateStr });
-
+                console.log('Firebase에서 메모 삭제 시작...', { user, dateStr });
                 const success = await FirebaseAttendanceMemos.delete(user, dateStr);
-
                 if (success) {
                     console.log('메모 삭제 성공');
                     return true;
@@ -1963,7 +1966,7 @@
 
             currentMemoDate = dateStr;
 
-            // 날짜 포맷팅 (YYYY-MM-DD -> YYYY년 M월 D일)
+            // 날짜 표시 (YYYY-MM-DD -> YYYY년 M월 D일)
             const [year, month, day] = dateStr.split('-');
             const formattedDate = `${year}년 ${parseInt(month)}월 ${parseInt(day)}일`;
             title.textContent = `${formattedDate} 메모`;
@@ -1993,7 +1996,7 @@
             updateCharCount();
         }
 
-        // 글자 수 카운트 업데이트
+        // 글자수 카운트 업데이트
         function updateCharCount() {
             const input = document.getElementById('memo-input');
             const charCount = document.getElementById('memo-char-current');
@@ -2011,20 +2014,20 @@
                 const success = await saveMemo(currentMemoDate, memo);
 
                 if (success) {
-                    // 로컬 메모 객체도 업데이트
+                    // 로컬 메모 데이터 업데이트
                     if (memo) {
                         memos[currentMemoDate] = memo;
                     } else {
                         delete memos[currentMemoDate];
                     }
 
-                    updateCalendar(); // 달력 새로고침
+                    updateCalendar(); // 달력 다시 그리기
                     closeMemoModal();
                 } else {
-                    alert('메모 저장에 실패했습니다. 다시 시도해 주세요.');
+                    alert('메모 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
                 }
             } catch (error) {
-                console.error('메모 저장 중 오류:', error);
+                console.error('메모 저장 오류:', error);
                 alert('메모 저장 중 오류가 발생했습니다.');
             }
         }
@@ -2038,21 +2041,22 @@
                     const success = await deleteMemoFromServer(currentMemoDate);
 
                     if (success) {
-                        // 로컬 메모 객체에서도 삭제
+                        // 로컬 메모 데이터에서 삭제
                         delete memos[currentMemoDate];
-                        updateCalendar(); // 달력 새로고침
+
+                        updateCalendar(); // 달력 다시 그리기
                         closeMemoModal();
                     } else {
-                        alert('메모 삭제에 실패했습니다. 다시 시도해 주세요.');
+                        alert('메모 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
                     }
                 } catch (error) {
-                    console.error('메모 삭제 중 오류:', error);
+                    console.error('메모 삭제 오류:', error);
                     alert('메모 삭제 중 오류가 발생했습니다.');
                 }
             }
         }
 
-        // 추천 메모 클릭 시 입력창에 추가
+        // 추천 메모 입력
         function insertSuggestion(text) {
             const input = document.getElementById('memo-input');
             const currentText = input.value;
@@ -2065,49 +2069,49 @@
             }
         }
 
-        // 프린트 함수
+        // 달력 프린트
         function printCalendar() {
-            // 프린트 전에 모든 모달 닫기
+            // 달력을 제외한 모든 요소를 숨기고 프린트
             closeMemoModal();
 
-            // 현재 년월 정보 가져오기
+            // 현재 날짜 정보 가져오기
             const year = document.getElementById('year-select').value;
             const month = document.getElementById('month-select').options[document.getElementById('month-select').selectedIndex].text;
-            const userName = currentUser || '전체 직원';
+            const userName = currentUser || '전체 사용자';
 
-            // 브라우저 제목 변경 (프린트 시 문서 제목으로 사용)
+            // 원래 타이틀 저장 (프린트 후 복구용)
             const originalTitle = document.title;
-            document.title = `출퇴근기록달력_${userName}_${year}년${month}`;
+            document.title = `근무기록달력_${userName}_${year}년_${month}`;
 
             // 프린트 실행
             window.print();
 
-            // 제목 복원
+            // 타이틀 복구
             setTimeout(() => {
                 document.title = originalTitle;
             }, 1000);
         }
 
         // 초기화
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', async function () {
             currentUser = getCurrentUser();
             console.log('현재 사용자:', currentUser);
 
-            // 사용자 이름 표시
+            // 사용자 정보 표시
             const userDisplay = document.getElementById('current-user-display');
             if (currentUser) {
                 userDisplay.textContent = `[${currentUser}]`;
             } else {
-                userDisplay.textContent = '[모든 사용자]';
+                userDisplay.textContent = '[전체 사용자]';
             }
 
-            // 메모 데이터 불러오기
+            // 메모 데이터 로드
             await loadMemos();
 
             initializeYearSelect();
             initializeMonthSelect();
 
-            // 달력 이벤트 리스너 등록
+            // 이벤트 리스너 등록
             document.getElementById('year-select').addEventListener('change', updateCalendar);
             document.getElementById('month-select').addEventListener('change', updateCalendar);
             document.getElementById('prev-month').addEventListener('click', () => navigateMonth(-1));
@@ -2115,43 +2119,33 @@
             document.getElementById('today-btn').addEventListener('click', goToToday);
             document.getElementById('print-btn').addEventListener('click', printCalendar);
 
-            // 메모 모달 이벤트 리스너 등록
+            // 메모 관련 이벤트
             document.getElementById('memo-close').addEventListener('click', closeMemoModal);
             document.getElementById('memo-cancel').addEventListener('click', closeMemoModal);
             document.getElementById('memo-save').addEventListener('click', saveMemoToServer);
             document.getElementById('memo-delete').addEventListener('click', deleteMemoFromClient);
-
-            // 메모 입력 글자수 카운트
             document.getElementById('memo-input').addEventListener('input', updateCharCount);
 
-            // 추천 메모 버튼 이벤트 리스너
+            // 추천 메모 버튼 이벤트
             document.querySelectorAll('.suggestion-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const text = this.getAttribute('data-text');
-                    insertSuggestion(text);
+                btn.addEventListener('click', function () {
+                    insertSuggestion(this.getAttribute('data-text'));
                 });
             });
 
-            // 모달 배경 클릭 시 닫기
-            document.getElementById('memo-modal').addEventListener('click', function(e) {
-                if (e.target === this) {
+            // 모달 외부 클릭 시 닫기
+            window.addEventListener('click', function (event) {
+                const modal = document.getElementById('memo-modal');
+                if (event.target === modal) {
                     closeMemoModal();
-                }
-            });
-
-            // ESC 키로 모달 닫기
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    const modal = document.getElementById('memo-modal');
-                    if (modal.style.display === 'flex') {
-                        closeMemoModal();
-                    }
                 }
             });
 
             // 초기 달력 로드
             updateCalendar();
         });
+
     </script>
 </body>
+
 </html>

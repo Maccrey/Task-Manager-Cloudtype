@@ -1,975 +1,385 @@
 <!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>점자 도서 작업 관리 대시보드</title>
-    <link rel="icon" type="image/png" href="images/Study%20Duck.png" />
-    <link rel="stylesheet" href="style.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
-  </head>
-  <body>
-    <!-- 로그인 페이지 -->
-    <div id="login-page" class="login-page">
-      <div class="login-container">
-        <h1>점자 도서 작업 관리 시스템</h1>
-        <h2>로그인</h2>
-        <form id="login-form" class="login-form">
-          <div class="form-group">
-            <label for="staff-name-login">직원 이름</label>
-            <input
-              type="text"
-              id="staff-name-login"
-              placeholder="등록된 직원 이름을 입력하세요"
-              required
-            />
-          </div>
-          <button type="submit" class="login-btn">로그인</button>
-        </form>
-        <div id="login-error" class="login-error" style="display: none"></div>
-      </div>
-      <div class="login-ad-banner">
-        <ins
-          class="kakao_ad_area"
-          style="display: none"
-          data-ad-unit="DAN-7VQcUrfV0TNWMZGM"
-          data-ad-width="728"
-          data-ad-height="90"
-        ></ins>
-      </div>
-      <script
-        type="text/javascript"
-        src="//t1.daumcdn.net/kas/static/ba.min.js"
-        async
-      ></script>
-    </div>
 
-    <!-- 메인 대시보드 페이지 -->
-    <div id="main-dashboard" class="main-dashboard" style="display: none">
-      <header>
-        <div class="header-content">
-          <h1>점자 도서 작업 관리 대시보드 Ver 3.0</h1>
-          <div class="user-info">
-            <button id="symbol-checker-btn" class="symbol-checker-btn">
-              특수문자검사
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>점자 도서 작업 관리 대시보드</title>
+  <link rel="icon" type="image/png" href="images/Study%20Duck.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+</head>
+
+<body>
+  <!-- 로그인 페이지 -->
+  <div id="login-page" class="login-page">
+    <div class="login-container">
+      <h1>점자 도서 작업 관리 시스템</h1>
+      <h2>로그인</h2>
+      <form id="login-form" class="login-form">
+        <div class="form-group">
+          <label for="staff-name-login">직원 이름</label>
+          <input type="text" id="staff-name-login" placeholder="등록된 직원 이름을 입력하세요" required />
+        </div>
+        <button type="submit" class="login-btn">로그인</button>
+      </form>
+      <div id="login-error" class="login-error" style="display: none"></div>
+    </div>
+    <div class="login-ad-banner">
+      <ins class="kakao_ad_area" style="display: none" data-ad-unit="DAN-7VQcUrfV0TNWMZGM" data-ad-width="728"
+        data-ad-height="90"></ins>
+    </div>
+    <script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script>
+  </div>
+
+  <!-- 메인 대시보드 페이지 -->
+  <div id="main-dashboard" class="main-dashboard" style="display: none">
+    <header>
+      <div class="header-content">
+        <h1>점자 도서 작업 관리 대시보드 Ver 3.1</h1>
+        <div class="user-info">
+          <button id="symbol-checker-btn" class="symbol-checker-btn">
+            특수문자검사
+          </button>
+          <a href="https://typing.maccrey.com/" target="_blank" rel="noopener noreferrer" style="text-decoration: none">
+            <button id="braille-typing-btn" class="braille-typing-btn">
+              점자타자연습
             </button>
-            <a
-              href="https://typing.maccrey.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              style="text-decoration: none"
-            >
-              <button id="braille-typing-btn" class="braille-typing-btn">
-                점자타자연습
-              </button>
-            </a>
-            <a
-              href="https://dashboard.maccrey.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              style="text-decoration: none"
-            >
-              <button id="work-dashboard-btn" class="braille-typing-btn">
-                업무대시보드
-              </button>
-            </a>
-            <a
-              href="https://maccrey.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              style="text-decoration: none"
-            >
-              <button id="psychology-test-btn" class="braille-typing-btn">
-                심리테스트
-              </button>
-            </a>
-            <span id="current-user-name"></span>
-            <button id="logout-btn" class="logout-btn">로그아웃</button>
+          </a>
+          <a href="https://dashboard.maccrey.com/" target="_blank" rel="noopener noreferrer"
+            style="text-decoration: none">
+            <button id="work-dashboard-btn" class="braille-typing-btn">
+              업무대시보드
+            </button>
+          </a>
+          <a href="https://maccrey.com" target="_blank" rel="noopener noreferrer" style="text-decoration: none">
+            <button id="psychology-test-btn" class="braille-typing-btn">
+              심리테스트
+            </button>
+          </a>
+          <span id="current-user-name"></span>
+          <button id="logout-btn" class="logout-btn">로그아웃</button>
+        </div>
+      </div>
+    </header>
+    <main>
+      <section class="search-section">
+        <input type="text" id="isbn-title-input" placeholder="ISBN 또는 책 제목 입력" />
+        <button id="search-button">검색</button>
+        <button id="add-new-button">신규 등록</button>
+        <button id="completed-books-button" class="completed-button">
+          완료된 도서
+        </button>
+        <button id="admin-mode-button" class="admin-button">
+          관리자모드
+        </button>
+        <button id="attendance-check-button" class="attendance-check-button">
+          출퇴근기록 확인
+        </button>
+      </section>
+
+      <section class="dashboard-section">
+        <div class="dashboard-section-header">
+          <h2>진행 중인 작업</h2>
+          <div class="task-filters">
+            <button class="filter-btn active" data-filter="all">전체</button>
+            <button class="filter-btn" data-filter="correction1">
+              1차교정
+            </button>
+            <button class="filter-btn" data-filter="correction2">
+              2차교정
+            </button>
+            <button class="filter-btn" data-filter="correction3">
+              3차교정
+            </button>
+            <button class="filter-btn" data-filter="finalCorrection">
+              최종검수
+            </button>
+            <button class="filter-btn" data-filter="transcription">
+              점역
+            </button>
+            <button class="filter-btn" data-filter="completed">완료</button>
           </div>
         </div>
-      </header>
-      <main>
-        <section class="search-section">
-          <input
-            type="text"
-            id="isbn-title-input"
-            placeholder="ISBN 또는 책 제목 입력"
-          />
-          <button id="search-button">검색</button>
-          <button id="add-new-button">신규 등록</button>
-          <button id="completed-books-button" class="completed-button">
-            완료된 도서
-          </button>
-          <button id="admin-mode-button" class="admin-button">
-            관리자모드
-          </button>
-          <button id="attendance-check-button" class="attendance-check-button">
-            출퇴근기록 확인
-          </button>
-        </section>
-
-        <section class="dashboard-section">
-          <div class="dashboard-section-header">
-            <h2>진행 중인 작업</h2>
-            <div class="task-filters">
-              <button class="filter-btn active" data-filter="all">전체</button>
-              <button class="filter-btn" data-filter="correction1">
-                1차교정
-              </button>
-              <button class="filter-btn" data-filter="correction2">
-                2차교정
-              </button>
-              <button class="filter-btn" data-filter="correction3">
-                3차교정
-              </button>
-              <button class="filter-btn" data-filter="finalCorrection">
-                최종검수
-              </button>
-              <button class="filter-btn" data-filter="transcription">
-                점역
-              </button>
-              <button class="filter-btn" data-filter="completed">완료</button>
-            </div>
-          </div>
-          <div id="task-list" class="task-list">
-            <!-- 작업 목록이 여기에 동적으로 추가됩니다. -->
-          </div>
-        </section>
-      </main>
-    </div>
-
-    <div id="modal" class="modal">
-      <div class="modal-content">
-        <span class="close-button">&times;</span>
-        <h2 id="modal-title">신규 도서 등록</h2>
-        <div id="book-info">
-          <!-- 검색된 도서 정보가 여기에 표시됩니다. -->
+        <div id="task-list" class="task-list">
+          <!-- 작업 목록이 여기에 동적으로 추가됩니다. -->
         </div>
-        <form id="task-form">
-          <label for="total-pages">총 페이지 수:</label>
-          <input type="number" id="total-pages" required />
+      </section>
+    </main>
+  </div>
 
-          <label for="corrector1">1차 교정자:</label>
-          <select id="corrector1" required>
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button">&times;</span>
+      <h2 id="modal-title">신규 도서 등록</h2>
+      <div id="book-info">
+        <!-- 검색된 도서 정보가 여기에 표시됩니다. -->
+      </div>
+      <form id="task-form">
+        <label for="total-pages">총 페이지 수:</label>
+        <input type="number" id="total-pages" required />
+
+        <label for="corrector1">1차 교정자:</label>
+        <select id="corrector1" required>
+          <option value="">담당자 선택</option>
+        </select>
+
+        <label for="corrector2">2차 교정자:</label>
+        <select id="corrector2">
+          <option value="">담당자 선택</option>
+        </select>
+
+        <label for="corrector3">3차 교정자:</label>
+        <select id="corrector3">
+          <option value="">담당자 선택</option>
+        </select>
+
+        <label for="transcriber">점역자 (선택):</label>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <input type="checkbox" id="enable-transcriber" checked />
+          <select id="transcriber">
             <option value="">담당자 선택</option>
           </select>
+        </div>
 
-          <label for="corrector2">2차 교정자:</label>
-          <select id="corrector2">
-            <option value="">담당자 선택</option>
-          </select>
+        <button type="submit">등록</button>
+      </form>
+    </div>
+  </div>
 
-          <label for="corrector3">3차 교정자:</label>
-          <select id="corrector3">
-            <option value="">담당자 선택</option>
-          </select>
+  <div id="progress-update-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button">&times;</span>
+      <h2 id="progress-modal-title">진행 상황 업데이트</h2>
+      <div id="progress-task-info"></div>
+      <form id="progress-update-form">
+        <input type="hidden" id="progress-task-id" />
+        <label for="update-page-input">완료된 페이지:</label>
+        <input type="number" id="update-page-input" required />
+        <label for="update-datetime-input">완료 시간:</label>
+        <input type="datetime-local" id="update-datetime-input" />
+        <button type="submit">저장</button>
+      </form>
+    </div>
+  </div>
 
-          <label for="transcriber">점역자 (선택):</label>
-          <div style="display: flex; align-items: center; gap: 10px">
-            <input type="checkbox" id="enable-transcriber" checked />
-            <select id="transcriber">
-              <option value="">담당자 선택</option>
-            </select>
-          </div>
-
-          <button type="submit">등록</button>
-        </form>
+  <div id="book-selection-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button">&times;</span>
+      <h2>검색 결과 선택</h2>
+      <p>여러 개의 검색 결과가 있습니다. 등록할 도서를 선택해주세요:</p>
+      <div id="book-selection-list" class="book-selection-list">
+        <!-- 검색된 도서 목록이 여기에 동적으로 추가됩니다. -->
       </div>
     </div>
+  </div>
 
-    <div id="progress-update-modal" class="modal">
-      <div class="modal-content">
-        <span class="close-button">&times;</span>
-        <h2 id="progress-modal-title">진행 상황 업데이트</h2>
-        <div id="progress-task-info"></div>
-        <form id="progress-update-form">
-          <input type="hidden" id="progress-task-id" />
-          <label for="update-page-input">완료된 페이지:</label>
-          <input type="number" id="update-page-input" required />
-          <label for="update-datetime-input">완료 시간:</label>
-          <input type="datetime-local" id="update-datetime-input" />
-          <button type="submit">저장</button>
-        </form>
+  <div id="admin-panel-modal" class="modal">
+    <div class="modal-content admin-panel">
+      <span class="close-button">&times;</span>
+      <h2>관리자 패널</h2>
+
+      <div class="admin-tabs">
+        <button class="tab-button active" data-tab="tasks">작업 관리</button>
+        <button class="tab-button" data-tab="data">데이터 관리</button>
+        <button class="tab-button" data-tab="staff">직원 관리</button>
+        <button class="tab-button" data-tab="attendance">출퇴근 기록</button>
+        <button class="tab-button" data-tab="stats">통계</button>
+        <button class="tab-button" data-tab="evaluation">업무평가서</button>
       </div>
-    </div>
 
-    <div id="book-selection-modal" class="modal">
-      <div class="modal-content">
-        <span class="close-button">&times;</span>
-        <h2>검색 결과 선택</h2>
-        <p>여러 개의 검색 결과가 있습니다. 등록할 도서를 선택해주세요:</p>
-        <div id="book-selection-list" class="book-selection-list">
-          <!-- 검색된 도서 목록이 여기에 동적으로 추가됩니다. -->
+      <div id="admin-tab-tasks" class="tab-content active">
+        <div class="admin-toolbar">
+          <button id="refresh-tasks-btn" class="small-btn">새로고침</button>
+          <button id="export-tasks-btn" class="small-btn">내보내기</button>
         </div>
-      </div>
-    </div>
-
-    <div id="admin-panel-modal" class="modal">
-      <div class="modal-content admin-panel">
-        <span class="close-button">&times;</span>
-        <h2>관리자 패널</h2>
-
-        <div class="admin-tabs">
-          <button class="tab-button active" data-tab="tasks">작업 관리</button>
-          <button class="tab-button" data-tab="data">데이터 관리</button>
-          <button class="tab-button" data-tab="staff">직원 관리</button>
-          <button class="tab-button" data-tab="attendance">출퇴근 기록</button>
-          <button class="tab-button" data-tab="stats">통계</button>
-          <button class="tab-button" data-tab="evaluation">업무평가서</button>
-        </div>
-
-        <div id="admin-tab-tasks" class="tab-content active">
-          <div class="admin-toolbar">
-            <button id="refresh-tasks-btn" class="small-btn">새로고침</button>
-            <button id="export-tasks-btn" class="small-btn">내보내기</button>
-          </div>
-          <div class="admin-table-container">
-            <table id="admin-tasks-table" class="admin-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>제목</th>
-                  <th>저자</th>
-                  <th>현재 단계</th>
-                  <th>진행률</th>
-                  <th>작업</th>
-                </tr>
-              </thead>
-              <tbody id="admin-tasks-tbody">
-                <!-- 작업 목록이 동적으로 추가됩니다 -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div id="admin-tab-data" class="tab-content">
-          <div class="data-management-container">
-            <!-- 책 정보 데이터 관리 -->
-            <div class="admin-data-section">
-              <div class="data-section-header">
-                <h3>📚 책 정보 데이터 (bookworklist.json)</h3>
-                <div class="data-status" id="books-status">
-                  <span class="data-count">0개 항목</span>
-                  <span class="data-modified">최종 수정: -</span>
-                </div>
-              </div>
-              <div class="admin-buttons">
-                <button id="check-duplicates-btn" class="admin-btn primary">
-                  🔍 중복 검사
-                </button>
-                <button id="backup-books-btn" class="admin-btn backup">
-                  📥 백업
-                </button>
-                <button id="restore-books-btn" class="admin-btn restore">
-                  📤 복원
-                </button>
-                <button id="clear-books-btn" class="admin-btn danger">
-                  🗑️ 삭제
-                </button>
-              </div>
-              <input
-                type="file"
-                id="restore-books-input"
-                style="display: none"
-                accept=".json"
-              />
-            </div>
-
-            <!-- 직원 정보 데이터 관리 -->
-            <div class="admin-data-section">
-              <div class="data-section-header">
-                <h3>👥 직원 정보 데이터 (staff.json)</h3>
-                <div class="data-status" id="staff-status">
-                  <span class="data-count">0개 항목</span>
-                  <span class="data-modified">최종 수정: -</span>
-                </div>
-              </div>
-              <div class="admin-buttons">
-                <button id="backup-staff-btn" class="admin-btn backup">
-                  📥 백업
-                </button>
-                <button id="restore-staff-btn" class="admin-btn restore">
-                  📤 복원
-                </button>
-                <button id="clear-staff-btn" class="admin-btn danger">
-                  🗑️ 삭제
-                </button>
-              </div>
-              <input
-                type="file"
-                id="restore-staff-input"
-                style="display: none"
-                accept=".json"
-              />
-            </div>
-
-            <!-- 출퇴근 기록 데이터 관리 -->
-            <div class="admin-data-section">
-              <div class="data-section-header">
-                <h3>⏰ 출퇴근 기록 데이터 (work-sessions-history.json)</h3>
-                <div class="data-status" id="work-sessions-status">
-                  <span class="data-count">0개 항목</span>
-                  <span class="data-modified">최종 수정: -</span>
-                </div>
-              </div>
-              <div class="admin-buttons">
-                <button id="merge-work-sessions-btn" class="admin-btn primary">
-                  병합
-                </button>
-                <button id="backup-work-sessions-btn" class="admin-btn backup">
-                  📥 백업
-                </button>
-                <button
-                  id="restore-work-sessions-btn"
-                  class="admin-btn restore"
-                >
-                  📤 복원
-                </button>
-                <button id="clear-work-sessions-btn" class="admin-btn danger">
-                  🗑️ 삭제
-                </button>
-              </div>
-              <input
-                type="file"
-                id="restore-work-sessions-input"
-                style="display: none"
-                accept=".json"
-              />
-            </div>
-
-            <!-- 전체 관리 -->
-            <div class="admin-data-section global-actions">
-              <div class="data-section-header">
-                <h3>🔧 전체 관리</h3>
-                <p class="section-description">
-                  모든 데이터를 한번에 관리합니다
-                </p>
-              </div>
-              <div class="admin-buttons">
-                <button id="backup-all-btn" class="admin-btn backup-all">
-                  📦 전체 백업
-                </button>
-                <button id="clear-all-data-btn" class="admin-btn danger">
-                  🗑️ 전체 삭제
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 데이터 삭제 확인 모달 -->
-        <div id="delete-confirm-modal" class="modal" style="display: none">
-          <div class="modal-content delete-confirm-content">
-            <h3>⚠️ 데이터 삭제 확인</h3>
-            <p id="delete-confirm-message">
-              정말로 이 데이터를 삭제하시겠습니까?
-            </p>
-            <div class="password-input-group">
-              <label for="delete-password">삭제 확인 암호:</label>
-              <input
-                type="password"
-                id="delete-password"
-                placeholder="삭제 암호를 입력하세요"
-                class="password-input"
-              />
-              <div class="password-hint">힌트: 환경을 생각하는 단어</div>
-            </div>
-            <div class="modal-buttons">
-              <button id="confirm-delete-btn" class="btn danger">삭제</button>
-              <button id="cancel-delete-btn" class="btn secondary">취소</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="admin-tab-staff" class="tab-content">
-          <div class="staff-management">
-            <div class="staff-toolbar">
-              <h3>직원 등록</h3>
-              <form id="staff-form" class="staff-form">
-                <div class="form-row">
-                  <input
-                    type="text"
-                    id="staff-name"
-                    placeholder="직원 이름"
-                    required
-                  />
-                  <select id="staff-role">
-                    <option value="corrector">교정자</option>
-                    <option value="transcriber">점역자</option>
-                    <option value="both">교정자+점역자</option>
-                    <option value="admin">관리자</option>
-                  </select>
-                  <button type="submit" class="small-btn">등록</button>
-                </div>
-              </form>
-            </div>
-
-            <div class="staff-list-container">
-              <h3>등록된 직원 목록</h3>
-              <div class="admin-table-container">
-                <table id="staff-table" class="admin-table">
-                  <thead>
-                    <tr>
-                      <th>이름</th>
-                      <th>역할</th>
-                      <th>등록일</th>
-                      <th>작업</th>
-                    </tr>
-                  </thead>
-                  <tbody id="staff-tbody">
-                    <!-- 직원 목록이 동적으로 추가됩니다 -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="admin-tab-attendance" class="tab-content">
-          <div class="attendance-management">
-            <div class="attendance-toolbar">
-              <h3>출퇴근 기록</h3>
-              <div class="attendance-filters">
-                <div class="date-filters">
-                  <select id="attendance-year" class="year-select">
-                    <option value="">전체 연도</option>
-                  </select>
-                  <select id="attendance-month" class="month-select">
-                    <option value="">전체 월</option>
-                    <option value="01">1월</option>
-                    <option value="02">2월</option>
-                    <option value="03">3월</option>
-                    <option value="04">4월</option>
-                    <option value="05">5월</option>
-                    <option value="06">6월</option>
-                    <option value="07">7월</option>
-                    <option value="08">8월</option>
-                    <option value="09">9월</option>
-                    <option value="10">10월</option>
-                    <option value="11">11월</option>
-                    <option value="12">12월</option>
-                  </select>
-                  <input
-                    type="date"
-                    id="attendance-date"
-                    class="date-input"
-                    placeholder="특정 날짜"
-                  />
-                </div>
-                <select id="attendance-worker" class="worker-select">
-                  <option value="">모든 직원</option>
-                </select>
-                <div class="attendance-actions">
-                  <button id="refresh-attendance-btn" class="small-btn">
-                    새로고침
-                  </button>
-                  <button id="export-attendance-btn" class="small-btn">
-                    출퇴근 기록 내보내기
-                  </button>
-                  <button id="create-attendance-btn" class="small-btn">
-                    생성
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="attendance-table-container">
-              <h4>출퇴근 기록 상세</h4>
-              <div class="admin-table-container">
-                <table id="attendance-table" class="admin-table">
-                  <thead>
-                    <tr>
-                      <th>날짜</th>
-                      <th>직원</th>
-                      <th>출근시간</th>
-                      <th>퇴근시간</th>
-                      <th>근무시간</th>
-                      <th>작업내용</th>
-                      <th>작업</th>
-                    </tr>
-                  </thead>
-                  <tbody id="attendance-tbody">
-                    <!-- 출퇴근 기록이 동적으로 추가됩니다 -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="admin-tab-stats" class="tab-content">
-          <div class="stats-grid">
-            <div class="stat-card">
-              <h3>총 작업 수</h3>
-              <div class="stat-value" id="total-tasks">0</div>
-            </div>
-            <div class="stat-card">
-              <h3>완료된 작업</h3>
-              <div class="stat-value" id="completed-tasks">0</div>
-            </div>
-            <div class="stat-card">
-              <h3>진행 중인 작업</h3>
-              <div class="stat-value" id="in-progress-tasks">0</div>
-            </div>
-            <div class="stat-card">
-              <h3>평균 진행률</h3>
-              <div class="stat-value" id="avg-progress">0%</div>
-            </div>
-          </div>
-
-          <div class="chart-container">
-            <h3>단계별 작업 분포</h3>
-            <div id="stage-distribution" class="stage-chart">
-              <!-- 단계별 차트가 여기에 표시됩니다 -->
-            </div>
-          </div>
-        </div>
-
-        <div id="admin-tab-evaluation" class="tab-content">
-          <div class="evaluation-controls">
-            <div class="control-group">
-              <label for="evaluation-year">년도:</label>
-              <select id="evaluation-year"></select>
-            </div>
-            <div class="control-group">
-              <label for="evaluation-month">월:</label>
-              <select id="evaluation-month">
-                <option value="1">1월</option>
-                <option value="2">2월</option>
-                <option value="3">3월</option>
-                <option value="4">4월</option>
-                <option value="5">5월</option>
-                <option value="6">6월</option>
-                <option value="7">7월</option>
-                <option value="8">8월</option>
-                <option value="9">9월</option>
-                <option value="10">10월</option>
-                <option value="11">11월</option>
-                <option value="12">12월</option>
-              </select>
-            </div>
-            <div class="control-group">
-              <label for="evaluation-staff">직원:</label>
-              <select id="evaluation-staff"></select>
-            </div>
-            <button id="generate-evaluation-btn" class="primary-btn">
-              평가서 생성
-            </button>
-          </div>
-
-          <div
-            id="evaluation-content"
-            class="evaluation-report"
-            style="display: none"
-          >
-            <div class="report-header">
-              <h2 id="evaluation-title">업무평가서</h2>
-              <div class="report-info">
-                <div class="info-item">
-                  <span class="label">평가 대상:</span>
-                  <span id="eval-staff-name"></span>
-                </div>
-                <div class="info-item">
-                  <span class="label">평가 기간:</span>
-                  <span id="eval-period"></span>
-                </div>
-                <div class="info-item">
-                  <span class="label">작성 일시:</span>
-                  <span id="eval-generated-date"></span>
-                </div>
-              </div>
-            </div>
-
-            <div class="performance-summary">
-              <h3>성과 요약</h3>
-              <div class="summary-grid">
-                <div class="summary-card">
-                  <h4>총 처리 페이지 수</h4>
-                  <div class="summary-value" id="total-pages-processed">0</div>
-                </div>
-                <div class="summary-card">
-                  <h4>하루 평균 처리 페이지</h4>
-                  <div class="summary-value" id="avg-daily-pages">0</div>
-                </div>
-                <div class="summary-card">
-                  <h4>근무 일수</h4>
-                  <div class="summary-value" id="work-days">0</div>
-                </div>
-                <div class="summary-card">
-                  <h4>부서 내 순위</h4>
-                  <div class="summary-value" id="department-rank">-</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="performance-charts">
-              <div class="chart-section">
-                <h3>일일 처리량 추이</h3>
-                <canvas
-                  id="daily-performance-chart"
-                  width="380"
-                  height="250"
-                ></canvas>
-              </div>
-
-              <div class="chart-section">
-                <h3>주간 처리량 비교</h3>
-                <canvas
-                  id="weekly-performance-chart"
-                  width="380"
-                  height="250"
-                ></canvas>
-              </div>
-
-              <div class="chart-section">
-                <h3>출퇴근 현황</h3>
-                <canvas id="attendance-chart" width="380" height="250"></canvas>
-              </div>
-
-              <div class="chart-section">
-                <h3>직원별 성과 비교</h3>
-                <canvas
-                  id="staff-comparison-chart"
-                  width="380"
-                  height="250"
-                ></canvas>
-              </div>
-            </div>
-
-            <!-- 출퇴근 상세 정보 -->
-            <div class="attendance-details">
-              <div class="attendance-header">
-                <h3>📅 출퇴근 상세 분석</h3>
-                <button id="evaluation-calendar-btn" class="calendar-view-btn">
-                  달력으로 보기
-                </button>
-              </div>
-              <div class="attendance-summary">
-                <div class="attendance-card">
-                  <h4>정상근무</h4>
-                  <div class="attendance-value normal" id="normal-attendance">
-                    0일
-                  </div>
-                </div>
-                <div class="attendance-card">
-                  <h4>지각</h4>
-                  <div class="attendance-value late" id="late-count">0일</div>
-                </div>
-                <div class="attendance-card">
-                  <h4>조퇴</h4>
-                  <div class="attendance-value early" id="early-leave-count">
-                    0일
-                  </div>
-                </div>
-                <div class="attendance-card">
-                  <h4>연장근무</h4>
-                  <div class="attendance-value overtime" id="overtime-count">
-                    0일
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="detailed-stats">
-              <h3>상세 통계</h3>
-              <table class="stats-table">
-                <thead>
-                  <tr>
-                    <th>구분</th>
-                    <th>1차 교정</th>
-                    <th>2차 교정</th>
-                    <th>3차 교정</th>
-                    <th>점역</th>
-                    <th>총계</th>
-                  </tr>
-                </thead>
-                <tbody id="detailed-stats-tbody"></tbody>
-              </table>
-            </div>
-
-            <div class="report-actions">
-              <button id="print-report-btn" class="action-btn print-btn">
-                🖨️ 프린트
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="task-detail-modal" class="modal">
-      <div class="modal-content task-detail">
-        <span class="close-button">&times;</span>
-        <h2 id="task-detail-title">작업 상세 정보</h2>
-
-        <div class="task-detail-tabs">
-          <button class="detail-tab-button active" data-tab="info">
-            기본 정보
-          </button>
-          <button class="detail-tab-button" data-tab="stages">작업 단계</button>
-          <button class="detail-tab-button" data-tab="history">
-            진행 기록
-          </button>
-        </div>
-
-        <div id="task-detail-info" class="detail-tab-content active">
-          <form id="task-detail-form">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="detail-title">제목:</label>
-                <input type="text" id="detail-title" name="title" />
-              </div>
-              <div class="form-group">
-                <label for="detail-author">저자:</label>
-                <input type="text" id="detail-author" name="author" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="detail-publisher">출판사:</label>
-                <input type="text" id="detail-publisher" name="publisher" />
-              </div>
-              <div class="form-group">
-                <label for="detail-isbn">ISBN:</label>
-                <input type="text" id="detail-isbn" name="isbn" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="detail-total-pages">총 페이지:</label>
-                <input
-                  type="number"
-                  id="detail-total-pages"
-                  name="totalPages"
-                  min="1"
-                />
-              </div>
-              <div class="form-group">
-                <label for="detail-current-stage">현재 단계:</label>
-                <select id="detail-current-stage" name="currentStage">
-                  <option value="correction1">1차 교정</option>
-                  <option value="correction2">2차 교정</option>
-                  <option value="correction3">3차 교정</option>
-                  <option value="finalCorrection">최종 검수</option>
-                  <option value="transcription">점역</option>
-                  <option value="completed">완료</option>
-                </select>
-              </div>
-            </div>
-          </form>
-        </div>
-
-        <div id="task-detail-stages" class="detail-tab-content">
-          <div class="stages-container">
-            <div class="stage-section">
-              <h4>1차 교정</h4>
-              <div class="stage-info">
-                <label
-                  >담당자:
-                  <select id="corrector1-assigned" class="stage-input">
-                    <option value="">담당자 선택</option>
-                  </select></label
-                >
-                <label
-                  >진행 페이지: <span id="corrector1-progress">0</span></label
-                >
-              </div>
-            </div>
-
-            <div class="stage-section">
-              <h4>2차 교정</h4>
-              <div class="stage-info">
-                <label
-                  >담당자:
-                  <select id="corrector2-assigned" class="stage-input">
-                    <option value="">담당자 선택</option>
-                  </select></label
-                >
-                <label
-                  >진행 페이지: <span id="corrector2-progress">0</span></label
-                >
-              </div>
-            </div>
-
-            <div class="stage-section">
-              <h4>3차 교정</h4>
-              <div class="stage-info">
-                <label
-                  >담당자:
-                  <select id="corrector3-assigned" class="stage-input">
-                    <option value="">담당자 선택</option>
-                  </select></label
-                >
-                <label
-                  >진행 페이지: <span id="corrector3-progress">0</span></label
-                >
-              </div>
-            </div>
-
-            <div class="stage-section">
-              <h4>최종 검수</h4>
-              <div class="stage-info">
-                <label
-                  >담당자:
-                  <select id="final-corrector-assigned" class="stage-input">
-                    <option value="">담당자 선택</option>
-                  </select></label
-                >
-                <label
-                  >진행 페이지:
-                  <span id="final-corrector-progress">0</span></label
-                >
-              </div>
-            </div>
-
-            <div class="stage-section">
-              <h4>점역</h4>
-              <div class="stage-info">
-                <label
-                  >담당자:
-                  <select id="transcriber-assigned" class="stage-input">
-                    <option value="">담당자 선택</option>
-                  </select></label
-                >
-                <label
-                  >진행 페이지: <span id="transcriber-progress">0</span></label
-                >
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="task-detail-history" class="detail-tab-content">
-          <div id="history-container">
-            <!-- 진행 기록이 여기에 표시됩니다 -->
-          </div>
-        </div>
-
-        <div class="task-detail-actions">
-          <button id="save-task-detail" class="action-btn save-btn">
-            저장
-          </button>
-          <button id="delete-task-detail" class="action-btn delete-btn">
-            삭제
-          </button>
-          <button id="cancel-task-detail" class="action-btn cancel-btn">
-            취소
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div id="completed-books-modal" class="modal">
-      <div class="modal-content completed-books">
-        <span class="close-button">&times;</span>
-        <div class="modal-heading">
-          <h2>완료된 도서 목록</h2>
-          <p class="modal-subtitle">
-            완료된 도서의 진행 내역을 확인하고 필요한 데이터를 내보낼 수
-            있습니다.
-          </p>
-        </div>
-
-        <div class="completed-stats">
-          <div class="stat-card">
-            <span class="stat-label">총 완료 작업</span>
-            <span id="completed-count" class="stat-value">0</span>
-          </div>
-        </div>
-
-        <div class="completed-toolbar">
-          <div class="export-buttons">
-            <button id="export-completed-btn" class="small-btn">
-              완료 목록 내보내기
-            </button>
-            <button id="export-in-progress-btn" class="small-btn">
-              진행 목록 내보내기
-            </button>
-          </div>
-          <div class="search-wrapper">
-            <input
-              type="text"
-              id="completed-search"
-              placeholder="완료된 도서 검색..."
-              class="search-input"
-            />
-          </div>
-        </div>
-
-        <div class="completed-table-container">
-          <table class="completed-table">
+        <div class="admin-table-container">
+          <table id="admin-tasks-table" class="admin-table">
             <thead>
               <tr>
+                <th>ID</th>
                 <th>제목</th>
                 <th>저자</th>
-                <th>총 페이지</th>
-                <th>완료일</th>
+                <th>현재 단계</th>
+                <th>진행률</th>
+                <th>작업</th>
               </tr>
             </thead>
-            <tbody id="completed-books-tbody">
-              <!-- 완료된 도서 목록이 여기에 표시됩니다 -->
+            <tbody id="admin-tasks-tbody">
+              <!-- 작업 목록이 동적으로 추가됩니다 -->
             </tbody>
           </table>
         </div>
       </div>
-    </div>
 
-    <div id="password-modal" class="modal">
-      <div class="modal-content password-modal">
-        <span class="close-button">&times;</span>
-        <h2>관리자 인증</h2>
-        <form id="password-form">
-          <div class="password-field">
-            <label for="admin-password">비밀번호를 입력하세요:</label>
-            <input type="password" id="admin-password" required autofocus />
+      <div id="admin-tab-data" class="tab-content">
+        <div class="data-management-container">
+          <!-- 책 정보 데이터 관리 -->
+          <div class="admin-data-section">
+            <div class="data-section-header">
+              <h3>📚 책 정보 데이터 (bookworklist.json)</h3>
+              <div class="data-status" id="books-status">
+                <span class="data-count">0개 항목</span>
+                <span class="data-modified">최종 수정: -</span>
+              </div>
+            </div>
+            <div class="admin-buttons">
+              <button id="check-duplicates-btn" class="admin-btn primary">
+                🔍 중복 검사
+              </button>
+              <button id="backup-books-btn" class="admin-btn backup">
+                📥 백업
+              </button>
+              <button id="restore-books-btn" class="admin-btn restore">
+                📤 복원
+              </button>
+              <button id="clear-books-btn" class="admin-btn danger">
+                🗑️ 삭제
+              </button>
+            </div>
+            <input type="file" id="restore-books-input" style="display: none" accept=".json" />
           </div>
-          <div class="password-actions">
-            <button type="submit" class="password-btn login-btn">확인</button>
-            <button
-              type="button"
-              class="password-btn cancel-btn"
-              id="password-cancel"
-            >
-              취소
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
 
-    <div id="notes-modal" class="modal">
-      <div class="modal-content">
-        <span class="close-button">&times;</span>
-        <h2 id="notes-modal-title">특이사항 관리</h2>
-        <div id="notes-list">
-          <!-- 특이사항 목록이 여기에 동적으로 추가됩니다. -->
+          <!-- 직원 정보 데이터 관리 -->
+          <div class="admin-data-section">
+            <div class="data-section-header">
+              <h3>👥 직원 정보 데이터 (staff.json)</h3>
+              <div class="data-status" id="staff-status">
+                <span class="data-count">0개 항목</span>
+                <span class="data-modified">최종 수정: -</span>
+              </div>
+            </div>
+            <div class="admin-buttons">
+              <button id="backup-staff-btn" class="admin-btn backup">
+                📥 백업
+              </button>
+              <button id="restore-staff-btn" class="admin-btn restore">
+                📤 복원
+              </button>
+              <button id="clear-staff-btn" class="admin-btn danger">
+                🗑️ 삭제
+              </button>
+            </div>
+            <input type="file" id="restore-staff-input" style="display: none" accept=".json" />
+          </div>
+
+          <!-- 출퇴근 기록 데이터 관리 -->
+          <div class="admin-data-section">
+            <div class="data-section-header">
+              <h3>⏰ 출퇴근 기록 데이터 (work-sessions-history.json)</h3>
+              <div class="data-status" id="work-sessions-status">
+                <span class="data-count">0개 항목</span>
+                <span class="data-modified">최종 수정: -</span>
+              </div>
+            </div>
+            <div class="admin-buttons">
+              <button id="merge-work-sessions-btn" class="admin-btn primary">
+                병합
+              </button>
+              <button id="backup-work-sessions-btn" class="admin-btn backup">
+                📥 백업
+              </button>
+              <button id="restore-work-sessions-btn" class="admin-btn restore">
+                📤 복원
+              </button>
+              <button id="clear-work-sessions-btn" class="admin-btn danger">
+                🗑️ 삭제
+              </button>
+            </div>
+            <input type="file" id="restore-work-sessions-input" style="display: none" accept=".json" />
+          </div>
+
+          <!-- 전체 관리 -->
+          <div class="admin-data-section global-actions">
+            <div class="data-section-header">
+              <h3>🔧 전체 관리</h3>
+              <p class="section-description">
+                모든 데이터를 한번에 관리합니다
+              </p>
+            </div>
+            <div class="admin-buttons">
+              <button id="backup-all-btn" class="admin-btn backup-all">
+                📦 전체 백업
+              </button>
+              <button id="clear-all-data-btn" class="admin-btn danger">
+                🗑️ 전체 삭제
+              </button>
+            </div>
+          </div>
         </div>
-        <form id="note-form">
-          <input type="hidden" id="note-id" />
-          <label for="note-author">작성자:</label>
-          <input type="text" id="note-author" required />
-          <label for="note-content">내용:</label>
-          <textarea id="note-content" rows="3" required></textarea>
-          <button type="submit">저장</button>
-        </form>
       </div>
-    </div>
 
-    <div id="attendance-only-modal" class="modal">
-      <div class="modal-content attendance-only">
-        <span class="close-button">&times;</span>
-        <h2>출퇴근 기록 확인</h2>
+      <!-- 데이터 삭제 확인 모달 -->
+      <div id="delete-confirm-modal" class="modal" style="display: none">
+        <div class="modal-content delete-confirm-content">
+          <h3>⚠️ 데이터 삭제 확인</h3>
+          <p id="delete-confirm-message">
+            정말로 이 데이터를 삭제하시겠습니까?
+          </p>
+          <div class="password-input-group">
+            <label for="delete-password">삭제 확인 암호:</label>
+            <input type="password" id="delete-password" placeholder="삭제 암호를 입력하세요" class="password-input" />
+            <div class="password-hint">힌트: 환경을 생각하는 단어</div>
+          </div>
+          <div class="modal-buttons">
+            <button id="confirm-delete-btn" class="btn danger">삭제</button>
+            <button id="cancel-delete-btn" class="btn secondary">취소</button>
+          </div>
+        </div>
+      </div>
 
+      <div id="admin-tab-staff" class="tab-content">
+        <div class="staff-management">
+          <div class="staff-toolbar">
+            <h3>직원 등록</h3>
+            <form id="staff-form" class="staff-form">
+              <div class="form-row">
+                <input type="text" id="staff-name" placeholder="직원 이름" required />
+                <select id="staff-role">
+                  <option value="corrector">교정자</option>
+                  <option value="transcriber">점역자</option>
+                  <option value="both">교정자+점역자</option>
+                  <option value="admin">관리자</option>
+                </select>
+                <button type="submit" class="small-btn">등록</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="staff-list-container">
+            <h3>등록된 직원 목록</h3>
+            <div class="admin-table-container">
+              <table id="staff-table" class="admin-table">
+                <thead>
+                  <tr>
+                    <th>이름</th>
+                    <th>역할</th>
+                    <th>등록일</th>
+                    <th>작업</th>
+                  </tr>
+                </thead>
+                <tbody id="staff-tbody">
+                  <!-- 직원 목록이 동적으로 추가됩니다 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="admin-tab-attendance" class="tab-content">
         <div class="attendance-management">
           <div class="attendance-toolbar">
+            <h3>출퇴근 기록</h3>
             <div class="attendance-filters">
               <div class="date-filters">
-                <select id="attendance-only-year" class="year-select">
+                <select id="attendance-year" class="year-select">
                   <option value="">전체 연도</option>
                 </select>
-                <select id="attendance-only-month" class="month-select">
+                <select id="attendance-month" class="month-select">
                   <option value="">전체 월</option>
                   <option value="01">1월</option>
                   <option value="02">2월</option>
@@ -984,37 +394,29 @@
                   <option value="11">11월</option>
                   <option value="12">12월</option>
                 </select>
-                <input
-                  type="date"
-                  id="attendance-only-date"
-                  class="date-input"
-                  placeholder="특정 날짜"
-                />
+                <input type="date" id="attendance-date" class="date-input" placeholder="특정 날짜" />
               </div>
-              <select id="attendance-only-worker" class="worker-select">
+              <select id="attendance-worker" class="worker-select">
                 <option value="">모든 직원</option>
               </select>
               <div class="attendance-actions">
-                <button id="refresh-attendance-only-btn" class="small-btn">
+                <button id="refresh-attendance-btn" class="small-btn">
                   새로고침
                 </button>
-                <button id="export-attendance-only-btn" class="small-btn">
+                <button id="export-attendance-btn" class="small-btn">
                   출퇴근 기록 내보내기
                 </button>
+                <button id="create-attendance-btn" class="small-btn">
+                  생성
+                </button>
               </div>
-            </div>
-          </div>
-
-          <div class="attendance-summary">
-            <div id="attendance-only-summary-content">
-              <!-- 출퇴근 현황이 여기에 표시됩니다 -->
             </div>
           </div>
 
           <div class="attendance-table-container">
             <h4>출퇴근 기록 상세</h4>
             <div class="admin-table-container">
-              <table id="attendance-only-table" class="admin-table">
+              <table id="attendance-table" class="admin-table">
                 <thead>
                   <tr>
                     <th>날짜</th>
@@ -1023,9 +425,10 @@
                     <th>퇴근시간</th>
                     <th>근무시간</th>
                     <th>작업내용</th>
+                    <th>작업</th>
                   </tr>
                 </thead>
-                <tbody id="attendance-only-tbody">
+                <tbody id="attendance-tbody">
                   <!-- 출퇴근 기록이 동적으로 추가됩니다 -->
                 </tbody>
               </table>
@@ -1033,83 +436,553 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <div id="assign-corrector-modal" class="modal">
-      <div class="modal-content assign-corrector">
-        <span class="close-button">&times;</span>
-        <h2 id="assign-modal-title">담당자 지정</h2>
-        <form id="assign-corrector-form">
-          <div class="assign-form-content">
-            <p id="assign-task-info"></p>
+      <div id="admin-tab-stats" class="tab-content">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>총 작업 수</h3>
+            <div class="stat-value" id="total-tasks">0</div>
+          </div>
+          <div class="stat-card">
+            <h3>완료된 작업</h3>
+            <div class="stat-value" id="completed-tasks">0</div>
+          </div>
+          <div class="stat-card">
+            <h3>진행 중인 작업</h3>
+            <div class="stat-value" id="in-progress-tasks">0</div>
+          </div>
+          <div class="stat-card">
+            <h3>평균 진행률</h3>
+            <div class="stat-value" id="avg-progress">0%</div>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <h3>단계별 작업 분포</h3>
+          <div id="stage-distribution" class="stage-chart">
+            <!-- 단계별 차트가 여기에 표시됩니다 -->
+          </div>
+        </div>
+      </div>
+
+      <div id="admin-tab-evaluation" class="tab-content">
+        <div class="evaluation-controls">
+          <div class="control-group">
+            <label for="evaluation-year">년도:</label>
+            <select id="evaluation-year"></select>
+          </div>
+          <div class="control-group">
+            <label for="evaluation-month">월:</label>
+            <select id="evaluation-month">
+              <option value="1">1월</option>
+              <option value="2">2월</option>
+              <option value="3">3월</option>
+              <option value="4">4월</option>
+              <option value="5">5월</option>
+              <option value="6">6월</option>
+              <option value="7">7월</option>
+              <option value="8">8월</option>
+              <option value="9">9월</option>
+              <option value="10">10월</option>
+              <option value="11">11월</option>
+              <option value="12">12월</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="evaluation-staff">직원:</label>
+            <select id="evaluation-staff"></select>
+          </div>
+          <button id="generate-evaluation-btn" class="primary-btn">
+            평가서 생성
+          </button>
+        </div>
+
+        <div id="evaluation-content" class="evaluation-report" style="display: none">
+          <div class="report-header">
+            <h2 id="evaluation-title">업무평가서</h2>
+            <div class="report-info">
+              <div class="info-item">
+                <span class="label">평가 대상:</span>
+                <span id="eval-staff-name"></span>
+              </div>
+              <div class="info-item">
+                <span class="label">평가 기간:</span>
+                <span id="eval-period"></span>
+              </div>
+              <div class="info-item">
+                <span class="label">작성 일시:</span>
+                <span id="eval-generated-date"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="performance-summary">
+            <h3>성과 요약</h3>
+            <div class="summary-grid">
+              <div class="summary-card">
+                <h4>총 처리 페이지 수</h4>
+                <div class="summary-value" id="total-pages-processed">0</div>
+              </div>
+              <div class="summary-card">
+                <h4>하루 평균 처리 페이지</h4>
+                <div class="summary-value" id="avg-daily-pages">0</div>
+              </div>
+              <div class="summary-card">
+                <h4>근무 일수</h4>
+                <div class="summary-value" id="work-days">0</div>
+              </div>
+              <div class="summary-card">
+                <h4>부서 내 순위</h4>
+                <div class="summary-value" id="department-rank">-</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="performance-charts">
+            <div class="chart-section">
+              <h3>일일 처리량 추이</h3>
+              <canvas id="daily-performance-chart" width="380" height="250"></canvas>
+            </div>
+
+            <div class="chart-section">
+              <h3>주간 처리량 비교</h3>
+              <canvas id="weekly-performance-chart" width="380" height="250"></canvas>
+            </div>
+
+            <div class="chart-section">
+              <h3>출퇴근 현황</h3>
+              <canvas id="attendance-chart" width="380" height="250"></canvas>
+            </div>
+
+            <div class="chart-section">
+              <h3>직원별 성과 비교</h3>
+              <canvas id="staff-comparison-chart" width="380" height="250"></canvas>
+            </div>
+          </div>
+
+          <!-- 출퇴근 상세 정보 -->
+          <div class="attendance-details">
+            <div class="attendance-header">
+              <h3>📅 출퇴근 상세 분석</h3>
+              <button id="evaluation-calendar-btn" class="calendar-view-btn">
+                달력으로 보기
+              </button>
+            </div>
+            <div class="attendance-summary">
+              <div class="attendance-card">
+                <h4>정상근무</h4>
+                <div class="attendance-value normal" id="normal-attendance">
+                  0일
+                </div>
+              </div>
+              <div class="attendance-card">
+                <h4>지각</h4>
+                <div class="attendance-value late" id="late-count">0일</div>
+              </div>
+              <div class="attendance-card">
+                <h4>조퇴</h4>
+                <div class="attendance-value early" id="early-leave-count">
+                  0일
+                </div>
+              </div>
+              <div class="attendance-card">
+                <h4>연장근무</h4>
+                <div class="attendance-value overtime" id="overtime-count">
+                  0일
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="detailed-stats">
+            <h3>상세 통계</h3>
+            <table class="stats-table">
+              <thead>
+                <tr>
+                  <th>구분</th>
+                  <th>1차 교정</th>
+                  <th>2차 교정</th>
+                  <th>3차 교정</th>
+                  <th>점역</th>
+                  <th>총계</th>
+                </tr>
+              </thead>
+              <tbody id="detailed-stats-tbody"></tbody>
+            </table>
+          </div>
+
+          <div class="report-actions">
+            <button id="print-report-btn" class="action-btn print-btn">
+              🖨️ 프린트
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="task-detail-modal" class="modal">
+    <div class="modal-content task-detail">
+      <span class="close-button">&times;</span>
+      <h2 id="task-detail-title">작업 상세 정보</h2>
+
+      <div class="task-detail-tabs">
+        <button class="detail-tab-button active" data-tab="info">
+          기본 정보
+        </button>
+        <button class="detail-tab-button" data-tab="stages">작업 단계</button>
+        <button class="detail-tab-button" data-tab="history">
+          진행 기록
+        </button>
+      </div>
+
+      <div id="task-detail-info" class="detail-tab-content active">
+        <form id="task-detail-form">
+          <div class="form-row">
             <div class="form-group">
-              <label for="assign-corrector-select">담당자 선택:</label>
-              <select id="assign-corrector-select" required>
-                <option value="">담당자를 선택해주세요</option>
+              <label for="detail-title">제목:</label>
+              <input type="text" id="detail-title" name="title" />
+            </div>
+            <div class="form-group">
+              <label for="detail-author">저자:</label>
+              <input type="text" id="detail-author" name="author" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="detail-publisher">출판사:</label>
+              <input type="text" id="detail-publisher" name="publisher" />
+            </div>
+            <div class="form-group">
+              <label for="detail-isbn">ISBN:</label>
+              <input type="text" id="detail-isbn" name="isbn" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="detail-total-pages">총 페이지:</label>
+              <input type="number" id="detail-total-pages" name="totalPages" min="1" />
+            </div>
+            <div class="form-group">
+              <label for="detail-current-stage">현재 단계:</label>
+              <select id="detail-current-stage" name="currentStage">
+                <option value="correction1">1차 교정</option>
+                <option value="correction2">2차 교정</option>
+                <option value="correction3">3차 교정</option>
+                <option value="finalCorrection">최종 검수</option>
+                <option value="transcription">점역</option>
+                <option value="completed">완료</option>
               </select>
             </div>
           </div>
-          <div class="assign-form-actions">
-            <button type="submit" class="assign-btn confirm">지정</button>
-            <button
-              type="button"
-              class="assign-btn cancel"
-              id="assign-cancel-btn"
-            >
-              취소
-            </button>
+        </form>
+      </div>
+
+      <div id="task-detail-stages" class="detail-tab-content">
+        <div class="stages-container">
+          <div class="stage-section">
+            <h4>1차 교정</h4>
+            <div class="stage-info">
+              <label>담당자:
+                <select id="corrector1-assigned" class="stage-input">
+                  <option value="">담당자 선택</option>
+                </select></label>
+              <label>진행 페이지: <span id="corrector1-progress">0</span></label>
+            </div>
           </div>
-        </form>
+
+          <div class="stage-section">
+            <h4>2차 교정</h4>
+            <div class="stage-info">
+              <label>담당자:
+                <select id="corrector2-assigned" class="stage-input">
+                  <option value="">담당자 선택</option>
+                </select></label>
+              <label>진행 페이지: <span id="corrector2-progress">0</span></label>
+            </div>
+          </div>
+
+          <div class="stage-section">
+            <h4>3차 교정</h4>
+            <div class="stage-info">
+              <label>담당자:
+                <select id="corrector3-assigned" class="stage-input">
+                  <option value="">담당자 선택</option>
+                </select></label>
+              <label>진행 페이지: <span id="corrector3-progress">0</span></label>
+            </div>
+          </div>
+
+          <div class="stage-section">
+            <h4>최종 검수</h4>
+            <div class="stage-info">
+              <label>담당자:
+                <select id="final-corrector-assigned" class="stage-input">
+                  <option value="">담당자 선택</option>
+                </select></label>
+              <label>진행 페이지:
+                <span id="final-corrector-progress">0</span></label>
+            </div>
+          </div>
+
+          <div class="stage-section">
+            <h4>점역</h4>
+            <div class="stage-info">
+              <label>담당자:
+                <select id="transcriber-assigned" class="stage-input">
+                  <option value="">담당자 선택</option>
+                </select></label>
+              <label>진행 페이지: <span id="transcriber-progress">0</span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="task-detail-history" class="detail-tab-content">
+        <div id="history-container">
+          <!-- 진행 기록이 여기에 표시됩니다 -->
+        </div>
+      </div>
+
+      <div class="task-detail-actions">
+        <button id="save-task-detail" class="action-btn save-btn">
+          저장
+        </button>
+        <button id="delete-task-detail" class="action-btn delete-btn">
+          삭제
+        </button>
+        <button id="cancel-task-detail" class="action-btn cancel-btn">
+          취소
+        </button>
       </div>
     </div>
+  </div>
 
-    <div id="attendance-edit-modal" class="modal">
-      <div class="modal-content">
-        <span class="close-button">&times;</span>
-        <h2 id="attendance-edit-modal-title">출퇴근 기록 수정</h2>
-        <form id="attendance-edit-form">
-          <input type="hidden" id="attendance-edit-id" />
-          <label for="attendance-edit-worker">직원:</label>
-          <select id="attendance-edit-worker" required></select>
-          <label for="attendance-edit-date">날짜:</label>
-          <input type="date" id="attendance-edit-date" required />
-          <label for="attendance-edit-start-time">출근시간:</label>
-          <input type="time" id="attendance-edit-start-time" required />
-          <label for="attendance-edit-end-time">퇴근시간:</label>
-          <input type="time" id="attendance-edit-end-time" required />
-          <label for="attendance-edit-pages">작업 페이지 수:</label>
-          <input
-            type="number"
-            id="attendance-edit-pages"
-            min="0"
-            placeholder="완료한 페이지 수를 입력하세요"
-          />
-          <label for="attendance-edit-tasks">작업내용 (선택):</label>
-          <input
-            type="text"
-            id="attendance-edit-tasks"
-            placeholder="작업 메모가 있다면 입력하세요"
-          />
-          <button type="submit">저장</button>
-        </form>
+  <div id="completed-books-modal" class="modal">
+    <div class="modal-content completed-books">
+      <span class="close-button">&times;</span>
+      <div class="modal-heading">
+        <h2>완료된 도서 목록</h2>
+        <p class="modal-subtitle">
+          완료된 도서의 진행 내역을 확인하고 필요한 데이터를 내보낼 수
+          있습니다.
+        </p>
+      </div>
+
+      <div class="completed-stats">
+        <div class="stat-card">
+          <span class="stat-label">총 완료 작업</span>
+          <span id="completed-count" class="stat-value">0</span>
+        </div>
+      </div>
+
+      <div class="completed-toolbar">
+        <div class="export-buttons">
+          <button id="export-completed-btn" class="small-btn">
+            완료 목록 내보내기
+          </button>
+          <button id="export-in-progress-btn" class="small-btn">
+            진행 목록 내보내기
+          </button>
+        </div>
+        <div class="search-wrapper">
+          <input type="text" id="completed-search" placeholder="완료된 도서 검색..." class="search-input" />
+        </div>
+      </div>
+
+      <div class="completed-table-container">
+        <table class="completed-table">
+          <thead>
+            <tr>
+              <th>제목</th>
+              <th>저자</th>
+              <th>총 페이지</th>
+              <th>완료일</th>
+            </tr>
+          </thead>
+          <tbody id="completed-books-tbody">
+            <!-- 완료된 도서 목록이 여기에 표시됩니다 -->
+          </tbody>
+        </table>
       </div>
     </div>
+  </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script>
-      window.FIREBASE_MEASUREMENT_ID = "G-QB9MKN0Z8T";
-    </script>
+  <div id="password-modal" class="modal">
+    <div class="modal-content password-modal">
+      <span class="close-button">&times;</span>
+      <h2>관리자 인증</h2>
+      <form id="password-form">
+        <div class="password-field">
+          <label for="admin-password">비밀번호를 입력하세요:</label>
+          <input type="password" id="admin-password" required autofocus />
+        </div>
+        <div class="password-actions">
+          <button type="submit" class="password-btn login-btn">확인</button>
+          <button type="button" class="password-btn cancel-btn" id="password-cancel">
+            취소
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-    <!-- Firebase 설정 및 헬퍼 함수 -->
-    <script src="firebase-config.js"></script>
+  <div id="notes-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button">&times;</span>
+      <h2 id="notes-modal-title">특이사항 관리</h2>
+      <div id="notes-list">
+        <!-- 특이사항 목록이 여기에 동적으로 추가됩니다. -->
+      </div>
+      <form id="note-form">
+        <input type="hidden" id="note-id" />
+        <label for="note-author">작성자:</label>
+        <input type="text" id="note-author" required />
+        <label for="note-content">내용:</label>
+        <textarea id="note-content" rows="3" required></textarea>
+        <button type="submit">저장</button>
+      </form>
+    </div>
+  </div>
 
-    <!-- Firebase 어댑터 (fetch를 Firebase로 변환) -->
-    <script src="firebase-adapter.js"></script>
+  <div id="attendance-only-modal" class="modal">
+    <div class="modal-content attendance-only">
+      <span class="close-button">&times;</span>
+      <h2>출퇴근 기록 확인</h2>
 
-    <!-- 쿠키로 문제가 될 경우 버전을 올려서 쿠키에 영향이 없도록 할 수 있음 -->
-    <script src="script.js?v=3.0.0"></script>
-  </body>
+      <div class="attendance-management">
+        <div class="attendance-toolbar">
+          <div class="attendance-filters">
+            <div class="date-filters">
+              <select id="attendance-only-year" class="year-select">
+                <option value="">전체 연도</option>
+              </select>
+              <select id="attendance-only-month" class="month-select">
+                <option value="">전체 월</option>
+                <option value="01">1월</option>
+                <option value="02">2월</option>
+                <option value="03">3월</option>
+                <option value="04">4월</option>
+                <option value="05">5월</option>
+                <option value="06">6월</option>
+                <option value="07">7월</option>
+                <option value="08">8월</option>
+                <option value="09">9월</option>
+                <option value="10">10월</option>
+                <option value="11">11월</option>
+                <option value="12">12월</option>
+              </select>
+              <input type="date" id="attendance-only-date" class="date-input" placeholder="특정 날짜" />
+            </div>
+            <select id="attendance-only-worker" class="worker-select">
+              <option value="">모든 직원</option>
+            </select>
+            <div class="attendance-actions">
+              <button id="refresh-attendance-only-btn" class="small-btn">
+                새로고침
+              </button>
+              <button id="export-attendance-only-btn" class="small-btn">
+                출퇴근 기록 내보내기
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="attendance-summary">
+          <div id="attendance-only-summary-content">
+            <!-- 출퇴근 현황이 여기에 표시됩니다 -->
+          </div>
+        </div>
+
+        <div class="attendance-table-container">
+          <h4>출퇴근 기록 상세</h4>
+          <div class="admin-table-container">
+            <table id="attendance-only-table" class="admin-table">
+              <thead>
+                <tr>
+                  <th>날짜</th>
+                  <th>직원</th>
+                  <th>출근시간</th>
+                  <th>퇴근시간</th>
+                  <th>근무시간</th>
+                  <th>작업내용</th>
+                </tr>
+              </thead>
+              <tbody id="attendance-only-tbody">
+                <!-- 출퇴근 기록이 동적으로 추가됩니다 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="assign-corrector-modal" class="modal">
+    <div class="modal-content assign-corrector">
+      <span class="close-button">&times;</span>
+      <h2 id="assign-modal-title">담당자 지정</h2>
+      <form id="assign-corrector-form">
+        <div class="assign-form-content">
+          <p id="assign-task-info"></p>
+          <div class="form-group">
+            <label for="assign-corrector-select">담당자 선택:</label>
+            <select id="assign-corrector-select" required>
+              <option value="">담당자를 선택해주세요</option>
+            </select>
+          </div>
+        </div>
+        <div class="assign-form-actions">
+          <button type="submit" class="assign-btn confirm">지정</button>
+          <button type="button" class="assign-btn cancel" id="assign-cancel-btn">
+            취소
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="attendance-edit-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button">&times;</span>
+      <h2 id="attendance-edit-modal-title">출퇴근 기록 수정</h2>
+      <form id="attendance-edit-form">
+        <input type="hidden" id="attendance-edit-id" />
+        <label for="attendance-edit-worker">직원:</label>
+        <select id="attendance-edit-worker" required></select>
+        <label for="attendance-edit-date">날짜:</label>
+        <input type="date" id="attendance-edit-date" required />
+        <label for="attendance-edit-start-time">출근시간:</label>
+        <input type="time" id="attendance-edit-start-time" required />
+        <label for="attendance-edit-end-time">퇴근시간:</label>
+        <input type="time" id="attendance-edit-end-time" required />
+        <label for="attendance-edit-pages">작업 페이지 수:</label>
+        <input type="number" id="attendance-edit-pages" min="0" placeholder="완료한 페이지 수를 입력하세요" />
+        <label for="attendance-edit-tasks">작업내용 (선택):</label>
+        <input type="text" id="attendance-edit-tasks" placeholder="작업 메모가 있다면 입력하세요" />
+        <button type="submit">저장</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <script>
+    window.FIREBASE_MEASUREMENT_ID = "G-QB9MKN0Z8T";
+  </script>
+
+  <!-- Firebase 설정 및 헬퍼 함수 -->
+  <script src="firebase-config.js"></script>
+
+  <!-- Firebase 어댑터 (fetch를 Firebase로 변환) -->
+  <script src="firebase-adapter.js"></script>
+
+  <!-- 쿠키로 문제가 될 경우 버전을 올려서 쿠키에 영향이 없도록 할 수 있음 -->
+  <script src="script.js?v=3.0.0"></script>
+</body>
+
 </html>
