@@ -166,38 +166,59 @@ header {
   margin-right: 15px;
 }
 
-.symbol-checker-btn {
-  background-color: #388e3c;
-  color: white;
-  border: 1px solid #388e3c;
-  padding: 8px 15px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.3s;
-  margin-right: 4px;
-}
-
-.symbol-checker-btn:hover {
-  background-color: #2e7d32;
-  border-color: #2e7d32;
-}
-
+.symbol-checker-btn,
 .braille-typing-btn {
-  background-color: #388e3c;
+  background-color: #2979ff; /* Bright Blue */
   color: white;
-  border: 1px solid #388e3c;
-  padding: 8px 15px;
+  border: none;
+  border-bottom: 4px solid #1565c0; /* Darker blue for 3D effect */
+  padding: 6px 12px; /* Match orange button size */
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.3s;
-  margin-right: 15px;
+  font-size: 0.85rem; /* Match orange button font */
+  transition: all 0.1s;
+  margin-right: 8px; /* Standardize margin */
+  font-weight: bold;
 }
 
+.symbol-checker-btn:hover,
 .braille-typing-btn:hover {
-  background-color: #2e7d32;
-  border-color: #2e7d32;
+  background-color: #448aff;
+  margin-top: 1px;
+  border-bottom-width: 3px;
+}
+
+.symbol-checker-btn:active,
+.braille-typing-btn:active {
+  margin-top: 4px;
+  border-bottom-width: 0;
+  transform: translateY(1px);
+}
+
+.header-orange-btn {
+  background-color: #ff9800; /* Orange color */
+  color: white;
+  border: none;
+  border-bottom: 4px solid #e65100; /* Darker orange for 3D effect */
+  padding: 6px 12px; /* Smaller padding */
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem; /* Slightly smaller font */
+  transition: all 0.1s;
+  margin-right: 8px; /* Reduced margin */
+  font-weight: bold;
+}
+
+.header-orange-btn:hover {
+  background-color: #fb8c00;
+  margin-top: 1px;
+  border-bottom-width: 3px;
+}
+
+.header-orange-btn:active {
+  margin-top: 4px;
+  border-bottom-width: 0;
+  transform: translateY(1px);
 }
 
 .header-link-btn {
